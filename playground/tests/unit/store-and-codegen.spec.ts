@@ -32,6 +32,90 @@ describe('playground store and code generation', () => {
         updateNode.mockRestore();
     });
 
+    it('auto-adds and connects nodes using the same defaults and edge styling', async () => {
+        vi.resetModules();
+        const { audioEngine } = await import('../../src/playground/AudioEngine');
+        const refreshConnections = vi.spyOn(audioEngine, 'refreshConnections').mockImplementation(() => {});
+        const { useAudioGraphStore } = await import('../../src/playground/store');
+
+        useAudioGraphStore.getState().loadGraph(
+            [
+                {
+                    id: 'osc-1',
+                    type: 'oscNode',
+                    position: { x: 0, y: 0 },
+                    data: { type: 'osc', frequency: 440, detune: 0, waveform: 'sine', label: 'Oscillator' },
+                },
+            ],
+            []
+        );
+
+        const nodeId = useAudioGraphStore.getState().addNodeAndConnect(
+            'filter',
+            {
+                source: 'osc-1',
+                sourceHandle: 'out',
+                target: '__suggestion__filter',
+                targetHandle: 'in',
+            },
+            { x: 120, y: 120 }
+        );
+
+        const state = useAudioGraphStore.getState();
+        const filterNode = state.nodes.find((node) => node.id === nodeId);
+        const filterEdge = state.edges.find((edge) => edge.target === nodeId);
+
+        expect(filterNode?.data.type).toBe('filter');
+        expect((filterNode?.data as { label?: string })?.label).toBe('Filter');
+        expect(filterEdge?.source).toBe('osc-1');
+        expect(filterEdge?.targetHandle).toBe('in');
+        expect(filterEdge?.style).toMatchObject({ stroke: '#44cc44', strokeWidth: 3 });
+        expect(filterEdge?.animated).toBe(false);
+
+        refreshConnections.mockRestore();
+    });
+
+    it('auto-connects correctly when the dragged handle started from a target', async () => {
+        vi.resetModules();
+        const { audioEngine } = await import('../../src/playground/AudioEngine');
+        const refreshConnections = vi.spyOn(audioEngine, 'refreshConnections').mockImplementation(() => {});
+        const { useAudioGraphStore } = await import('../../src/playground/store');
+
+        useAudioGraphStore.getState().loadGraph(
+            [
+                {
+                    id: 'osc-1',
+                    type: 'oscNode',
+                    position: { x: 0, y: 0 },
+                    data: { type: 'osc', frequency: 440, detune: 0, waveform: 'sine', label: 'Oscillator' },
+                },
+            ],
+            []
+        );
+
+        const nodeId = useAudioGraphStore.getState().addNodeAndConnect(
+            'voice',
+            {
+                source: '__suggestion__voice',
+                sourceHandle: 'note',
+                target: 'osc-1',
+                targetHandle: 'frequency',
+            },
+            { x: 80, y: 80 }
+        );
+
+        const state = useAudioGraphStore.getState();
+        const edge = state.edges.find((item) => item.source === nodeId && item.target === 'osc-1');
+
+        expect(state.nodes.find((node) => node.id === nodeId)?.data.type).toBe('voice');
+        expect(edge?.sourceHandle).toBe('note');
+        expect(edge?.targetHandle).toBe('frequency');
+        expect(edge?.animated).toBe(true);
+        expect(edge?.style).toMatchObject({ stroke: '#4488ff', strokeWidth: 2, strokeDasharray: '5,5' });
+
+        refreshConnections.mockRestore();
+    });
+
     it('sanitizes persisted graphs and emits component names for generated code', async () => {
         vi.resetModules();
         const { generateCode } = await import('../../src/playground/CodeGenerator');

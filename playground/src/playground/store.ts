@@ -15,12 +15,18 @@ import { normalizeGraphName } from './graphUtils';
 import {
     canConnect,
     isAudioConnection,
+    type NormalizedConnectionDescriptor,
     migrateGraphEdges,
     migrateGraphNodes,
     normalizeInputNodeData,
     normalizeTransportNodeData,
     getSingletonNodeTypes,
 } from './nodeHelpers';
+import type { PlaygroundNodeType } from './nodeCatalog';
+import {
+    createDefaultOutputData,
+    createPlaygroundNode,
+} from './graphBuilders';
 
 // ============================================================================
 // Audio Node Data Types
@@ -361,7 +367,8 @@ interface AudioGraphState {
     setHydrated: (isHydrated: boolean) => void;
 
     // Custom actions
-    addNode: (type: AudioNodeData['type'], position?: { x: number; y: number }) => void;
+    addNode: (type: PlaygroundNodeType, position?: { x: number; y: number }) => void;
+    addNodeAndConnect: (type: PlaygroundNodeType, connection: NormalizedConnectionDescriptor, position?: { x: number; y: number }) => string | null;
     updateNodeData: (nodeId: string, data: Partial<AudioNodeData>) => void;
     removeNode: (nodeId: string) => void;
     loadGraph: (nodes: Node<AudioNodeData>[], edges: Edge[]) => void;
@@ -415,32 +422,6 @@ const syncNodeIdCounter = (nodes: Node<AudioNodeData>[]) => {
         nodeIdCounter = maxId;
     }
 };
-
-const createDefaultOutputData = (): OutputNodeData => ({
-    type: 'output',
-    playing: false,
-    masterGain: 0.5,
-    label: 'Output',
-});
-
-const createDefaultTransportData = (): TransportNodeData => ({
-    type: 'transport',
-    bpm: 120,
-    playing: false,
-    beatsPerBar: 4,
-    beatUnit: 4,
-    stepsPerBeat: 4,
-    barsPerPhrase: 4,
-    swing: 0,
-    label: 'Transport',
-});
-
-const createDefaultInputData = (nodeId: string): InputNodeData =>
-    normalizeInputNodeData(nodeId, {
-        type: 'input',
-        params: [],
-        label: 'Params',
-    });
 
 // Initial nodes - Horizontal layout
 const initialNodes: Node<AudioNodeData>[] = [
@@ -497,7 +478,7 @@ const normalizeGraphDocument = (graph: GraphDocument, index: number, now: number
     };
 };
 
-const hasSingletonNode = (nodes: Node<AudioNodeData>[], type: AudioNodeData['type']) =>
+const hasSingletonNode = (nodes: Node<AudioNodeData>[], type: PlaygroundNodeType) =>
     nodes.some((node) => node.data.type === type);
 
 const requiresConnectionRefresh = (
@@ -509,6 +490,33 @@ const requiresConnectionRefresh = (
     if (node.data.type === 'switch' && 'inputs' in data) return true;
     return false;
 };
+
+const createStyledEdge = (
+    nodes: Node<AudioNodeData>[],
+    edges: Edge[],
+    connection: Connection
+): Edge[] | null => {
+    const nodeById = new Map(nodes.map((node) => [node.id, node]));
+    if (!canConnect(connection, nodeById)) return null;
+
+    const isAudioConnectionValue = isAudioConnection(connection, nodeById);
+    const edgeStyle = isAudioConnectionValue
+        ? { stroke: '#44cc44', strokeWidth: 3 }
+        : { stroke: '#4488ff', strokeWidth: 2, strokeDasharray: '5,5' };
+
+    return addEdge({ ...connection, style: edgeStyle, animated: !isAudioConnectionValue }, edges);
+};
+
+const replaceVirtualConnectionNode = (
+    nodes: Node<AudioNodeData>[],
+    connection: NormalizedConnectionDescriptor,
+    nodeId: string
+): Connection => ({
+    source: nodes.some((node) => node.id === connection.source) ? connection.source : nodeId,
+    sourceHandle: connection.sourceHandle ?? null,
+    target: nodes.some((node) => node.id === connection.target) ? connection.target : nodeId,
+    targetHandle: connection.targetHandle ?? null,
+});
 
 export const useAudioGraphStore = create<AudioGraphState>((set, get) => ({
     nodes: initialGraph.nodes,
@@ -755,16 +763,9 @@ export const useAudioGraphStore = create<AudioGraphState>((set, get) => ({
     },
 
     onConnect: (connection) => {
-        const nodeById = new Map(get().nodes.map((node) => [node.id, node]));
-        if (!canConnect(connection as Connection, nodeById)) return;
+        const newEdges = createStyledEdge(get().nodes, get().edges, connection as Connection);
+        if (!newEdges) return;
 
-        const isAudioConnectionValue = isAudioConnection(connection as Connection, nodeById);
-
-        const edgeStyle = isAudioConnectionValue
-            ? { stroke: '#44cc44', strokeWidth: 3 } // Green for audio
-            : { stroke: '#4488ff', strokeWidth: 2, strokeDasharray: '5,5' }; // Blue dashed for control
-
-        const newEdges = addEdge({ ...connection, style: edgeStyle, animated: !isAudioConnectionValue }, get().edges);
         set({ edges: newEdges });
 
         set((state) => {
@@ -788,311 +789,8 @@ export const useAudioGraphStore = create<AudioGraphState>((set, get) => ({
         }
 
         const id = getNodeId();
-        let newNode: Node<AudioNodeData>;
-
-        switch (type) {
-            case 'osc':
-                newNode = {
-                    id,
-                    type: 'oscNode',
-                    position,
-                    dragHandle: '.node-header',
-                    data: { type: 'osc', frequency: 440, detune: 0, waveform: 'sine', label: 'Oscillator' } as AudioNodeData,
-                };
-                break;
-            case 'gain':
-                newNode = {
-                    id,
-                    type: 'gainNode',
-                    position,
-                    dragHandle: '.node-header',
-                    data: { type: 'gain', gain: 0.5, label: 'Gain' } as AudioNodeData,
-                };
-                break;
-            case 'filter':
-                newNode = {
-                    id,
-                    type: 'filterNode',
-                    position,
-                    dragHandle: '.node-header',
-                    data: {
-                        type: 'filter',
-                        filterType: 'lowpass',
-                        frequency: 1000,
-                        detune: 0,
-                        q: 1,
-                        gain: 0,
-                        label: 'Filter'
-                    } as AudioNodeData,
-                };
-                break;
-            case 'output':
-                newNode = {
-                    id,
-                    type: 'outputNode',
-                    position,
-                    dragHandle: '.node-header',
-                    data: createDefaultOutputData() as AudioNodeData,
-                };
-                break;
-            case 'noise':
-                newNode = {
-                    id,
-                    type: 'noiseNode',
-                    position,
-                    dragHandle: '.node-header',
-                    data: { type: 'noise', noiseType: 'white', label: 'Noise' } as AudioNodeData,
-                };
-                break;
-            case 'delay':
-                newNode = {
-                    id,
-                    type: 'delayNode',
-                    position,
-                    dragHandle: '.node-header',
-                    data: { type: 'delay', delayTime: 0.3, feedback: 0.4, label: 'Delay' } as AudioNodeData,
-                };
-                break;
-            case 'reverb':
-                newNode = {
-                    id,
-                    type: 'reverbNode',
-                    position,
-                    dragHandle: '.node-header',
-                    data: { type: 'reverb', decay: 2, mix: 0.5, label: 'Reverb' } as AudioNodeData,
-                };
-                break;
-            case 'panner':
-                newNode = {
-                    id,
-                    type: 'pannerNode',
-                    position,
-                    dragHandle: '.node-header',
-                    data: { type: 'panner', pan: 0, label: 'Pan' } as AudioNodeData,
-                };
-                break;
-            case 'mixer':
-                newNode = {
-                    id,
-                    type: 'mixerNode',
-                    position,
-                    dragHandle: '.node-header',
-                    data: { type: 'mixer', inputs: 3, label: 'Mixer' } as AudioNodeData,
-                };
-                break;
-            case 'input':
-                newNode = {
-                    id,
-                    type: 'inputNode',
-                    position,
-                    dragHandle: '.node-header',
-                    data: createDefaultInputData(id) as AudioNodeData,
-                };
-                break;
-            case 'note':
-                newNode = {
-                    id,
-                    type: 'noteNode',
-                    position,
-                    dragHandle: '.node-header',
-                    data: {
-                        type: 'note',
-                        note: 'C',
-                        octave: 4,
-                        frequency: 261.6,
-                        language: 'en',
-                        label: 'Note'
-                    } as AudioNodeData,
-                };
-                break;
-            case 'stepSequencer':
-                newNode = {
-                    id,
-                    type: 'stepSequencerNode',
-                    position,
-                    dragHandle: '.node-header',
-                    data: {
-                        type: 'stepSequencer',
-                        steps: 16,
-                        pattern: Array(16).fill(0.8), // Default velocity 0.8
-                        activeSteps: Array(16).fill(false), // Default all off
-                        label: 'Step Sequencer'
-                    } as AudioNodeData,
-                };
-                break;
-
-            case 'pianoRoll':
-                newNode = {
-                    id,
-                    type: 'pianoRollNode',
-                    position,
-                    dragHandle: '.node-header',
-                    data: {
-                        type: 'pianoRoll',
-                        steps: 16,
-                        octaves: 2,
-                        baseNote: 48, // C3
-                        notes: [],
-                        label: 'Piano Roll'
-                    } as AudioNodeData,
-                };
-                break;
-
-            case 'lfo':
-                newNode = {
-                    id,
-                    type: 'lfoNode',
-                    position,
-                    dragHandle: '.node-header',
-                    data: {
-                        type: 'lfo',
-                        rate: 1,
-                        depth: 500,
-                        waveform: 'sine',
-                        label: 'LFO'
-                    } as AudioNodeData,
-                };
-                break;
-
-            case 'adsr':
-                newNode = {
-                    id,
-                    type: 'adsrNode',
-                    position,
-                    dragHandle: '.node-header',
-                    data: {
-                        type: 'adsr',
-                        attack: 0.1,
-                        decay: 0.2,
-                        sustain: 0.5,
-                        release: 0.5,
-                        label: 'ADSR'
-                    } as AudioNodeData,
-                };
-                break;
-
-            case 'transport':
-                newNode = {
-                    id,
-                    type: 'transportNode',
-                    position,
-                    dragHandle: '.node-header',
-                    data: createDefaultTransportData() as AudioNodeData,
-                };
-                break;
-
-            case 'voice':
-                newNode = {
-                    id,
-                    type: 'voiceNode',
-                    position,
-                    dragHandle: '.node-header',
-                    data: {
-                        type: 'voice',
-                        portamento: 0,
-                        label: 'Voice'
-                    } as AudioNodeData,
-                };
-                break;
-
-            case 'sampler':
-                newNode = {
-                    id,
-                    type: 'samplerNode',
-                    position,
-                    dragHandle: '.node-header',
-                    data: {
-                        type: 'sampler',
-                        src: '',
-                        loop: false,
-                        playbackRate: 1,
-                        detune: 0,
-                        loaded: false,
-                        label: 'Sampler'
-                    } as AudioNodeData,
-                };
-                break;
-            case 'math':
-                newNode = {
-                    id,
-                    type: 'mathNode',
-                    position,
-                    dragHandle: '.node-header',
-                    data: {
-                        type: 'math',
-                        operation: 'add',
-                        a: 0,
-                        b: 0,
-                        c: 0,
-                        label: 'Math'
-                    } as AudioNodeData,
-                };
-                break;
-            case 'compare':
-                newNode = {
-                    id,
-                    type: 'compareNode',
-                    position,
-                    dragHandle: '.node-header',
-                    data: {
-                        type: 'compare',
-                        operation: 'gt',
-                        a: 0,
-                        b: 0,
-                        label: 'Compare'
-                    } as AudioNodeData,
-                };
-                break;
-            case 'mix':
-                newNode = {
-                    id,
-                    type: 'mixNode',
-                    position,
-                    dragHandle: '.node-header',
-                    data: {
-                        type: 'mix',
-                        a: 0,
-                        b: 1,
-                        t: 0.5,
-                        clamp: true,
-                        label: 'Mix'
-                    } as AudioNodeData,
-                };
-                break;
-            case 'clamp':
-                newNode = {
-                    id,
-                    type: 'clampNode',
-                    position,
-                    dragHandle: '.node-header',
-                    data: {
-                        type: 'clamp',
-                        mode: 'range',
-                        value: 0,
-                        min: 0,
-                        max: 1,
-                        label: 'Clamp'
-                    } as AudioNodeData,
-                };
-                break;
-            case 'switch':
-                newNode = {
-                    id,
-                    type: 'switchNode',
-                    position,
-                    dragHandle: '.node-header',
-                    data: {
-                        type: 'switch',
-                        inputs: 3,
-                        selectedIndex: 0,
-                        values: [0, 0, 0],
-                        label: 'Switch'
-                    } as AudioNodeData,
-                };
-                break;
-            default:
-                return;
-        }
+        const newNode = createPlaygroundNode(id, type, position);
+        if (!newNode) return;
 
         const newNodes = [...get().nodes, newNode];
 
@@ -1108,6 +806,35 @@ export const useAudioGraphStore = create<AudioGraphState>((set, get) => ({
         }));
 
         audioEngine.refreshConnections(newNodes, get().edges);
+    },
+
+    addNodeAndConnect: (type, connection, position = { x: 300, y: 200 }) => {
+        if (getSingletonNodeTypes().has(type) && hasSingletonNode(get().nodes, type)) {
+            return null;
+        }
+
+        const id = getNodeId();
+        const newNode = createPlaygroundNode(id, type, position);
+        if (!newNode) return null;
+
+        const newNodes = [...get().nodes, newNode];
+        const resolvedConnection = replaceVirtualConnectionNode(get().nodes, connection, id);
+        const newEdges = createStyledEdge(newNodes, get().edges, resolvedConnection);
+
+        set((state) => ({
+            nodes: newNodes,
+            edges: newEdges ?? state.edges,
+            graphs: state.activeGraphId
+                ? state.graphs.map((graph) =>
+                    graph.id === state.activeGraphId
+                        ? { ...graph, nodes: newNodes, edges: newEdges ?? state.edges, updatedAt: Date.now() }
+                        : graph
+                )
+                : state.graphs,
+        }));
+
+        audioEngine.refreshConnections(newNodes, newEdges ?? get().edges);
+        return id;
     },
 
     updateNodeData: (nodeId, data) => {

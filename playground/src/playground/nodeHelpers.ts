@@ -5,14 +5,65 @@ import type {
     InputParam,
     TransportNodeData,
 } from './store';
+import {
+    INPUT_PARAM_HANDLE_PREFIX,
+    getInputParamHandleId,
+    migrateLegacyInputHandle,
+    resolveInputParamByHandle,
+} from './handleIds';
+import {
+    PLAYGROUND_NODE_CATALOG,
+    getNodeCatalogEntry,
+    getNodeHandleDescriptors,
+    type HandleDescriptor,
+    type HandleDirection,
+    type PlaygroundNodeType,
+} from './nodeCatalog';
+import { createPlaygroundNode } from './graphBuilders';
 
-export const INPUT_PARAM_HANDLE_PREFIX = 'param:';
+export {
+    INPUT_PARAM_HANDLE_PREFIX,
+    getInputParamHandleId,
+    migrateLegacyInputHandle,
+    resolveInputParamByHandle,
+} from './handleIds';
 
 export interface GraphConnectionLike {
     source?: string | null;
     sourceHandle?: string | null;
     target?: string | null;
     targetHandle?: string | null;
+}
+
+export interface ConnectionAssistStart {
+    nodeId: string;
+    handleId: string | null;
+    handleType: HandleDirection;
+}
+
+export interface NormalizedConnectionDescriptor {
+    source: string;
+    sourceHandle?: string | null;
+    target: string;
+    targetHandle?: string | null;
+}
+
+export interface CompatibleHandleMatch {
+    key: string;
+    nodeId: string;
+    nodeType: PlaygroundNodeType;
+    nodeLabel: string;
+    handleId: string;
+    handleLabel: string;
+    handleType: HandleDirection;
+    connection: NormalizedConnectionDescriptor;
+}
+
+export interface NodeSuggestion extends CompatibleHandleMatch {
+    type: PlaygroundNodeType;
+    icon: string;
+    color: string;
+    title: string;
 }
 
 const AUDIO_NODE_TYPES = new Set<AudioNodeData['type']>([
@@ -68,6 +119,12 @@ const MODULATION_TARGET_HANDLES = new Set([
     'index',
 ]);
 
+const SINGLETON_NODE_TYPES = new Set(
+    PLAYGROUND_NODE_CATALOG
+        .filter((node) => node.singleton)
+        .map((node) => node.type)
+);
+
 export function isAudioNodeType(type: AudioNodeData['type']): boolean {
     return AUDIO_NODE_TYPES.has(type);
 }
@@ -109,48 +166,9 @@ export function normalizeInputNodeData(nodeId: string, data: InputNodeData): Inp
     };
 }
 
-export function getInputParamHandleId(param: Pick<InputParam, 'id'> | string): string {
-    const id = typeof param === 'string' ? param : param.id;
-    return `${INPUT_PARAM_HANDLE_PREFIX}${id}`;
-}
-
 export function getInputParamHandleIdByIndex(params: InputParam[], index: number): string | null {
     const param = params[index];
     return param ? getInputParamHandleId(param) : null;
-}
-
-export function resolveInputParamByHandle(
-    params: InputParam[] | undefined,
-    handle: string | null | undefined
-): { param: InputParam; index: number } | null {
-    if (!params?.length || !handle) return null;
-
-    if (handle.startsWith(INPUT_PARAM_HANDLE_PREFIX)) {
-        const id = handle.slice(INPUT_PARAM_HANDLE_PREFIX.length);
-        const index = params.findIndex((param) => param.id === id);
-        if (index >= 0) {
-            return { param: params[index], index };
-        }
-    }
-
-    const legacyMatch = /^param_(\d+)$/.exec(handle);
-    if (legacyMatch) {
-        const index = Number(legacyMatch[1]);
-        const param = params[index];
-        if (param) {
-            return { param, index };
-        }
-    }
-
-    return null;
-}
-
-export function migrateLegacyInputHandle(
-    params: InputParam[] | undefined,
-    handle: string | null | undefined
-): string | null | undefined {
-    const resolved = resolveInputParamByHandle(params, handle);
-    return resolved ? getInputParamHandleId(resolved.param) : handle;
 }
 
 export function normalizeTransportNodeData(data: TransportNodeData): TransportNodeData {
@@ -168,7 +186,7 @@ export function normalizeTransportNodeData(data: TransportNodeData): TransportNo
 }
 
 export function getSingletonNodeTypes(): ReadonlySet<AudioNodeData['type']> {
-    return new Set(['transport', 'output']);
+    return SINGLETON_NODE_TYPES;
 }
 
 export function isAudioConnection(
@@ -249,6 +267,10 @@ export function canConnect(
         return sourceHandle === 'out' && MODULATION_TARGET_HANDLES.has(targetHandle);
     }
 
+    if (sourceType === 'adsr') {
+        return sourceHandle === 'envelope' && MODULATION_TARGET_HANDLES.has(targetHandle);
+    }
+
     if (isDataNodeType(sourceType)) {
         return sourceHandle === 'out'
             && targetHandle !== 'transport'
@@ -259,6 +281,123 @@ export function canConnect(
     }
 
     return false;
+}
+
+export function normalizeConnectionFromStart(
+    start: ConnectionAssistStart,
+    candidate: { nodeId: string; handleId: string | null; handleType: HandleDirection }
+): NormalizedConnectionDescriptor | null {
+    if (start.handleType === candidate.handleType) return null;
+
+    if (start.handleType === 'source') {
+        return {
+            source: start.nodeId,
+            sourceHandle: start.handleId,
+            target: candidate.nodeId,
+            targetHandle: candidate.handleId,
+        };
+    }
+
+    return {
+        source: candidate.nodeId,
+        sourceHandle: candidate.handleId,
+        target: start.nodeId,
+        targetHandle: start.handleId,
+    };
+}
+
+function createNodeLookup(nodes: Node<AudioNodeData>[]) {
+    return new Map(nodes.map((node) => [node.id, node]));
+}
+
+function getNodeDisplayLabel(node: Node<AudioNodeData>): string {
+    return String(node.data.label || getNodeCatalogEntry(node.data.type).label);
+}
+
+function mapHandleMatch(
+    node: Node<AudioNodeData>,
+    handle: HandleDescriptor,
+    connection: NormalizedConnectionDescriptor
+): CompatibleHandleMatch {
+    return {
+        key: `${node.id}:${handle.id}`,
+        nodeId: node.id,
+        nodeType: node.data.type,
+        nodeLabel: getNodeDisplayLabel(node),
+        handleId: handle.id,
+        handleLabel: handle.label,
+        handleType: handle.direction,
+        connection,
+    };
+}
+
+export function getCompatibleExistingHandleMatches(
+    start: ConnectionAssistStart,
+    nodes: Node<AudioNodeData>[]
+): CompatibleHandleMatch[] {
+    const nodeById = createNodeLookup(nodes);
+    const expectedDirection: HandleDirection = start.handleType === 'source' ? 'target' : 'source';
+
+    return nodes.flatMap((node) => {
+        return getNodeHandleDescriptors(node.data)
+            .filter((handle) => handle.direction === expectedDirection)
+            .flatMap((handle) => {
+                const connection = normalizeConnectionFromStart(start, {
+                    nodeId: node.id,
+                    handleId: handle.id,
+                    handleType: handle.direction,
+                });
+
+                if (!connection || !canConnect(connection, nodeById)) {
+                    return [];
+                }
+
+                return [mapHandleMatch(node, handle, connection)];
+            });
+    });
+}
+
+export function getCompatibleNodeSuggestions(
+    start: ConnectionAssistStart,
+    nodes: Node<AudioNodeData>[]
+): NodeSuggestion[] {
+    const existingTypes = new Set(nodes.map((node) => node.data.type));
+    const baseLookup = createNodeLookup(nodes);
+    const expectedDirection: HandleDirection = start.handleType === 'source' ? 'target' : 'source';
+
+    return PLAYGROUND_NODE_CATALOG.flatMap((entry) => {
+        if (entry.singleton && existingTypes.has(entry.type)) {
+            return [];
+        }
+
+        const virtualNode = createPlaygroundNode(`__suggestion__${entry.type}`, entry.type, { x: 0, y: 0 });
+        if (!virtualNode) return [];
+
+        const lookup = new Map(baseLookup);
+        lookup.set(virtualNode.id, virtualNode);
+
+        return getNodeHandleDescriptors(virtualNode.data)
+            .filter((handle) => handle.direction === expectedDirection)
+            .flatMap((handle) => {
+                const connection = normalizeConnectionFromStart(start, {
+                    nodeId: virtualNode.id,
+                    handleId: handle.id,
+                    handleType: handle.direction,
+                });
+
+                if (!connection || !canConnect(connection, lookup)) {
+                    return [];
+                }
+
+                return [{
+                    ...mapHandleMatch(virtualNode, handle, connection),
+                    type: entry.type,
+                    icon: entry.icon,
+                    color: entry.color,
+                    title: `${entry.label} -> ${handle.label}`,
+                }];
+            });
+    });
 }
 
 export function migrateGraphNodes(nodes: Node<AudioNodeData>[]): Node<AudioNodeData>[] {
@@ -294,7 +433,7 @@ export function migrateGraphEdges(
     nodes: Node<AudioNodeData>[],
     edges: Edge[]
 ): Edge[] {
-    const nodeById = new Map(nodes.map((node) => [node.id, node]));
+    const nodeById = createNodeLookup(nodes);
 
     return edges.flatMap((edge) => {
         const sourceNode = nodeById.get(edge.source);

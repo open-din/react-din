@@ -8,10 +8,14 @@ import {
     type NodeTypes,
     type Node,
     type OnNodesChange,
+    type OnConnectStartParams,
+    type FinalConnectionState,
+    type XYPosition,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import './playground/playground.css';
 import Inspector from './playground/Inspector';
+import ConnectionAssistMenu from './playground/ConnectionAssistMenu';
 
 import { useAudioGraphStore, type AudioNodeData, type SamplerNodeData } from './playground/store';
 import {
@@ -43,7 +47,15 @@ import { deleteGraph as deleteStoredGraph, loadActiveGraphId, loadGraphs, saveAc
 import { deleteAudioFromCache, getAudioObjectUrl } from './playground/audioCache';
 import { sanitizeGraphForStorage, toPascalCase } from './playground/graphUtils';
 import { audioEngine } from './playground/AudioEngine';
-import { canConnect } from './playground/nodeHelpers';
+import {
+    canConnect,
+    getCompatibleExistingHandleMatches,
+    getCompatibleNodeSuggestions,
+    type ConnectionAssistStart,
+    type NodeSuggestion,
+} from './playground/nodeHelpers';
+import { DEFAULT_NODE_SIZE } from './playground/graphBuilders';
+import { groupCatalogByCategory, type PlaygroundNodeType } from './playground/nodeCatalog';
 
 const nodeTypes: NodeTypes = {
     oscNode: OscNode as NodeTypes[string],
@@ -71,51 +83,22 @@ const nodeTypes: NodeTypes = {
     switchNode: SwitchNode as NodeTypes[string],
 };
 
-const nodeCategories = [
-    {
-        name: 'Sources',
-        nodes: [
-            { type: 'input', label: 'Params', icon: '⏱️', color: '#dddddd' },
-            { type: 'transport', label: 'Transport', icon: '⏯️', color: '#dddddd' },
-            { type: 'stepSequencer', label: 'Step Sequencer', icon: '🎹', color: '#dddddd' },
-            { type: 'pianoRoll', label: 'Piano Roll', icon: '🎼', color: '#44ccff' },
-            { type: 'lfo', label: 'LFO', icon: '🌀', color: '#aa44ff' },
-            { type: 'voice', label: 'Voice', icon: '🗣️', color: '#ff4466' },
-            { type: 'adsr', label: 'ADSR', icon: '📈', color: '#dddddd' },
-            { type: 'note', label: 'Note', icon: '🎵', color: '#ffcc00' },
-            { type: 'osc', label: 'Oscillator', icon: '◐', color: '#ff8844' },
-            { type: 'noise', label: 'Noise', icon: '〰️', color: '#888888' },
-            { type: 'sampler', label: 'Sampler', icon: '🎹', color: '#44ccff' },
-        ],
-    },
-    {
-        name: 'Effects',
-        nodes: [
-            { type: 'gain', label: 'Gain', icon: '◧', color: '#44cc44' },
-            { type: 'filter', label: 'Filter', icon: '◇', color: '#aa44ff' },
-            { type: 'delay', label: 'Delay', icon: '⏱️', color: '#4488ff' },
-            { type: 'reverb', label: 'Reverb', icon: '🏛️', color: '#8844ff' },
-            { type: 'panner', label: 'Pan', icon: '↔️', color: '#44ffff' },
-        ],
-    },
-    {
-        name: 'Routing',
-        nodes: [
-            { type: 'mixer', label: 'Mixer', icon: '⊕', color: '#ffaa44' },
-            { type: 'output', label: 'Output', icon: '🔊', color: '#ff4466' },
-        ],
-    },
-    {
-        name: 'Math',
-        nodes: [
-            { type: 'math', label: 'Math', icon: 'fx', color: '#7bd1ff' },
-            { type: 'compare', label: 'Compare', icon: '>=', color: '#7bd1ff' },
-            { type: 'mix', label: 'Mix', icon: 'mix', color: '#7bd1ff' },
-            { type: 'clamp', label: 'Clamp', icon: '[]', color: '#7bd1ff' },
-            { type: 'switch', label: 'Switch', icon: 'sw', color: '#7bd1ff' },
-        ],
-    },
-];
+const nodeCategories = groupCatalogByCategory();
+const ASSIST_MENU_WIDTH = 320;
+const ASSIST_MENU_HEIGHT = 420;
+const ASSIST_MENU_MARGIN = 16;
+
+const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
+
+const getClientPosition = (event: MouseEvent | TouchEvent): XYPosition | null => {
+    if ('clientX' in event) {
+        return { x: event.clientX, y: event.clientY };
+    }
+
+    const touch = event.touches[0] ?? event.changedTouches[0];
+    if (!touch) return null;
+    return { x: touch.clientX, y: touch.clientY };
+};
 
 const getInitialTheme = (): 'light' | 'dark' => {
     if (typeof window === 'undefined') return 'dark';
@@ -127,7 +110,7 @@ const getInitialTheme = (): 'light' | 'dark' => {
 const NodePalette: FC = () => {
     const addNode = useAudioGraphStore((s) => s.addNode);
 
-    const handleDragStart = useCallback((e: React.DragEvent, nodeType: string) => {
+    const handleDragStart = useCallback((e: React.DragEvent, nodeType: PlaygroundNodeType) => {
         e.dataTransfer.setData('application/reactflow', nodeType);
         e.dataTransfer.effectAllowed = 'move';
     }, []);
@@ -147,7 +130,7 @@ const NodePalette: FC = () => {
                                 style={{ borderLeftWidth: 3, borderLeftColor: node.color }}
                                 draggable
                                 onDragStart={(e) => handleDragStart(e, node.type)}
-                                onClick={() => addNode(node.type as AudioNodeData['type'])}
+                                onClick={() => addNode(node.type)}
                             >
                                 <span className="text-sm">{node.icon}</span>
                                 <span className="truncate">{node.label}</span>
@@ -169,6 +152,7 @@ export const PlaygroundDemo: FC = () => {
     const onEdgesChange = useAudioGraphStore((s) => s.onEdgesChange);
     const onConnect = useAudioGraphStore((s) => s.onConnect);
     const addNode = useAudioGraphStore((s) => s.addNode);
+    const addNodeAndConnect = useAudioGraphStore((s) => s.addNodeAndConnect);
     const setGraphs = useAudioGraphStore((s) => s.setGraphs);
     const setActiveGraph = useAudioGraphStore((s) => s.setActiveGraph);
     const createGraph = useAudioGraphStore((s) => s.createGraph);
@@ -188,6 +172,22 @@ export const PlaygroundDemo: FC = () => {
 
     const [nameDraft, setNameDraft] = useState(activeGraphName);
     const saveTimerRef = useRef<number | null>(null);
+    const flowRef = useRef<{
+        screenToFlowPosition: (clientPosition: XYPosition, options?: { snapToGrid: boolean }) => XYPosition;
+    } | null>(null);
+    const canvasRef = useRef<HTMLDivElement | null>(null);
+    const ignorePaneClickUntilRef = useRef(0);
+    const activeConnectionStartRef = useRef<ConnectionAssistStart | null>(null);
+    const [compatibleHandleKeys, setCompatibleHandleKeys] = useState<string[]>([]);
+    const [assistSuggestions, setAssistSuggestions] = useState<NodeSuggestion[]>([]);
+    const [assistMenuOpen, setAssistMenuOpen] = useState(false);
+    const [assistMenuQuery, setAssistMenuQuery] = useState('');
+    const [assistMenuPosition, setAssistMenuPosition] = useState<XYPosition>({ x: ASSIST_MENU_MARGIN, y: ASSIST_MENU_MARGIN });
+    const [assistDropClientPosition, setAssistDropClientPosition] = useState<XYPosition | null>(null);
+
+    const filteredAssistSuggestions = assistSuggestions.filter((suggestion) =>
+        suggestion.title.toLowerCase().includes(assistMenuQuery.trim().toLowerCase())
+    );
 
     useEffect(() => {
         setNameDraft(activeGraphName);
@@ -291,6 +291,134 @@ export const PlaygroundDemo: FC = () => {
         });
     }, [nodes, isHydrated, updateNodeData]);
 
+    const clearDragAssist = useCallback(() => {
+        activeConnectionStartRef.current = null;
+        setCompatibleHandleKeys([]);
+    }, []);
+
+    const resetConnectionAssist = useCallback(() => {
+        clearDragAssist();
+        setAssistSuggestions([]);
+        setAssistMenuOpen(false);
+        setAssistMenuQuery('');
+        setAssistDropClientPosition(null);
+    }, [clearDragAssist]);
+
+    useEffect(() => {
+        const root = canvasRef.current;
+        if (!root) return;
+
+        const handleNodes = root.querySelectorAll<HTMLElement>('.react-flow__node');
+        const handles = root.querySelectorAll<HTMLElement>('.react-flow__handle');
+
+        handleNodes.forEach((element) => element.classList.remove('connection-assist-node'));
+        handles.forEach((element) => element.classList.remove('connection-assist-handle'));
+
+        compatibleHandleKeys.forEach((key) => {
+            const separatorIndex = key.indexOf(':');
+            if (separatorIndex < 0) return;
+
+            const nodeId = key.slice(0, separatorIndex);
+            const handleId = key.slice(separatorIndex + 1);
+            if (!nodeId || !handleId) return;
+
+            const handle = root.querySelector<HTMLElement>(
+                `.react-flow__handle[data-nodeid="${nodeId}"][data-handleid="${handleId}"]`
+            );
+            if (!handle) return;
+
+            handle.classList.add('connection-assist-handle');
+            handle.closest<HTMLElement>('.react-flow__node')?.classList.add('connection-assist-node');
+        });
+
+        return () => {
+            handleNodes.forEach((element) => element.classList.remove('connection-assist-node'));
+            handles.forEach((element) => element.classList.remove('connection-assist-handle'));
+        };
+    }, [compatibleHandleKeys, nodes]);
+
+    const openAssistMenu = useCallback((clientPosition: XYPosition) => {
+        const bounds = canvasRef.current?.getBoundingClientRect();
+        if (!bounds) return;
+
+        setAssistMenuPosition({
+            x: clamp(clientPosition.x - bounds.left + 12, ASSIST_MENU_MARGIN, Math.max(ASSIST_MENU_MARGIN, bounds.width - ASSIST_MENU_WIDTH - ASSIST_MENU_MARGIN)),
+            y: clamp(clientPosition.y - bounds.top + 12, ASSIST_MENU_MARGIN, Math.max(ASSIST_MENU_MARGIN, bounds.height - ASSIST_MENU_HEIGHT - ASSIST_MENU_MARGIN)),
+        });
+        setAssistDropClientPosition(clientPosition);
+        setAssistMenuQuery('');
+        setAssistMenuOpen(true);
+    }, []);
+
+    const handleConnectStart = useCallback((_: MouseEvent | TouchEvent, params: OnConnectStartParams) => {
+        if (!params.nodeId || !params.handleId || !params.handleType) {
+            resetConnectionAssist();
+            return;
+        }
+
+        const start: ConnectionAssistStart = {
+            nodeId: params.nodeId,
+            handleId: params.handleId,
+            handleType: params.handleType,
+        };
+
+        clearDragAssist();
+        setAssistSuggestions([]);
+        setAssistMenuOpen(false);
+        setAssistMenuQuery('');
+        setAssistDropClientPosition(null);
+        activeConnectionStartRef.current = start;
+        setCompatibleHandleKeys(getCompatibleExistingHandleMatches(start, nodes).map((match) => match.key));
+        setAssistSuggestions(getCompatibleNodeSuggestions(start, nodes));
+    }, [clearDragAssist, nodes, resetConnectionAssist]);
+
+    const handleConnectEnd = useCallback((event: MouseEvent | TouchEvent, connectionState: FinalConnectionState) => {
+        const dropPosition = getClientPosition(event);
+        const shouldOpenMenu = Boolean(
+            activeConnectionStartRef.current
+            && dropPosition
+            && (!connectionState.isValid || !connectionState.toHandle)
+        );
+
+        clearDragAssist();
+
+        if (shouldOpenMenu && dropPosition) {
+            ignorePaneClickUntilRef.current = Date.now() + 200;
+            openAssistMenu(dropPosition);
+            return;
+        }
+
+        resetConnectionAssist();
+    }, [clearDragAssist, openAssistMenu, resetConnectionAssist]);
+
+    const handleAssistSuggestionSelect = useCallback((suggestion: NodeSuggestion) => {
+        if (!assistDropClientPosition || !flowRef.current || !canvasRef.current) {
+            resetConnectionAssist();
+            return;
+        }
+
+        const bounds = canvasRef.current.getBoundingClientRect();
+        const clampedTopLeft = {
+            x: clamp(
+                assistDropClientPosition.x - (DEFAULT_NODE_SIZE.width / 2),
+                bounds.left + ASSIST_MENU_MARGIN,
+                Math.max(bounds.left + ASSIST_MENU_MARGIN, bounds.right - DEFAULT_NODE_SIZE.width - ASSIST_MENU_MARGIN)
+            ),
+            y: clamp(
+                assistDropClientPosition.y - (DEFAULT_NODE_SIZE.height / 2),
+                bounds.top + ASSIST_MENU_MARGIN,
+                Math.max(bounds.top + ASSIST_MENU_MARGIN, bounds.bottom - DEFAULT_NODE_SIZE.height - ASSIST_MENU_MARGIN)
+            ),
+        };
+
+        const position = flowRef.current.screenToFlowPosition(clampedTopLeft, { snapToGrid: true });
+        const nodeId = addNodeAndConnect(suggestion.type, suggestion.connection, position);
+        if (nodeId) {
+            setSelectedNode(nodeId);
+        }
+        resetConnectionAssist();
+    }, [addNodeAndConnect, assistDropClientPosition, resetConnectionAssist, setSelectedNode]);
+
     const commitGraphName = useCallback(() => {
         if (!activeGraphId) return;
         const trimmed = nameDraft.trim();
@@ -341,7 +469,7 @@ export const PlaygroundDemo: FC = () => {
     const onDrop = useCallback(
         (event: React.DragEvent) => {
             event.preventDefault();
-            const type = event.dataTransfer.getData('application/reactflow') as AudioNodeData['type'];
+            const type = event.dataTransfer.getData('application/reactflow') as PlaygroundNodeType;
             if (!type) return;
 
             const reactFlowBounds = (event.target as HTMLElement).closest('.react-flow')?.getBoundingClientRect();
@@ -363,12 +491,17 @@ export const PlaygroundDemo: FC = () => {
     }, []);
 
     const onNodeClick = useCallback((_: React.MouseEvent, node: Node) => {
+        resetConnectionAssist();
         setSelectedNode(node.id);
-    }, [setSelectedNode]);
+    }, [resetConnectionAssist, setSelectedNode]);
 
     const onPaneClick = useCallback(() => {
+        if (Date.now() < ignorePaneClickUntilRef.current) {
+            return;
+        }
+        resetConnectionAssist();
         setSelectedNode(null);
-    }, [setSelectedNode]);
+    }, [resetConnectionAssist, setSelectedNode]);
 
     const isValidConnection = useCallback((connection: Parameters<typeof canConnect>[0]) => {
         return canConnect(connection, new Map(nodes.map((node) => [node.id, node])));
@@ -589,10 +722,20 @@ export const PlaygroundDemo: FC = () => {
                 </div>
 
                 <div
+                    ref={canvasRef}
                     className="relative flex-1"
                     onDrop={onDrop}
                     onDragOver={onDragOver}
                 >
+                    <ConnectionAssistMenu
+                        isOpen={assistMenuOpen}
+                        position={assistMenuPosition}
+                        query={assistMenuQuery}
+                        suggestions={filteredAssistSuggestions}
+                        onClose={resetConnectionAssist}
+                        onQueryChange={setAssistMenuQuery}
+                        onSelect={handleAssistSuggestionSelect}
+                    />
                     <ReactFlow
                         className="h-full"
                         nodes={nodes as unknown as Node[]}
@@ -600,6 +743,11 @@ export const PlaygroundDemo: FC = () => {
                         onNodesChange={onNodesChange as unknown as OnNodesChange}
                         onEdgesChange={onEdgesChange}
                         onConnect={onConnect}
+                        onConnectStart={handleConnectStart}
+                        onConnectEnd={handleConnectEnd}
+                        onInit={(instance) => {
+                            flowRef.current = instance;
+                        }}
                         isValidConnection={isValidConnection}
                         onNodeClick={onNodeClick}
                         onPaneClick={onPaneClick}

@@ -26,3 +26,38 @@ test('persists graph edits and refreshes generated code', async ({ page }) => {
     await expect(page.getByPlaceholder('Graph name')).toHaveValue('Bass Lab');
     await expect(page.locator('textarea')).toContainText('BassLab');
 });
+
+test('shows compatible handles during a drag and adds a connected node from the floating menu', async ({ page }) => {
+    await page.goto('/');
+
+    const oscOut = page.locator('.react-flow__handle[data-nodeid="osc_1"][data-handleid="out"]').first();
+    const gainIn = page.locator('.react-flow__handle[data-nodeid="gain_1"][data-handleid="in"]').first();
+    const canvas = page.getByTestId('rf__wrapper');
+
+    await expect(oscOut).toBeVisible();
+    await expect(gainIn).toBeVisible();
+
+    const oscBox = await oscOut.boundingBox();
+    const canvasBox = await canvas.boundingBox();
+
+    if (!oscBox || !canvasBox) {
+        throw new Error('Expected drag handles and canvas to have bounding boxes');
+    }
+
+    await page.mouse.move(oscBox.x + (oscBox.width / 2), oscBox.y + (oscBox.height / 2));
+    await page.mouse.down();
+    await page.mouse.move(oscBox.x + (oscBox.width / 2) + 36, oscBox.y + (oscBox.height / 2) + 12);
+
+    await expect(page.locator('.react-flow__handle.connection-assist-handle[data-nodeid="gain_1"][data-handleid="in"]').first()).toBeVisible();
+
+    await page.mouse.move(canvasBox.x + (canvasBox.width * 0.7), canvasBox.y + (canvasBox.height * 0.55));
+    await page.mouse.up();
+
+    await expect(page.getByLabel('Search nodes')).toBeVisible();
+
+    await page.getByLabel('Search nodes').fill('filter');
+    await page.getByRole('option', { name: /Filter -> In/i }).click();
+
+    await expect(page.locator('.react-flow__node').filter({ hasText: 'Filter' })).toHaveCount(1);
+    await expect(page.locator('.react-flow__edge')).toHaveCount(3);
+});
