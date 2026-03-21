@@ -860,6 +860,131 @@ function createUiFeedbackPackTemplate(): FeedbackTemplateGraph {
     };
 }
 
+function createMedievalStrategyLongformTemplate(): FeedbackTemplateGraph {
+    const calmNotes = [
+        { pitch: 50, step: 0, duration: 10, velocity: 0.56 },   // D3
+        { pitch: 57, step: 10, duration: 8, velocity: 0.53 },   // A3
+        { pitch: 53, step: 18, duration: 10, velocity: 0.5 },   // F3
+        { pitch: 55, step: 28, duration: 8, velocity: 0.48 },   // G3
+        { pitch: 62, step: 36, duration: 10, velocity: 0.52 },  // D4
+        { pitch: 60, step: 46, duration: 8, velocity: 0.47 },   // C4
+        { pitch: 57, step: 54, duration: 10, velocity: 0.5 },   // A3
+    ];
+
+    const activeNotes = [
+        { pitch: 62, step: 0, duration: 2, velocity: 0.72 },    // D4
+        { pitch: 64, step: 2, duration: 2, velocity: 0.74 },    // E4
+        { pitch: 65, step: 4, duration: 2, velocity: 0.7 },     // F4
+        { pitch: 69, step: 6, duration: 2, velocity: 0.76 },    // A4
+        { pitch: 67, step: 8, duration: 2, velocity: 0.71 },    // G4
+        { pitch: 65, step: 10, duration: 2, velocity: 0.69 },   // F4
+        { pitch: 64, step: 12, duration: 2, velocity: 0.7 },    // E4
+        { pitch: 62, step: 14, duration: 2, velocity: 0.72 },   // D4
+        { pitch: 74, step: 16, duration: 2, velocity: 0.78 },   // D5
+        { pitch: 72, step: 18, duration: 2, velocity: 0.74 },   // C5
+        { pitch: 69, step: 20, duration: 2, velocity: 0.76 },   // A4
+        { pitch: 67, step: 22, duration: 2, velocity: 0.71 },   // G4
+        { pitch: 65, step: 24, duration: 2, velocity: 0.7 },    // F4
+        { pitch: 64, step: 26, duration: 2, velocity: 0.72 },   // E4
+        { pitch: 62, step: 28, duration: 2, velocity: 0.7 },    // D4
+        { pitch: 60, step: 30, duration: 2, velocity: 0.68 },   // C4
+    ];
+
+    const drumPattern = [
+        1, 0, 0.72, 0, 0.86, 0, 0.64, 0,
+        0.95, 0, 0.58, 0, 0.82, 0, 0.7, 0,
+        1, 0, 0.66, 0, 0.88, 0, 0.62, 0,
+        0.93, 0, 0.56, 0, 0.8, 0, 0.68, 0,
+    ];
+
+    return {
+        nodes: [
+            { id: 'transport', type: 'transportNode', dragHandle: '.node-header', position: { x: 40, y: 60 }, data: { type: 'transport', bpm: 86, stepsPerBeat: 4, swing: 0.08, barsPerPhrase: 4, playing: true, label: 'Transport' } as any },
+
+            { id: 'pianoroll-calm', type: 'pianoRollNode', dragHandle: '.node-header', position: { x: 40, y: 220 }, data: { type: 'pianoRoll', steps: 64, octaves: 2, baseNote: 48, notes: calmNotes, label: 'Calm Theme Roll' } as any },
+            { id: 'voice-calm', type: 'voiceNode', dragHandle: '.node-header', position: { x: 320, y: 220 }, data: { type: 'voice', portamento: 0.06, label: 'Calm Voice' } as any },
+            { id: 'osc-calm-a', type: 'oscNode', dragHandle: '.node-header', position: { x: 560, y: 120 }, data: { type: 'osc', frequency: 0, waveform: 'triangle', detune: -6, label: 'Calm Osc A' } as any },
+            { id: 'osc-calm-b', type: 'oscNode', dragHandle: '.node-header', position: { x: 560, y: 270 }, data: { type: 'osc', frequency: 0, waveform: 'sine', detune: 5, label: 'Calm Osc B' } as any },
+            { id: 'adsr-calm', type: 'adsrNode', dragHandle: '.node-header', position: { x: 560, y: 430 }, data: { type: 'adsr', attack: 0.28, decay: 0.9, sustain: 0.72, release: 1.8, label: 'Calm ADSR' } as any },
+            { id: 'gain-calm-a', type: 'gainNode', dragHandle: '.node-header', position: { x: 820, y: 130 }, data: { type: 'gain', gain: 0, label: 'Calm VCA A' } as any },
+            { id: 'gain-calm-b', type: 'gainNode', dragHandle: '.node-header', position: { x: 820, y: 290 }, data: { type: 'gain', gain: 0, label: 'Calm VCA B' } as any },
+            { id: 'filter-calm', type: 'filterNode', dragHandle: '.node-header', position: { x: 1060, y: 220 }, data: { type: 'filter', filterType: 'lowpass', frequency: 1300, detune: 0, q: 0.8, gain: 0, label: 'Calm Filter' } as any },
+            { id: 'reverb-calm', type: 'reverbNode', dragHandle: '.node-header', position: { x: 1290, y: 220 }, data: { type: 'reverb', decay: 6.8, mix: 0.42, label: 'Hall Reverb Calm' } as any },
+            { id: 'gain-calm-main', type: 'gainNode', dragHandle: '.node-header', position: { x: 1520, y: 220 }, data: { type: 'gain', gain: 0.22, label: 'Calm Layer Gain' } as any },
+
+            { id: 'pianoroll-active', type: 'pianoRollNode', dragHandle: '.node-header', position: { x: 40, y: 560 }, data: { type: 'pianoRoll', steps: 32, octaves: 2, baseNote: 60, notes: activeNotes, label: 'Active Theme Roll' } as any },
+            { id: 'voice-active', type: 'voiceNode', dragHandle: '.node-header', position: { x: 320, y: 560 }, data: { type: 'voice', portamento: 0.015, label: 'Active Voice' } as any },
+            { id: 'osc-active', type: 'oscNode', dragHandle: '.node-header', position: { x: 560, y: 520 }, data: { type: 'osc', frequency: 0, waveform: 'sawtooth', detune: 0, label: 'Active Osc' } as any },
+            { id: 'adsr-active', type: 'adsrNode', dragHandle: '.node-header', position: { x: 560, y: 690 }, data: { type: 'adsr', attack: 0.01, decay: 0.16, sustain: 0.2, release: 0.12, label: 'Active ADSR' } as any },
+            { id: 'filter-active', type: 'filterNode', dragHandle: '.node-header', position: { x: 820, y: 520 }, data: { type: 'filter', filterType: 'lowpass', frequency: 1900, detune: 0, q: 4.2, gain: 0, label: 'Active Filter' } as any },
+            { id: 'gain-active-vca', type: 'gainNode', dragHandle: '.node-header', position: { x: 1060, y: 520 }, data: { type: 'gain', gain: 0, label: 'Active VCA' } as any },
+            { id: 'gain-active-main', type: 'gainNode', dragHandle: '.node-header', position: { x: 1290, y: 520 }, data: { type: 'gain', gain: 0.12, label: 'Active Layer Gain' } as any },
+            { id: 'delay-active', type: 'delayNode', dragHandle: '.node-header', position: { x: 1520, y: 520 }, data: { type: 'delay', delayTime: 0.27, feedback: 0.34, label: 'Active Delay' } as any },
+
+            { id: 'sequencer-drum', type: 'stepSequencerNode', dragHandle: '.node-header', position: { x: 40, y: 910 }, data: { type: 'stepSequencer', steps: 32, pattern: drumPattern, activeSteps: drumPattern.map((value) => value > 0), label: 'Battle Pulse Seq' } as any },
+            { id: 'noise-drum', type: 'noiseBurstNode', dragHandle: '.node-header', position: { x: 320, y: 910 }, data: { type: 'noiseBurst', noiseType: 'brown', duration: 0.07, gain: 0.5, attack: 0.001, release: 0.05, label: 'Drum Burst' } as any },
+            { id: 'filter-drum', type: 'filterNode', dragHandle: '.node-header', position: { x: 560, y: 910 }, data: { type: 'filter', filterType: 'bandpass', frequency: 700, detune: 0, q: 5, gain: 0, label: 'Drum Filter' } as any },
+            { id: 'gain-drum', type: 'gainNode', dragHandle: '.node-header', position: { x: 820, y: 910 }, data: { type: 'gain', gain: 0.06, label: 'Drum Layer Gain' } as any },
+
+            { id: 'lfo-phase', type: 'lfoNode', dragHandle: '.node-header', position: { x: 1060, y: 770 }, data: { type: 'lfo', rate: 0.007, depth: 0.48, waveform: 'sine', label: 'Phase LFO' } as any },
+            { id: 'math-phase-shift', type: 'mathNode', dragHandle: '.node-header', position: { x: 1290, y: 770 }, data: { type: 'math', operation: 'add', a: 0, b: 0.5, c: 0, label: 'Shift to 0..1' } as any },
+            { id: 'mix-calm-level', type: 'mixNode', dragHandle: '.node-header', position: { x: 1520, y: 680 }, data: { type: 'mix', a: 0.34, b: 0.08, t: 0.5, clamp: true, label: 'Calm Level Mix' } as any },
+            { id: 'mix-active-level', type: 'mixNode', dragHandle: '.node-header', position: { x: 1520, y: 770 }, data: { type: 'mix', a: 0.05, b: 0.28, t: 0.5, clamp: true, label: 'Active Level Mix' } as any },
+            { id: 'mix-drum-level', type: 'mixNode', dragHandle: '.node-header', position: { x: 1520, y: 860 }, data: { type: 'mix', a: 0.02, b: 0.2, t: 0.5, clamp: true, label: 'Drum Level Mix' } as any },
+
+            { id: 'mixer-main', type: 'mixerNode', dragHandle: '.node-header', position: { x: 1760, y: 520 }, data: { type: 'mixer', inputs: 3, label: 'Phase Mixer' } as any },
+            { id: 'reverb-main', type: 'reverbNode', dragHandle: '.node-header', position: { x: 1990, y: 520 }, data: { type: 'reverb', decay: 4.6, mix: 0.28, label: 'Master Hall' } as any },
+            { id: 'output', type: 'outputNode', dragHandle: '.node-header', position: { x: 2220, y: 520 }, data: { type: 'output', masterGain: 0.44, playing: false, label: 'Output' } as any },
+        ],
+        edges: [
+            { id: 'med-t-calm', source: 'transport', sourceHandle: 'out', target: 'pianoroll-calm', targetHandle: 'transport', style: CONTROL_EDGE_STYLE, animated: true },
+            { id: 'med-t-active', source: 'transport', sourceHandle: 'out', target: 'pianoroll-active', targetHandle: 'transport', style: CONTROL_EDGE_STYLE, animated: true },
+            { id: 'med-t-drum', source: 'transport', sourceHandle: 'out', target: 'sequencer-drum', targetHandle: 'transport', style: CONTROL_EDGE_STYLE, animated: true },
+
+            { id: 'med-calm-trg', source: 'pianoroll-calm', sourceHandle: 'trigger', target: 'voice-calm', targetHandle: 'trigger', style: TRIGGER_EDGE_STYLE, animated: true },
+            { id: 'med-calm-note-a', source: 'voice-calm', sourceHandle: 'note', target: 'osc-calm-a', targetHandle: 'frequency', style: CONTROL_EDGE_STYLE, animated: true },
+            { id: 'med-calm-note-b', source: 'voice-calm', sourceHandle: 'note', target: 'osc-calm-b', targetHandle: 'frequency', style: CONTROL_EDGE_STYLE, animated: true },
+            { id: 'med-calm-gate', source: 'voice-calm', sourceHandle: 'gate', target: 'adsr-calm', targetHandle: 'gate', style: TRIGGER_EDGE_STYLE, animated: true },
+            { id: 'med-calm-audio-a', source: 'osc-calm-a', sourceHandle: 'out', target: 'gain-calm-a', targetHandle: 'in', style: AUDIO_EDGE_STYLE, animated: false },
+            { id: 'med-calm-audio-b', source: 'osc-calm-b', sourceHandle: 'out', target: 'gain-calm-b', targetHandle: 'in', style: AUDIO_EDGE_STYLE, animated: false },
+            { id: 'med-calm-env-a', source: 'adsr-calm', sourceHandle: 'envelope', target: 'gain-calm-a', targetHandle: 'gain', style: CONTROL_EDGE_STYLE, animated: true },
+            { id: 'med-calm-env-b', source: 'adsr-calm', sourceHandle: 'envelope', target: 'gain-calm-b', targetHandle: 'gain', style: CONTROL_EDGE_STYLE, animated: true },
+            { id: 'med-calm-audio-1', source: 'gain-calm-a', sourceHandle: 'out', target: 'filter-calm', targetHandle: 'in', style: AUDIO_EDGE_STYLE, animated: false },
+            { id: 'med-calm-audio-2', source: 'gain-calm-b', sourceHandle: 'out', target: 'filter-calm', targetHandle: 'in', style: AUDIO_EDGE_STYLE, animated: false },
+            { id: 'med-calm-audio-3', source: 'filter-calm', sourceHandle: 'out', target: 'reverb-calm', targetHandle: 'in', style: AUDIO_EDGE_STYLE, animated: false },
+            { id: 'med-calm-audio-4', source: 'reverb-calm', sourceHandle: 'out', target: 'gain-calm-main', targetHandle: 'in', style: AUDIO_EDGE_STYLE, animated: false },
+
+            { id: 'med-active-trg', source: 'pianoroll-active', sourceHandle: 'trigger', target: 'voice-active', targetHandle: 'trigger', style: TRIGGER_EDGE_STYLE, animated: true },
+            { id: 'med-active-note', source: 'voice-active', sourceHandle: 'note', target: 'osc-active', targetHandle: 'frequency', style: CONTROL_EDGE_STYLE, animated: true },
+            { id: 'med-active-gate', source: 'voice-active', sourceHandle: 'gate', target: 'adsr-active', targetHandle: 'gate', style: TRIGGER_EDGE_STYLE, animated: true },
+            { id: 'med-active-audio-1', source: 'osc-active', sourceHandle: 'out', target: 'filter-active', targetHandle: 'in', style: AUDIO_EDGE_STYLE, animated: false },
+            { id: 'med-active-audio-2', source: 'filter-active', sourceHandle: 'out', target: 'gain-active-vca', targetHandle: 'in', style: AUDIO_EDGE_STYLE, animated: false },
+            { id: 'med-active-audio-3', source: 'gain-active-vca', sourceHandle: 'out', target: 'gain-active-main', targetHandle: 'in', style: AUDIO_EDGE_STYLE, animated: false },
+            { id: 'med-active-audio-4', source: 'gain-active-main', sourceHandle: 'out', target: 'delay-active', targetHandle: 'in', style: AUDIO_EDGE_STYLE, animated: false },
+            { id: 'med-active-env-gain', source: 'adsr-active', sourceHandle: 'envelope', target: 'gain-active-vca', targetHandle: 'gain', style: CONTROL_EDGE_STYLE, animated: true },
+            { id: 'med-active-env-filter', source: 'adsr-active', sourceHandle: 'envelope', target: 'filter-active', targetHandle: 'frequency', style: CONTROL_EDGE_STYLE, animated: true },
+
+            { id: 'med-drum-trg', source: 'sequencer-drum', sourceHandle: 'trigger', target: 'noise-drum', targetHandle: 'trigger', style: TRIGGER_EDGE_STYLE, animated: true },
+            { id: 'med-drum-audio-1', source: 'noise-drum', sourceHandle: 'out', target: 'filter-drum', targetHandle: 'in', style: AUDIO_EDGE_STYLE, animated: false },
+            { id: 'med-drum-audio-2', source: 'filter-drum', sourceHandle: 'out', target: 'gain-drum', targetHandle: 'in', style: AUDIO_EDGE_STYLE, animated: false },
+
+            { id: 'med-phase-lfo', source: 'lfo-phase', sourceHandle: 'out', target: 'math-phase-shift', targetHandle: 'a', style: CONTROL_EDGE_STYLE, animated: true },
+            { id: 'med-phase-calm', source: 'math-phase-shift', sourceHandle: 'out', target: 'mix-calm-level', targetHandle: 't', style: CONTROL_EDGE_STYLE, animated: true },
+            { id: 'med-phase-active', source: 'math-phase-shift', sourceHandle: 'out', target: 'mix-active-level', targetHandle: 't', style: CONTROL_EDGE_STYLE, animated: true },
+            { id: 'med-phase-drum', source: 'math-phase-shift', sourceHandle: 'out', target: 'mix-drum-level', targetHandle: 't', style: CONTROL_EDGE_STYLE, animated: true },
+            { id: 'med-calm-level', source: 'mix-calm-level', sourceHandle: 'out', target: 'gain-calm-main', targetHandle: 'gain', style: CONTROL_EDGE_STYLE, animated: true },
+            { id: 'med-active-level', source: 'mix-active-level', sourceHandle: 'out', target: 'gain-active-main', targetHandle: 'gain', style: CONTROL_EDGE_STYLE, animated: true },
+            { id: 'med-drum-level', source: 'mix-drum-level', sourceHandle: 'out', target: 'gain-drum', targetHandle: 'gain', style: CONTROL_EDGE_STYLE, animated: true },
+
+            { id: 'med-main-calm', source: 'gain-calm-main', sourceHandle: 'out', target: 'mixer-main', targetHandle: 'in1', style: AUDIO_EDGE_STYLE, animated: false },
+            { id: 'med-main-active', source: 'delay-active', sourceHandle: 'out', target: 'mixer-main', targetHandle: 'in2', style: AUDIO_EDGE_STYLE, animated: false },
+            { id: 'med-main-drum', source: 'gain-drum', sourceHandle: 'out', target: 'mixer-main', targetHandle: 'in3', style: AUDIO_EDGE_STYLE, animated: false },
+            { id: 'med-main-reverb', source: 'mixer-main', sourceHandle: 'out', target: 'reverb-main', targetHandle: 'in', style: AUDIO_EDGE_STYLE, animated: false },
+            { id: 'med-main-output', source: 'reverb-main', sourceHandle: 'out', target: 'output', targetHandle: 'in', style: AUDIO_EDGE_STYLE, animated: false },
+        ],
+    };
+}
+
 const NodePalette: FC<{ compact?: boolean }> = ({ compact = false }) => {
     const addNode = useAudioGraphStore((s) => s.addNode);
 
@@ -1932,6 +2057,14 @@ export const PlaygroundDemo: FC = () => {
                         >
                             <span className="text-sm">🌫️</span>
                             <span>Atmospheric Sidechain</span>
+                        </button>
+
+                        <button
+                            onClick={() => loadFeedbackTemplate(createMedievalStrategyLongformTemplate())}
+                            className={`${templateButtonBase} border-[var(--accent)] text-[var(--accent)] hover:text-[var(--text)]`}
+                        >
+                            <span className="text-sm">🏰</span>
+                            <span>Medieval Strategy Longform</span>
                         </button>
 
                         <button
