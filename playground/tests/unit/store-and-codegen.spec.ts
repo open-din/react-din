@@ -347,7 +347,7 @@ describe('playground store and code generation', () => {
                 id: 'convolver-1',
                 type: 'convolverNode',
                 position: { x: 0, y: 0 },
-                data: { type: 'convolver', impulseSrc: '/impulses/plate.wav', normalize: true, label: 'Convolver' },
+                data: { type: 'convolver', impulseSrc: 'data:audio/wav;base64,ZmFrZS1pcg==', impulseFileName: 'plate.wav', normalize: true, label: 'Convolver' },
             },
             {
                 id: 'chorus-1',
@@ -398,6 +398,8 @@ describe('playground store and code generation', () => {
         expect(code).toContain('Analyzer');
         expect(code).toContain('PresetWaveShaper');
         expect(code).not.toContain('const PresetWaveShaper');
+        expect(code).toContain('impulse="/impulses/plate.wav"');
+        expect(code).not.toContain('data:audio/wav;base64');
         expect(code).toContain('<EventTrigger token={hoverToken}');
     });
 });

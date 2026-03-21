@@ -915,6 +915,22 @@ function ensureUniqueName(base: string, usedNames: Set<string>): string {
     return candidate;
 }
 
+function resolveConvolverImpulseForExport(convolver: ConvolverNodeData): string | undefined {
+    const rawImpulse = typeof convolver.impulseSrc === 'string' ? convolver.impulseSrc.trim() : '';
+    if (!rawImpulse) return undefined;
+
+    const isInlineOrEphemeralSource = rawImpulse.startsWith('data:') || rawImpulse.startsWith('blob:');
+    if (!isInlineOrEphemeralSource) {
+        return rawImpulse;
+    }
+
+    const rawFileName = typeof convolver.impulseFileName === 'string' ? convolver.impulseFileName.trim() : '';
+    const fileNameCandidate = rawFileName.split(/[\\/]/).pop() || '';
+    const safeFileName = fileNameCandidate.replace(/[^a-zA-Z0-9._-]+/g, '-');
+    const finalFileName = safeFileName || 'impulse.wav';
+    return `/impulses/${finalFileName}`;
+}
+
 const RESERVED_IDENTIFIERS = new Set([
     'break',
     'case',
@@ -1204,8 +1220,9 @@ function buildNodeProps(
         }
         case 'convolver': {
             const convolver = nodeData as ConvolverNodeData;
-            if (convolver.impulseSrc) {
-                addStringProp('impulse', convolver.impulseSrc);
+            const impulseForExport = resolveConvolverImpulseForExport(convolver);
+            if (impulseForExport) {
+                addStringProp('impulse', impulseForExport);
             }
             if (!convolver.normalize) {
                 props.push('normalize={false}');
