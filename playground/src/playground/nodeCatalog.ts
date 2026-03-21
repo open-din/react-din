@@ -1,6 +1,7 @@
 import type {
     AudioNodeData,
     InputNodeData,
+    UiTokensNodeData,
     MathNodeData,
     SwitchNodeData,
 } from './store';
@@ -69,6 +70,7 @@ const MATH_OPERATION_INPUT_LABELS: Record<MathNodeData['operation'], Array<{ id:
 
 export const PLAYGROUND_NODE_CATALOG: NodeCatalogEntry[] = [
     { type: 'input', category: 'Sources', label: 'Params', icon: '⏱️', color: '#dddddd' },
+    { type: 'uiTokens', category: 'Sources', label: 'UI Tokens', icon: '⏱️', color: '#68a5ff' },
     { type: 'eventTrigger', category: 'Sources', label: 'Event Trigger', icon: '⚡', color: '#ffd166' },
     { type: 'transport', category: 'Sources', label: 'Transport', icon: '⏯️', color: '#dddddd', singleton: true },
     { type: 'stepSequencer', category: 'Sources', label: 'Step Sequencer', icon: '🎹', color: '#dddddd' },
@@ -106,6 +108,7 @@ export const PLAYGROUND_NODE_CATALOG: NodeCatalogEntry[] = [
 
 const DEFAULT_HANDLES_BY_TYPE: Record<PlaygroundNodeType, HandleDescriptor[]> = {
     input: [],
+    uiTokens: [],
     eventTrigger: [
         { id: 'trigger', direction: 'source', label: 'Trigger' },
         { id: 'token', direction: 'target', label: 'Token' },
@@ -296,6 +299,14 @@ export function getNodeHandleDescriptors(data: AudioNodeData): HandleDescriptor[
         case 'input': {
             const inputData = data as InputNodeData;
             return inputData.params.map((param) => ({
+                id: getInputParamHandleId(param),
+                direction: 'source',
+                label: param.label || param.name,
+            }));
+        }
+        case 'uiTokens': {
+            const uiTokensData = data as UiTokensNodeData;
+            return uiTokensData.params.map((param) => ({
                 id: getInputParamHandleId(param),
                 direction: 'source',
                 label: param.label || param.name,

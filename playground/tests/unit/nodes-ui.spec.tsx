@@ -6,6 +6,7 @@ import OscNode from '../../src/playground/nodes/OscNode';
 import GainNode from '../../src/playground/nodes/GainNode';
 import OutputNode from '../../src/playground/nodes/OutputNode';
 import InputNode from '../../src/playground/nodes/InputNode';
+import UiTokensNode from '../../src/playground/nodes/UiTokensNode';
 import NoteNode from '../../src/playground/nodes/NoteNode';
 import { StepSequencerNode } from '../../src/playground/nodes/StepSequencerNode';
 import { PianoRollNode } from '../../src/playground/nodes/PianoRollNode';
@@ -26,6 +27,7 @@ import MediaStreamNode from '../../src/playground/nodes/MediaStreamNode';
 import EventTriggerNode from '../../src/playground/nodes/EventTriggerNode';
 import CompressorNode from '../../src/playground/nodes/CompressorNode';
 import SamplerNode from '../../src/playground/nodes/SamplerNode';
+import Inspector from '../../src/playground/Inspector';
 import { getInputParamHandleId } from '../../src/playground/handleIds';
 import { audioEngine } from '../../src/playground/AudioEngine';
 
@@ -34,6 +36,7 @@ const storeState = {
     updateNodeData,
     nodes: [] as any[],
     edges: [] as any[],
+    selectedNodeId: null as string | null,
 };
 const audioEngineMock = vi.hoisted(() => ({
     subscribeStep: vi.fn((callback: (step: number) => void) => {
@@ -90,6 +93,7 @@ describe('playground node UIs', () => {
     afterEach(() => {
         storeState.nodes = [];
         storeState.edges = [];
+        storeState.selectedNodeId = null;
         updateNodeData.mockClear();
         vi.mocked(audioEngine.updateNode).mockClear();
         audioLibraryMock.addAssetFromFile.mockClear();
@@ -181,6 +185,96 @@ describe('playground node UIs', () => {
 
         expect(screen.getByTestId('handle-freq')).toBeInTheDocument();
         expect(screen.queryByTestId('handle-trigger')).not.toBeInTheDocument();
+    });
+
+    it('renders UI token handles and triggers only the selected token row', () => {
+        cleanup();
+        const sharedProps = {
+            dragging: false,
+            selected: false,
+            zIndex: 0,
+            selectable: true,
+            draggable: true,
+            isConnectable: true,
+            positionAbsoluteX: 0,
+            positionAbsoluteY: 0,
+            xPos: 0,
+            yPos: 0,
+        } as const;
+
+        const params = [
+            { id: 'hoverToken', name: 'hoverToken', label: 'Hover Token', type: 'float' as const, value: 1, defaultValue: 0, min: 0, max: 9999 },
+            { id: 'successToken', name: 'successToken', label: 'Success Token', type: 'float' as const, value: 2, defaultValue: 0, min: 0, max: 9999 },
+            { id: 'errorToken', name: 'errorToken', label: 'Error Token', type: 'float' as const, value: 3, defaultValue: 0, min: 0, max: 9999 },
+        ];
+
+        render(
+            <UiTokensNode
+                {...(sharedProps as any)}
+                id="ui-tokens-1"
+                data={{
+                    type: 'uiTokens',
+                    label: 'UI Tokens',
+                    params,
+                }}
+            />
+        );
+
+        expect(screen.getByTestId('handle-param:hoverToken')).toBeInTheDocument();
+        expect(screen.getByTestId('handle-param:successToken')).toBeInTheDocument();
+        expect(screen.getByTestId('handle-param:errorToken')).toBeInTheDocument();
+
+        fireEvent.click(screen.getByTestId('ui-token-trigger-successToken'));
+        expect(updateNodeData).toHaveBeenCalledWith(
+            'ui-tokens-1',
+            expect.objectContaining({
+                params: expect.arrayContaining([
+                    expect.objectContaining({ id: 'hoverToken', value: 1 }),
+                    expect.objectContaining({ id: 'successToken', value: 3 }),
+                    expect.objectContaining({ id: 'errorToken', value: 3 }),
+                ]),
+            })
+        );
+    });
+
+    it('allows adding and removing uiTokens params from the inspector panel', () => {
+        cleanup();
+        storeState.selectedNodeId = 'ui-tokens-1';
+        storeState.nodes = [{
+            id: 'ui-tokens-1',
+            type: 'uiTokensNode',
+            data: {
+                type: 'uiTokens',
+                label: 'UI Tokens',
+                params: [
+                    { id: 'hoverToken', name: 'hoverToken', label: 'Hover Token', type: 'float', value: 0, defaultValue: 0, min: 0, max: 9999 },
+                ],
+            },
+        }];
+
+        render(<Inspector />);
+
+        fireEvent.change(screen.getByPlaceholderText('New token name...'), { target: { value: 'Warning Token' } });
+        fireEvent.click(screen.getByText('+'));
+
+        expect(updateNodeData).toHaveBeenCalledWith(
+            'ui-tokens-1',
+            expect.objectContaining({
+                params: expect.arrayContaining([
+                    expect.objectContaining({ id: 'hoverToken' }),
+                    expect.objectContaining({ name: 'Warning Token', label: 'Warning Token' }),
+                ]),
+            })
+        );
+
+        updateNodeData.mockClear();
+        fireEvent.click(screen.getByText('×'));
+        expect(updateNodeData).toHaveBeenCalledWith(
+            'ui-tokens-1',
+            expect.objectContaining({
+                params: [],
+            })
+        );
     });
 
     it('replaces slider with connected value when parameter handle is connected', () => {

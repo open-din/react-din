@@ -154,4 +154,37 @@ describe('playground connection assist helpers', () => {
         expect(suggestions.some((suggestion) => suggestion.title === 'Gain -> Gain')).toBe(true);
         expect(suggestions.some((suggestion) => suggestion.title === 'Filter -> Freq')).toBe(true);
     });
+
+    it('treats uiTokens outputs as control sources for compatible targets', () => {
+        const nodes = [
+            createNode({
+                id: 'ui-1',
+                type: 'uiTokensNode',
+                position: { x: 0, y: 0 },
+                data: {
+                    type: 'uiTokens',
+                    label: 'UI Tokens',
+                    params: [
+                        { id: 'hoverToken', name: 'hoverToken', label: 'Hover Token', type: 'float', value: 0, defaultValue: 0, min: 0, max: 9999 },
+                        { id: 'successToken', name: 'successToken', label: 'Success Token', type: 'float', value: 0, defaultValue: 0, min: 0, max: 9999 },
+                        { id: 'errorToken', name: 'errorToken', label: 'Error Token', type: 'float', value: 0, defaultValue: 0, min: 0, max: 9999 },
+                    ],
+                },
+            }),
+            createNode({
+                id: 'event-1',
+                type: 'eventTriggerNode',
+                position: { x: 0, y: 0 },
+                data: { type: 'eventTrigger', token: 0, mode: 'change', cooldownMs: 0, velocity: 1, duration: 0.1, note: 60, trackId: 'event', label: 'Event Trigger' },
+            }),
+        ];
+
+        const matches = getCompatibleExistingHandleMatches({
+            nodeId: 'ui-1',
+            handleId: 'param:hoverToken',
+            handleType: 'source',
+        }, nodes);
+
+        expect(matches.map((match) => `${match.nodeId}:${match.handleId}`)).toContain('event-1:token');
+    });
 });

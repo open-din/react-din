@@ -4,6 +4,7 @@ import type {
     InputNodeData,
     InputParam,
     TransportNodeData,
+    UiTokensNodeData,
 } from './store';
 import {
     INPUT_PARAM_HANDLE_PREFIX,
@@ -20,6 +21,11 @@ import {
     type PlaygroundNodeType,
 } from './nodeCatalog';
 import { createPlaygroundNode } from './graphBuilders';
+import {
+    hasAnyUiTokenInputParam,
+    isLegacyUiTokensInputLabel,
+    normalizeUiTokensNodeData,
+} from './uiTokens';
 
 export {
     INPUT_PARAM_HANDLE_PREFIX,
@@ -165,6 +171,10 @@ export function isDataNodeType(type: AudioNodeData['type']): boolean {
     return DATA_NODE_TYPES.has(type);
 }
 
+export function isInputLikeNodeType(type: AudioNodeData['type']): type is 'input' | 'uiTokens' {
+    return type === 'input' || type === 'uiTokens';
+}
+
 export function createInputParamId(nodeId: string, index: number): string {
     return `${nodeId}-param-${index + 1}`;
 }
@@ -287,7 +297,7 @@ export function canConnect(
         return sourceHandle === 'freq' && targetHandle === 'frequency';
     }
 
-    if (sourceType === 'input') {
+    if (isInputLikeNodeType(sourceType)) {
         return (sourceHandle.startsWith(INPUT_PARAM_HANDLE_PREFIX) || /^param_\d+$/.test(sourceHandle))
             && targetHandle !== 'transport'
             && targetHandle !== 'trigger'
@@ -449,9 +459,33 @@ export function migrateGraphNodes(nodes: Node<AudioNodeData>[]): Node<AudioNodeD
         }
 
         if (node.data.type === 'input') {
+            const normalizedInput = normalizeInputNodeData(node.id, node.data as InputNodeData);
+            if (
+                isLegacyUiTokensInputLabel(normalizedInput.label)
+                && hasAnyUiTokenInputParam(normalizedInput.params)
+            ) {
+                return [{
+                    ...node,
+                    type: 'uiTokensNode',
+                    data: normalizeUiTokensNodeData({
+                        type: 'uiTokens',
+                        params: normalizedInput.params,
+                        label: normalizedInput.label,
+                    }) as UiTokensNodeData,
+                }];
+            }
+
             return [{
                 ...node,
-                data: normalizeInputNodeData(node.id, node.data as InputNodeData),
+                data: normalizedInput,
+            }];
+        }
+
+        if (node.data.type === 'uiTokens') {
+            return [{
+                ...node,
+                type: 'uiTokensNode',
+                data: normalizeUiTokensNodeData(node.data as UiTokensNodeData),
             }];
         }
 
@@ -556,8 +590,8 @@ export function migrateGraphEdges(
             }
         }
 
-        if (sourceNode?.data.type === 'input') {
-            const inputData = sourceNode.data as InputNodeData;
+        if (sourceNode && isInputLikeNodeType(sourceNode.data.type)) {
+            const inputData = sourceNode.data as InputNodeData | UiTokensNodeData;
             const migratedHandle = migrateLegacyInputHandle(inputData.params, edge.sourceHandle);
             if (migratedHandle !== edge.sourceHandle) {
                 nextEdge = { ...nextEdge, sourceHandle: migratedHandle ?? undefined };

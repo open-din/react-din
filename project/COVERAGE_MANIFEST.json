@@ -434,6 +434,15 @@
       "scenarios": ["F02-S02", "F04-S02"]
     },
     {
+      "id": "playground-node:UiTokensNode",
+      "kind": "playground-node",
+      "name": "UiTokensNode",
+      "source": "playground/src/playground/nodes/UiTokensNode.tsx",
+      "docs": "docs/playground-nodes/UiTokensNode.md",
+      "tests": ["playground/tests/unit/nodes-ui.spec.tsx", "playground/tests/unit/store-and-codegen.spec.ts", "playground/tests/unit/node-helpers.spec.ts"],
+      "scenarios": ["F02-S02", "F04-S02"]
+    },
+    {
       "id": "playground-node:NoteNode",
       "kind": "playground-node",
       "name": "NoteNode",

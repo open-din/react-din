@@ -14,6 +14,7 @@ import {
     type FilterNodeData,
     type GainNodeData,
     type InputNodeData,
+    type UiTokensNodeData,
     type LFONodeData,
     type MediaStreamNodeData,
     type MathNodeData,
@@ -83,6 +84,7 @@ import {
     isAudioConnection,
     isAudioNodeType,
     isDataNodeType,
+    isInputLikeNodeType,
 } from './nodeHelpers';
 
 export const CodeGenerator: React.FC = () => {
@@ -206,10 +208,10 @@ export function generateCode(
         const paramInfoByHandle = new Map<string, ParamInfo>();
         const paramInfoByName = new Map<string, ParamInfo>();
         const usedNames = new Set<string>();
-        const inputNodes = nodes.filter((node) => node.data.type === 'input') as Node<InputNodeData>[];
+        const inputNodes = nodes.filter((node) => isInputLikeNodeType(node.data.type)) as Array<Node<InputNodeData | UiTokensNodeData>>;
 
         inputNodes.forEach((node) => {
-            const params = (node.data as InputNodeData).params || [];
+            const params = (node.data as InputNodeData | UiTokensNodeData).params || [];
             params.forEach((param, index) => {
                 const rawName = param.label || param.name || `param${index + 1}`;
                 const baseName = toSafeIdentifier(rawName, `param${index + 1}`);
@@ -241,7 +243,7 @@ export function generateCode(
             const sourceNode = nodeById.get(edge.source);
             if (!sourceNode) return null;
 
-            if (sourceNode.data.type === 'input') {
+            if (isInputLikeNodeType(sourceNode.data.type)) {
                 const info = inputParamInfo.paramInfoByHandle.get(`${edge.source}:${edge.sourceHandle}`);
                 return info?.name ?? null;
             }
@@ -342,7 +344,7 @@ export function generateCode(
     const usedParamNames = new Set<string>();
     controlEdges.forEach((edge) => {
         const sourceNode = nodeById.get(edge.source);
-        if (sourceNode?.data.type !== 'input') return;
+        if (!sourceNode || !isInputLikeNodeType(sourceNode.data.type)) return;
         const info = inputParamInfo.paramInfoByHandle.get(`${edge.source}:${edge.sourceHandle}`);
         if (info) {
             usedParamNames.add(info.name);
@@ -430,7 +432,7 @@ export function generateCode(
         const sourceNode = nodeById.get(tokenEdge.source);
         if (!sourceNode) return formatNumber(fallbackValue);
 
-        if (sourceNode.data.type === 'input') {
+        if (isInputLikeNodeType(sourceNode.data.type)) {
             const info = inputParamInfo.paramInfoByHandle.get(`${tokenEdge.source}:${tokenEdge.sourceHandle}`);
             return info?.name ?? formatNumber(fallbackValue);
         }
@@ -1077,7 +1079,10 @@ function buildNodeProps(
         const dataValue = dataEdge ? context.getDataVar(dataEdge.source) : undefined;
 
         const inputEdge = edgesForHandle.find(
-            (edge) => context.nodeById.get(edge.source)?.data.type === 'input'
+            (edge) => {
+                const sourceType = context.nodeById.get(edge.source)?.data.type;
+                return sourceType ? isInputLikeNodeType(sourceType) : false;
+            }
         );
         const inputInfo = inputEdge
             ? context.inputParamInfo.paramInfoByHandle.get(`${inputEdge.source}:${inputEdge.sourceHandle}`)
@@ -1462,8 +1467,8 @@ function buildPreviewGraphData(nodes: Node<AudioNodeData>[], edges: Edge[]): Pre
 
     const paramsByHandle = new Map<string, number>();
     nodes.forEach((node) => {
-        if (node.data.type !== 'input') return;
-        const input = node.data as InputNodeData;
+        if (!isInputLikeNodeType(node.data.type)) return;
+        const input = node.data as InputNodeData | UiTokensNodeData;
         input.params?.forEach((param) => {
             const value = Number.isFinite(param.value)
                 ? param.value
@@ -1586,7 +1591,7 @@ const PreviewRenderer: React.FC<{ graph: PreviewGraphData; sequencerBpm?: number
         const sourceNode = graph.nodeById.get(tokenEdge.source);
         if (!sourceNode) return fallback;
 
-        if (sourceNode.data.type === 'input') {
+        if (isInputLikeNodeType(sourceNode.data.type)) {
             return graph.paramsByHandle.get(`${tokenEdge.source}:${tokenEdge.sourceHandle}`) ?? fallback;
         }
         if (sourceNode.data.type === 'note') {
@@ -1662,7 +1667,7 @@ const PreviewRenderer: React.FC<{ graph: PreviewGraphData; sequencerBpm?: number
             const sourceNode = graph.nodeById.get(edge.source);
             if (!sourceNode) return fallback;
 
-            if (sourceNode.data.type === 'input') {
+            if (isInputLikeNodeType(sourceNode.data.type)) {
                 const value = graph.paramsByHandle.get(`${edge.source}:${edge.sourceHandle}`);
                 return value ?? fallback;
             }
@@ -1940,7 +1945,10 @@ function buildPreviewProps(
         const dataValue = dataEdge ? context.getDataValue(dataEdge.source) : undefined;
 
         const inputEdge = edgesForHandle.find(
-            (edge) => context.nodeById.get(edge.source)?.data.type === 'input'
+            (edge) => {
+                const sourceType = context.nodeById.get(edge.source)?.data.type;
+                return sourceType ? isInputLikeNodeType(sourceType) : false;
+            }
         );
         const inputValue = inputEdge
             ? context.paramsByHandle.get(`${inputEdge.source}:${inputEdge.sourceHandle}`)

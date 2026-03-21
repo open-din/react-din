@@ -16,6 +16,7 @@ export { default as StereoPannerNode } from './StereoPannerNode';
 export { default as Panner3DNode } from './Panner3DNode';
 export { default as MixerNode } from './MixerNode';
 export { default as InputNode } from './InputNode';
+export { default as UiTokensNode } from './UiTokensNode';
 export { default as ConstantSourceNode } from './ConstantSourceNode';
 export { default as MediaStreamNode } from './MediaStreamNode';
 export { default as EventTriggerNode } from './EventTriggerNode';

@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from 'react';
-import { useAudioGraphStore, type AudioNodeData, type InputNodeData, type InputParam } from './store';
+import { useAudioGraphStore, type AudioNodeData, type InputNodeData, type InputParam, type UiTokensNodeData } from './store';
 
 import { CodeGenerator } from './CodeGenerator';
 
@@ -10,33 +10,36 @@ const Inspector: React.FC = () => {
 
     const selectedNode = nodes.find((n) => n.id === selectedNodeId);
     const nodeData = selectedNode?.data as AudioNodeData | undefined;
+    const isParamEditorNode = nodeData?.type === 'input' || nodeData?.type === 'uiTokens';
+    const paramEditorData = isParamEditorNode ? (nodeData as InputNodeData | UiTokensNodeData) : null;
 
     const [newParamName, setNewParamName] = useState('');
 
     const handleAddParam = useCallback(() => {
         if (!selectedNodeId || !newParamName.trim()) return;
-        const currentData = nodeData as InputNodeData;
-        const params = [...(currentData.params || [])];
+        if (!paramEditorData) return;
+        const params = [...(paramEditorData.params || [])];
+        const trimmedName = newParamName.trim();
 
         params.push({
             id: crypto.randomUUID(),
-            name: newParamName.trim(),
+            name: trimmedName,
             type: 'float',
             value: 0,
             defaultValue: 0,
             min: 0,
-            max: 1,
-            label: newParamName.trim()
+            max: nodeData?.type === 'uiTokens' ? 9999 : 1,
+            label: trimmedName,
         });
 
         updateNodeData(selectedNodeId, { params });
         setNewParamName('');
-    }, [selectedNodeId, newParamName, nodeData, updateNodeData]);
+    }, [selectedNodeId, newParamName, paramEditorData, updateNodeData]);
 
     const handleUpdateParam = (index: number, updates: Partial<InputParam>) => {
         if (!selectedNodeId) return;
-        const currentData = nodeData as InputNodeData;
-        const params = [...(currentData.params || [])];
+        if (!paramEditorData) return;
+        const params = [...(paramEditorData.params || [])];
         params[index] = { ...params[index], ...updates };
         // If label changes, update name too? Or keep them separate.
         // For now, let's keep them somewhat synced or allow detailed editing.
@@ -45,8 +48,8 @@ const Inspector: React.FC = () => {
 
     const handleRemoveParam = (index: number) => {
         if (!selectedNodeId) return;
-        const currentData = nodeData as InputNodeData;
-        const params = [...(currentData.params || [])];
+        if (!paramEditorData) return;
+        const params = [...(paramEditorData.params || [])];
         params.splice(index, 1);
         updateNodeData(selectedNodeId, { params });
     };
@@ -67,14 +70,14 @@ const Inspector: React.FC = () => {
             </div>
 
             <div className="flex-1 overflow-y-auto px-4 py-4">
-                {/* Input Node Specific Controls */}
-                {nodeData.type === 'input' && (
+                {/* Param/Token Node Specific Controls */}
+                {isParamEditorNode && paramEditorData && (
                     <div className="mb-6">
                         <h4 className="mb-2 text-[9px] font-semibold uppercase tracking-[0.2em] text-[var(--text-subtle)]">
-                            Params
+                            {nodeData.type === 'uiTokens' ? 'Tokens' : 'Params'}
                         </h4>
                         <div className="flex flex-col gap-3">
-                            {(nodeData as InputNodeData).params.map((param, index) => (
+                            {paramEditorData.params.map((param, index) => (
                                 <div key={param.id} className="rounded-md border border-[var(--panel-border)] bg-[var(--panel-muted)] p-3">
                                     <div className="mb-2 flex items-center gap-2">
                                         <span className="h-2 w-2 rounded-full bg-[var(--success)]" />
@@ -143,7 +146,7 @@ const Inspector: React.FC = () => {
                         <div className="mt-3 flex items-center gap-2">
                             <input
                                 type="text"
-                                placeholder="New param name..."
+                                placeholder={nodeData.type === 'uiTokens' ? 'New token name...' : 'New param name...'}
                                 value={newParamName}
                                 onChange={(e) => setNewParamName(e.target.value)}
                                 onKeyDown={(e) => e.key === 'Enter' && handleAddParam()}

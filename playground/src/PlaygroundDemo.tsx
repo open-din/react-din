@@ -38,6 +38,7 @@ import {
     Panner3DNode,
     MixerNode,
     InputNode,
+    UiTokensNode,
     ConstantSourceNode,
     MediaStreamNode,
     EventTriggerNode,
@@ -77,6 +78,7 @@ import {
 } from './playground/nodeHelpers';
 import { DEFAULT_NODE_SIZE } from './playground/graphBuilders';
 import { groupCatalogByCategory, type PlaygroundNodeType } from './playground/nodeCatalog';
+import { createUiTokenParams } from './playground/uiTokens';
 
 const nodeTypes: NodeTypes = {
     oscNode: OscNode as NodeTypes[string],
@@ -97,6 +99,7 @@ const nodeTypes: NodeTypes = {
     panner3dNode: Panner3DNode as NodeTypes[string],
     mixerNode: MixerNode as NodeTypes[string],
     inputNode: InputNode as NodeTypes[string],
+    uiTokensNode: UiTokensNode as NodeTypes[string],
     constantSourceNode: ConstantSourceNode as NodeTypes[string],
     mediaStreamNode: MediaStreamNode as NodeTypes[string],
     eventTriggerNode: EventTriggerNode as NodeTypes[string],
@@ -243,25 +246,18 @@ interface FeedbackTemplateGraph {
     edges: Edge[];
 }
 
-function createTokenParam(id: string, label: string) {
+function createUiTokensNodeData() {
     return {
-        id,
-        name: id,
-        label,
-        type: 'float' as const,
-        value: 0,
-        defaultValue: 0,
-        min: 0,
-        max: 9999,
+        type: 'uiTokens' as const,
+        params: createUiTokenParams(),
+        label: 'UI Tokens',
     };
 }
 
 function createHoverFeedbackTemplate(): FeedbackTemplateGraph {
-    const hoverParam = createTokenParam('hoverToken', 'Hover Token');
-
     return {
         nodes: [
-            { id: 'input-hover', type: 'inputNode', dragHandle: '.node-header', position: { x: 40, y: 80 }, data: { type: 'input', params: [hoverParam], label: 'UI Tokens' } as any },
+            { id: 'input-hover', type: 'uiTokensNode', dragHandle: '.node-header', position: { x: 40, y: 80 }, data: createUiTokensNodeData() as any },
             { id: 'evt-hover', type: 'eventTriggerNode', dragHandle: '.node-header', position: { x: 280, y: 80 }, data: { type: 'eventTrigger', token: 0, mode: 'change', cooldownMs: 40, velocity: 0.45, duration: 0.06, note: 72, trackId: 'hover', label: 'Hover Trigger' } as any },
             { id: 'noise-hover', type: 'noiseBurstNode', dragHandle: '.node-header', position: { x: 520, y: 40 }, data: { type: 'noiseBurst', noiseType: 'white', duration: 0.03, gain: 0.55, attack: 0.001, release: 0.02, label: 'Hover Noise' } as any },
             { id: 'filter-hover', type: 'filterNode', dragHandle: '.node-header', position: { x: 760, y: 40 }, data: { type: 'filter', filterType: 'highpass', frequency: 1800, detune: 0, q: 0.9, gain: 0, label: 'HP Filter' } as any },
@@ -271,7 +267,7 @@ function createHoverFeedbackTemplate(): FeedbackTemplateGraph {
             { id: 'output', type: 'outputNode', dragHandle: '.node-header', position: { x: 1680, y: 120 }, data: { type: 'output', masterGain: 0.5, playing: false, label: 'Output' } as any },
         ],
         edges: [
-            { id: 'hover-token', source: 'input-hover', sourceHandle: getInputParamHandleId(hoverParam), target: 'evt-hover', targetHandle: 'token', animated: true, style: CONTROL_EDGE_STYLE },
+            { id: 'hover-token', source: 'input-hover', sourceHandle: getInputParamHandleId('hoverToken'), target: 'evt-hover', targetHandle: 'token', animated: true, style: CONTROL_EDGE_STYLE },
             { id: 'hover-trigger', source: 'evt-hover', sourceHandle: 'trigger', target: 'noise-hover', targetHandle: 'trigger', animated: true, style: TRIGGER_EDGE_STYLE },
             { id: 'hover-a1', source: 'noise-hover', sourceHandle: 'out', target: 'filter-hover', targetHandle: 'in', animated: false, style: AUDIO_EDGE_STYLE },
             { id: 'hover-a2', source: 'filter-hover', sourceHandle: 'out', target: 'chorus-hover', targetHandle: 'in', animated: false, style: AUDIO_EDGE_STYLE },
@@ -283,11 +279,9 @@ function createHoverFeedbackTemplate(): FeedbackTemplateGraph {
 }
 
 function createSuccessFeedbackTemplate(): FeedbackTemplateGraph {
-    const successParam = createTokenParam('successToken', 'Success Token');
-
     return {
         nodes: [
-            { id: 'input-success', type: 'inputNode', dragHandle: '.node-header', position: { x: 40, y: 80 }, data: { type: 'input', params: [successParam], label: 'UI Tokens' } as any },
+            { id: 'input-success', type: 'uiTokensNode', dragHandle: '.node-header', position: { x: 40, y: 80 }, data: createUiTokensNodeData() as any },
             { id: 'evt-success', type: 'eventTriggerNode', dragHandle: '.node-header', position: { x: 280, y: 80 }, data: { type: 'eventTrigger', token: 0, mode: 'change', cooldownMs: 120, velocity: 0.9, duration: 0.35, note: 76, trackId: 'success', label: 'Success Trigger' } as any },
             { id: 'sampler-success', type: 'samplerNode', dragHandle: '.node-header', position: { x: 530, y: 40 }, data: { type: 'sampler', src: '/samples/ui_success.wav', loop: false, playbackRate: 1, detune: 0, loaded: true, label: 'Success Sample' } as any },
             { id: 'convolver-success', type: 'convolverNode', dragHandle: '.node-header', position: { x: 760, y: 40 }, data: { type: 'convolver', impulseSrc: '/impulses/plate.wav', normalize: true, label: 'Plate IR' } as any },
@@ -298,7 +292,7 @@ function createSuccessFeedbackTemplate(): FeedbackTemplateGraph {
             { id: 'output', type: 'outputNode', dragHandle: '.node-header', position: { x: 1910, y: 120 }, data: { type: 'output', masterGain: 0.5, playing: false, label: 'Output' } as any },
         ],
         edges: [
-            { id: 'success-token', source: 'input-success', sourceHandle: getInputParamHandleId(successParam), target: 'evt-success', targetHandle: 'token', animated: true, style: CONTROL_EDGE_STYLE },
+            { id: 'success-token', source: 'input-success', sourceHandle: getInputParamHandleId('successToken'), target: 'evt-success', targetHandle: 'token', animated: true, style: CONTROL_EDGE_STYLE },
             { id: 'success-trigger', source: 'evt-success', sourceHandle: 'trigger', target: 'sampler-success', targetHandle: 'trigger', animated: true, style: TRIGGER_EDGE_STYLE },
             { id: 'success-a1', source: 'sampler-success', sourceHandle: 'out', target: 'convolver-success', targetHandle: 'in', animated: false, style: AUDIO_EDGE_STYLE },
             { id: 'success-a2', source: 'convolver-success', sourceHandle: 'out', target: 'chorus-success', targetHandle: 'in', animated: false, style: AUDIO_EDGE_STYLE },
@@ -311,11 +305,9 @@ function createSuccessFeedbackTemplate(): FeedbackTemplateGraph {
 }
 
 function createErrorFeedbackTemplate(): FeedbackTemplateGraph {
-    const errorParam = createTokenParam('errorToken', 'Error Token');
-
     return {
         nodes: [
-            { id: 'input-error', type: 'inputNode', dragHandle: '.node-header', position: { x: 40, y: 80 }, data: { type: 'input', params: [errorParam], label: 'UI Tokens' } as any },
+            { id: 'input-error', type: 'uiTokensNode', dragHandle: '.node-header', position: { x: 40, y: 80 }, data: createUiTokensNodeData() as any },
             { id: 'evt-error', type: 'eventTriggerNode', dragHandle: '.node-header', position: { x: 280, y: 80 }, data: { type: 'eventTrigger', token: 0, mode: 'change', cooldownMs: 120, velocity: 0.95, duration: 0.25, note: 45, trackId: 'error', label: 'Error Trigger' } as any },
             { id: 'noise-error', type: 'noiseBurstNode', dragHandle: '.node-header', position: { x: 530, y: 10 }, data: { type: 'noiseBurst', noiseType: 'brown', duration: 0.09, gain: 0.7, attack: 0.002, release: 0.08, label: 'Error Noise' } as any },
             { id: 'sampler-error', type: 'samplerNode', dragHandle: '.node-header', position: { x: 530, y: 150 }, data: { type: 'sampler', src: '/samples/ui_error.wav', loop: false, playbackRate: 1, detune: 0, loaded: true, label: 'Error Sample' } as any },
@@ -327,7 +319,7 @@ function createErrorFeedbackTemplate(): FeedbackTemplateGraph {
             { id: 'output', type: 'outputNode', dragHandle: '.node-header', position: { x: 1950, y: 140 }, data: { type: 'output', masterGain: 0.5, playing: false, label: 'Output' } as any },
         ],
         edges: [
-            { id: 'error-token', source: 'input-error', sourceHandle: getInputParamHandleId(errorParam), target: 'evt-error', targetHandle: 'token', animated: true, style: CONTROL_EDGE_STYLE },
+            { id: 'error-token', source: 'input-error', sourceHandle: getInputParamHandleId('errorToken'), target: 'evt-error', targetHandle: 'token', animated: true, style: CONTROL_EDGE_STYLE },
             { id: 'error-trigger-noise', source: 'evt-error', sourceHandle: 'trigger', target: 'noise-error', targetHandle: 'trigger', animated: true, style: TRIGGER_EDGE_STYLE },
             { id: 'error-trigger-sampler', source: 'evt-error', sourceHandle: 'trigger', target: 'sampler-error', targetHandle: 'trigger', animated: true, style: TRIGGER_EDGE_STYLE },
             { id: 'error-a1', source: 'noise-error', sourceHandle: 'out', target: 'dist-error', targetHandle: 'in', animated: false, style: AUDIO_EDGE_STYLE },
@@ -342,13 +334,9 @@ function createErrorFeedbackTemplate(): FeedbackTemplateGraph {
 }
 
 function createUiFeedbackPackTemplate(): FeedbackTemplateGraph {
-    const hoverParam = createTokenParam('hoverToken', 'Hover Token');
-    const successParam = createTokenParam('successToken', 'Success Token');
-    const errorParam = createTokenParam('errorToken', 'Error Token');
-
     return {
         nodes: [
-            { id: 'input-ui', type: 'inputNode', dragHandle: '.node-header', position: { x: 40, y: 220 }, data: { type: 'input', params: [hoverParam, successParam, errorParam], label: 'UI Tokens' } as any },
+            { id: 'input-ui', type: 'uiTokensNode', dragHandle: '.node-header', position: { x: 40, y: 220 }, data: createUiTokensNodeData() as any },
             { id: 'evt-hover', type: 'eventTriggerNode', dragHandle: '.node-header', position: { x: 280, y: 60 }, data: { type: 'eventTrigger', token: 0, mode: 'change', cooldownMs: 40, velocity: 0.45, duration: 0.06, note: 72, trackId: 'hover', label: 'Hover Trigger' } as any },
             { id: 'evt-success', type: 'eventTriggerNode', dragHandle: '.node-header', position: { x: 280, y: 220 }, data: { type: 'eventTrigger', token: 0, mode: 'change', cooldownMs: 120, velocity: 0.9, duration: 0.35, note: 76, trackId: 'success', label: 'Success Trigger' } as any },
             { id: 'evt-error', type: 'eventTriggerNode', dragHandle: '.node-header', position: { x: 280, y: 380 }, data: { type: 'eventTrigger', token: 0, mode: 'change', cooldownMs: 120, velocity: 0.95, duration: 0.25, note: 45, trackId: 'error', label: 'Error Trigger' } as any },
@@ -371,9 +359,9 @@ function createUiFeedbackPackTemplate(): FeedbackTemplateGraph {
             { id: 'output', type: 'outputNode', dragHandle: '.node-header', position: { x: 1910, y: 250 }, data: { type: 'output', masterGain: 0.5, playing: false, label: 'Output' } as any },
         ],
         edges: [
-            { id: 'token-hover', source: 'input-ui', sourceHandle: getInputParamHandleId(hoverParam), target: 'evt-hover', targetHandle: 'token', animated: true, style: CONTROL_EDGE_STYLE },
-            { id: 'token-success', source: 'input-ui', sourceHandle: getInputParamHandleId(successParam), target: 'evt-success', targetHandle: 'token', animated: true, style: CONTROL_EDGE_STYLE },
-            { id: 'token-error', source: 'input-ui', sourceHandle: getInputParamHandleId(errorParam), target: 'evt-error', targetHandle: 'token', animated: true, style: CONTROL_EDGE_STYLE },
+            { id: 'token-hover', source: 'input-ui', sourceHandle: getInputParamHandleId('hoverToken'), target: 'evt-hover', targetHandle: 'token', animated: true, style: CONTROL_EDGE_STYLE },
+            { id: 'token-success', source: 'input-ui', sourceHandle: getInputParamHandleId('successToken'), target: 'evt-success', targetHandle: 'token', animated: true, style: CONTROL_EDGE_STYLE },
+            { id: 'token-error', source: 'input-ui', sourceHandle: getInputParamHandleId('errorToken'), target: 'evt-error', targetHandle: 'token', animated: true, style: CONTROL_EDGE_STYLE },
             { id: 'tr-hover', source: 'evt-hover', sourceHandle: 'trigger', target: 'noise-hover', targetHandle: 'trigger', animated: true, style: TRIGGER_EDGE_STYLE },
             { id: 'tr-success', source: 'evt-success', sourceHandle: 'trigger', target: 'sampler-success', targetHandle: 'trigger', animated: true, style: TRIGGER_EDGE_STYLE },
             { id: 'tr-error-1', source: 'evt-error', sourceHandle: 'trigger', target: 'noise-error', targetHandle: 'trigger', animated: true, style: TRIGGER_EDGE_STYLE },
@@ -507,12 +495,6 @@ export const PlaygroundDemo: FC = () => {
     const [isLibraryDragOver, setLibraryDragOver] = useState(false);
     const libraryUploadRef = useRef<HTMLInputElement | null>(null);
     const previewAudioRef = useRef<HTMLAudioElement | null>(null);
-    const [uiTokenCounters, setUiTokenCounters] = useState<Record<'hoverToken' | 'successToken' | 'errorToken', number>>({
-        hoverToken: 0,
-        successToken: 0,
-        errorToken: 0,
-    });
-
     const filteredAssistSuggestions = assistSuggestions.filter((suggestion) =>
         suggestion.title.toLowerCase().includes(assistMenuQuery.trim().toLowerCase())
     );
@@ -548,21 +530,6 @@ export const PlaygroundDemo: FC = () => {
         }
 
         return messages;
-    })();
-
-    const uiTokenAvailability = (() => {
-        const available = { hoverToken: false, successToken: false, errorToken: false };
-        nodes.forEach((node) => {
-            if (node.data.type !== 'input') return;
-            const inputData = node.data as any;
-            inputData.params?.forEach((param: any) => {
-                const key = (param.name || param.id || '').trim();
-                if (key === 'hoverToken' || key === 'successToken' || key === 'errorToken') {
-                    available[key] = true;
-                }
-            });
-        });
-        return available;
     })();
 
     useEffect(() => {
@@ -872,43 +839,7 @@ export const PlaygroundDemo: FC = () => {
 
     const loadFeedbackTemplate = useCallback((template: FeedbackTemplateGraph) => {
         useAudioGraphStore.getState().loadGraph(template.nodes, template.edges);
-        setUiTokenCounters({
-            hoverToken: 0,
-            successToken: 0,
-            errorToken: 0,
-        });
     }, []);
-
-    const pushUiToken = useCallback((token: 'hoverToken' | 'successToken' | 'errorToken') => {
-        setUiTokenCounters((previous) => {
-            const nextValue = previous[token] + 1;
-            const nextCounters = {
-                ...previous,
-                [token]: nextValue,
-            };
-
-            const state = useAudioGraphStore.getState();
-            state.nodes.forEach((node) => {
-                if (node.data.type !== 'input') return;
-                const inputData = node.data as any;
-                if (!Array.isArray(inputData.params)) return;
-
-                let changed = false;
-                const nextParams = inputData.params.map((param: any) => {
-                    const key = (param.name || param.id || '').trim();
-                    if (key !== token) return param;
-                    changed = true;
-                    return { ...param, value: nextValue };
-                });
-
-                if (changed) {
-                    updateNodeData(node.id, { params: nextParams });
-                }
-            });
-
-            return nextCounters;
-        });
-    }, [updateNodeData]);
 
     const commitGraphName = useCallback(() => {
         if (!activeGraphId) return;
@@ -1257,45 +1188,6 @@ export const PlaygroundDemo: FC = () => {
                             <span>Error Feedback</span>
                         </button>
 
-                        <div className="rounded-md border border-[var(--panel-border)] bg-[var(--panel-bg)] px-3 py-3">
-                            <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--text-subtle)]">
-                                UI Token Simulator
-                            </p>
-                            <div className="flex flex-col gap-2">
-                                <button
-                                    type="button"
-                                    onClick={() => pushUiToken('hoverToken')}
-                                    className="flex items-center justify-between rounded border border-[var(--panel-border)] bg-[var(--panel-muted)] px-2 py-1 text-[10px] text-[var(--text)] hover:border-[var(--accent)]"
-                                >
-                                    <span>hoverToken</span>
-                                    <span className="font-mono">{uiTokenCounters.hoverToken}</span>
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => pushUiToken('successToken')}
-                                    className="flex items-center justify-between rounded border border-[var(--panel-border)] bg-[var(--panel-muted)] px-2 py-1 text-[10px] text-[var(--text)] hover:border-[var(--accent)]"
-                                >
-                                    <span>successToken</span>
-                                    <span className="font-mono">{uiTokenCounters.successToken}</span>
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => pushUiToken('errorToken')}
-                                    className="flex items-center justify-between rounded border border-[var(--panel-border)] bg-[var(--panel-muted)] px-2 py-1 text-[10px] text-[var(--text)] hover:border-[var(--accent)]"
-                                >
-                                    <span>errorToken</span>
-                                    <span className="font-mono">{uiTokenCounters.errorToken}</span>
-                                </button>
-                            </div>
-                            <p className="mt-2 text-[9px] text-[var(--text-muted)]">
-                                Missing token params: {[
-                                    uiTokenAvailability.hoverToken ? null : 'hoverToken',
-                                    uiTokenAvailability.successToken ? null : 'successToken',
-                                    uiTokenAvailability.errorToken ? null : 'errorToken',
-                                ].filter(Boolean).join(', ') || 'none'}
-                            </p>
-                        </div>
-
                         <button
                             onClick={() => {
                                 const nodes: Node<AudioNodeData>[] = [
@@ -1594,6 +1486,7 @@ export const PlaygroundDemo: FC = () => {
                                         case 'pannerNode': return '#44cccc';
                                         case 'panner3dNode': return '#44cccc';
                                         case 'mixerNode': return '#ffaa44';
+                                        case 'uiTokensNode': return '#68a5ff';
                                         case 'constantSourceNode': return '#7bd1ff';
                                         case 'mediaStreamNode': return '#7bd1ff';
                                         case 'eventTriggerNode': return '#ffd166';

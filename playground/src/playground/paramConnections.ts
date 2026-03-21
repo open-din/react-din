@@ -5,13 +5,14 @@ import type {
     ClampNodeData,
     CompareNodeData,
     InputNodeData,
+    UiTokensNodeData,
     MathNodeData,
     MixNodeData,
     NoteNodeData,
     SwitchNodeData,
 } from './store';
 import { useAudioGraphStore } from './store';
-import { isDataNodeType, resolveInputParamByHandle } from './nodeHelpers';
+import { isDataNodeType, isInputLikeNodeType, resolveInputParamByHandle } from './nodeHelpers';
 import { audioEngine } from './AudioEngine';
 import { clamp, compare, math, mix, switchValue } from '../../../src/data/values';
 
@@ -30,8 +31,8 @@ function resolveSourceHandleValue(
 ): number | null {
     const sourceData = sourceNode.data;
 
-    if (sourceData.type === 'input') {
-        const inputData = sourceData as InputNodeData;
+    if (isInputLikeNodeType(sourceData.type)) {
+        const inputData = sourceData as InputNodeData | UiTokensNodeData;
         return resolveInputParamByHandle(inputData.params, sourceHandle)?.param.value ?? null;
     }
 

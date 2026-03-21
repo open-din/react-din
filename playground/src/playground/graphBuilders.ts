@@ -1,6 +1,7 @@
 import type { Node } from '@xyflow/react';
-import type { AudioNodeData, OutputNodeData, TransportNodeData, InputNodeData } from './store';
+import type { AudioNodeData, OutputNodeData, TransportNodeData, InputNodeData, UiTokensNodeData } from './store';
 import type { PlaygroundNodeType } from './nodeCatalog';
+import { createUiTokenParams, normalizeUiTokensNodeData } from './uiTokens';
 
 export const DEFAULT_NODE_SIZE = {
     width: 160,
@@ -31,6 +32,13 @@ export const createDefaultInputData = (): InputNodeData => ({
     params: [],
     label: 'Params',
 });
+
+export const createDefaultUiTokensData = (): UiTokensNodeData =>
+    normalizeUiTokensNodeData({
+        type: 'uiTokens',
+        params: createUiTokenParams(),
+        label: 'UI Tokens',
+    });
 
 export function createPlaygroundNode(
     id: string,
@@ -213,6 +221,14 @@ export function createPlaygroundNode(
                 position,
                 dragHandle: '.node-header',
                 data: createDefaultInputData() as AudioNodeData,
+            };
+        case 'uiTokens':
+            return {
+                id,
+                type: 'uiTokensNode',
+                position,
+                dragHandle: '.node-header',
+                data: createDefaultUiTokensData() as AudioNodeData,
             };
         case 'note':
             return {

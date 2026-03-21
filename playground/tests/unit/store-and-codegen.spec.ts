@@ -15,6 +15,15 @@ describe('playground store and code generation', () => {
         expect(useAudioGraphStore.getState().nodes).toHaveLength(initialLength + 1);
         expect(mixNode?.data.type).toBe('mix');
 
+        useAudioGraphStore.getState().addNode('uiTokens');
+        const uiTokensNode = useAudioGraphStore.getState().nodes.at(-1);
+        expect(uiTokensNode?.data.type).toBe('uiTokens');
+        if (!uiTokensNode) {
+            throw new Error('Expected a uiTokens node');
+        }
+        useAudioGraphStore.getState().removeNode(uiTokensNode.id);
+        expect(useAudioGraphStore.getState().nodes.some((node) => node.id === uiTokensNode.id)).toBe(false);
+
         if (!mixNode) {
             throw new Error('Expected a mix node');
         }
@@ -230,6 +239,20 @@ describe('playground store and code generation', () => {
                     data: { type: 'transport', bpm: 90, playing: false, label: 'Transport 2' },
                 },
                 {
+                    id: 'legacy-ui-tokens',
+                    type: 'inputNode',
+                    position: { x: 0, y: 0 },
+                    data: {
+                        type: 'input',
+                        label: 'UI Tokens',
+                        params: [
+                            { id: 'hoverToken', name: 'hoverToken', label: 'Hover Token', type: 'float', value: 0, defaultValue: 0, min: 0, max: 9999 },
+                            { id: 'successToken', name: 'successToken', label: 'Success Token', type: 'float', value: 0, defaultValue: 0, min: 0, max: 9999 },
+                            { id: 'errorToken', name: 'errorToken', label: 'Error Token', type: 'float', value: 0, defaultValue: 0, min: 0, max: 9999 },
+                        ],
+                    },
+                },
+                {
                     id: 'seq-1',
                     type: 'stepSequencerNode',
                     position: { x: 0, y: 0 },
@@ -262,6 +285,7 @@ describe('playground store and code generation', () => {
             ],
             [
                 { id: 'legacy-input', source: 'input-1', sourceHandle: 'param_0', target: 'osc-1', targetHandle: 'frequency' },
+                { id: 'legacy-ui-token', source: 'legacy-ui-tokens', sourceHandle: 'param_1', target: 'osc-1', targetHandle: 'frequency' },
                 { id: 'legacy-transport', source: 'transport-a', target: 'seq-1' },
                 { id: 'dead-note-trigger', source: 'osc-1', sourceHandle: 'out', target: 'note-1', targetHandle: 'trigger' },
             ]
@@ -271,7 +295,10 @@ describe('playground store and code generation', () => {
 
         expect(state.nodes.filter((node) => node.data.type === 'transport')).toHaveLength(1);
         expect(state.nodes.filter((node) => node.data.type === 'output')).toHaveLength(1);
+        expect(state.nodes.find((node) => node.id === 'legacy-ui-tokens')?.data.type).toBe('uiTokens');
+        expect(state.nodes.find((node) => node.id === 'legacy-ui-tokens')?.type).toBe('uiTokensNode');
         expect(state.edges.find((edge) => edge.id === 'legacy-input')?.sourceHandle).toBe('param:cutoff');
+        expect(state.edges.find((edge) => edge.id === 'legacy-ui-token')?.sourceHandle).toBe('param:successToken');
         expect(state.edges.find((edge) => edge.id === 'legacy-transport')?.targetHandle).toBe('transport');
         expect(state.edges.some((edge) => edge.id === 'dead-note-trigger')).toBe(false);
     });
@@ -365,12 +392,16 @@ describe('playground store and code generation', () => {
         const nodes = [
             {
                 id: 'input-1',
-                type: 'inputNode',
+                type: 'uiTokensNode',
                 position: { x: 0, y: 0 },
                 data: {
-                    type: 'input',
+                    type: 'uiTokens',
                     label: 'UI Tokens',
-                    params: [{ id: 'hoverToken', name: 'hoverToken', label: 'Hover Token', type: 'float', value: 0, defaultValue: 0, min: 0, max: 9999 }],
+                    params: [
+                        { id: 'hoverToken', name: 'hoverToken', label: 'Hover Token', type: 'float', value: 0, defaultValue: 0, min: 0, max: 9999 },
+                        { id: 'successToken', name: 'successToken', label: 'Success Token', type: 'float', value: 0, defaultValue: 0, min: 0, max: 9999 },
+                        { id: 'errorToken', name: 'errorToken', label: 'Error Token', type: 'float', value: 0, defaultValue: 0, min: 0, max: 9999 },
+                    ],
                 },
             },
             {

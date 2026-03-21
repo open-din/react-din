@@ -23,6 +23,7 @@ import type {
     EventTriggerNodeData,
     StereoPannerNodeData,
     InputNodeData,
+    UiTokensNodeData,
     NoteNodeData,
     StepSequencerNodeData,
     TransportNodeData,
@@ -1428,6 +1429,21 @@ export class AudioEngine {
 
                 return { node: dummy, type: 'input', outputs };
             }
+            case 'uiTokens': {
+                const inputData = data as UiTokensNodeData;
+                const dummy = ctx.createGain();
+                const outputs = new Map<string, AudioNode>();
+
+                if (inputData.params) {
+                    inputData.params.forEach((param) => {
+                        const paramSource = ctx.createConstantSource();
+                        paramSource.offset.value = param.value;
+                        outputs.set(getInputParamHandleId(param), paramSource);
+                    });
+                }
+
+                return { node: dummy, type: 'uiTokens', outputs };
+            }
             case 'constantSource': {
                 const sourceData = data as ConstantSourceNodeData;
                 const source = ctx.createConstantSource();
@@ -1532,6 +1548,11 @@ export class AudioEngine {
             switch (sourceNode.data.type) {
                 case 'input': {
                     const inputData = sourceNode.data as InputNodeData;
+                    const resolved = resolveInputParamByHandle(inputData.params, edge.sourceHandle);
+                    return resolved?.param.value ?? null;
+                }
+                case 'uiTokens': {
+                    const inputData = sourceNode.data as UiTokensNodeData;
                     const resolved = resolveInputParamByHandle(inputData.params, edge.sourceHandle);
                     return resolved?.param.value ?? null;
                 }
@@ -1851,8 +1872,8 @@ export class AudioEngine {
             if ('detune' in data && typeof data.detune === 'number') node.detune.setTargetAtTime(data.detune, currentTime, 0.01);
             if ('gain' in data && typeof data.gain === 'number') node.gain.setTargetAtTime(data.gain, currentTime, 0.01);
             if ('filterType' in data && typeof data.filterType === 'string') node.type = data.filterType as BiquadFilterType;
-        } else if (instance.type === 'input') {
-            const inputData = data as InputNodeData;
+        } else if (instance.type === 'input' || instance.type === 'uiTokens') {
+            const inputData = data as InputNodeData | UiTokensNodeData;
             if ('params' in inputData && instance.outputs) {
                 const outputs = instance.outputs;
                 inputData.params.forEach((param) => {

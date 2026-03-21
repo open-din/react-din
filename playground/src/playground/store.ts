@@ -27,6 +27,7 @@ import {
     createDefaultOutputData,
     createPlaygroundNode,
 } from './graphBuilders';
+import { normalizeUiTokensNodeData } from './uiTokens';
 
 // ============================================================================
 // Audio Node Data Types
@@ -237,6 +238,13 @@ export interface InputNodeData {
     [key: string]: unknown;
 }
 
+export interface UiTokensNodeData {
+    type: 'uiTokens';
+    params: InputParam[];
+    label: string;
+    [key: string]: unknown;
+}
+
 export type MathOperation =
     | 'add'
     | 'subtract'
@@ -441,6 +449,7 @@ export type AudioNodeData = (
     | StereoPannerNodeData
     | MixerNodeData
     | InputNodeData
+    | UiTokensNodeData
     | NoteNodeData
     | LFONodeData
     | TransportNodeData
@@ -613,6 +622,7 @@ const requiresConnectionRefresh = (
 ) => {
     if (!node) return false;
     if (node.data.type === 'input' && 'params' in data) return true;
+    if (node.data.type === 'uiTokens' && 'params' in data) return true;
     if (node.data.type === 'switch' && 'inputs' in data) return true;
     return false;
 };
@@ -980,6 +990,12 @@ export const useAudioGraphStore = create<AudioGraphState>((set, get) => ({
                         return {
                             ...node,
                             data: normalizeInputNodeData(node.id, nextData as InputNodeData),
+                        };
+                    }
+                    if (nextData.type === 'uiTokens') {
+                        return {
+                            ...node,
+                            data: normalizeUiTokensNodeData(nextData as UiTokensNodeData),
                         };
                     }
                     if (nextData.type === 'transport') {
