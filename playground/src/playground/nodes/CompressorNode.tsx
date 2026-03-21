@@ -12,6 +12,7 @@ const CompressorNode = memo(({ id, data, selected }: NodeProps) => {
     const ratioConnection = useTargetHandleConnection(id, 'ratio');
     const attackConnection = useTargetHandleConnection(id, 'attack');
     const releaseConnection = useTargetHandleConnection(id, 'release');
+    const sidechainStrengthConnection = useTargetHandleConnection(id, 'sidechainStrength');
 
     const handleChange = (key: keyof CompressorNodeData, value: number) => {
         updateNodeData(id, { [key]: value });
@@ -23,6 +24,7 @@ const CompressorNode = memo(({ id, data, selected }: NodeProps) => {
             <div className="node-header" style={{ justifyContent: 'space-between', position: 'relative', background: '#5fcd70' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <Handle type="target" position={Position.Left} id="in" className="handle handle-in handle-audio" style={{ left: '0px' }} />
+                    <Handle type="target" position={Position.Left} id="sidechainIn" className="handle handle-in handle-audio" style={{ top: '30px' }} />
                     <span className="node-icon">🗜️</span>
                     <span className="node-title">Compressor</span>
                 </div>
@@ -73,6 +75,22 @@ const CompressorNode = memo(({ id, data, selected }: NodeProps) => {
                         <input type="range" min="0" max="2" step="0.001" value={compressorData.release} onChange={(e) => handleChange('release', Number(e.target.value))} />
                     )}
                     <Handle type="target" position={Position.Left} id="release" className="handle handle-in handle-param" />
+                </div>
+                <div className="node-control">
+                    <label>SC Amount</label>
+                    {sidechainStrengthConnection.connected ? (
+                        <div className="node-connected-value">{formatConnectedValue(sidechainStrengthConnection.value)}</div>
+                    ) : (
+                        <input
+                            type="range"
+                            min="0"
+                            max="1"
+                            step="0.01"
+                            value={compressorData.sidechainStrength ?? 0.7}
+                            onChange={(e) => handleChange('sidechainStrength', Number(e.target.value))}
+                        />
+                    )}
+                    <Handle type="target" position={Position.Left} id="sidechainStrength" className="handle handle-in handle-param" />
                 </div>
             </div>
         </div>

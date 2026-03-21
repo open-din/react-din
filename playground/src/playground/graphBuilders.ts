@@ -116,7 +116,48 @@ export function createPlaygroundNode(
                 type: 'compressorNode',
                 position,
                 dragHandle: '.node-header',
-                data: { type: 'compressor', threshold: -24, knee: 30, ratio: 12, attack: 0.003, release: 0.25, label: 'Compressor' } as AudioNodeData,
+                data: {
+                    type: 'compressor',
+                    threshold: -24,
+                    knee: 30,
+                    ratio: 12,
+                    attack: 0.003,
+                    release: 0.25,
+                    sidechainStrength: 0.7,
+                    label: 'Compressor',
+                } as AudioNodeData,
+            };
+        case 'phaser':
+            return {
+                id,
+                type: 'phaserNode',
+                position,
+                dragHandle: '.node-header',
+                data: { type: 'phaser', rate: 0.5, depth: 0.5, feedback: 0.7, baseFrequency: 1000, stages: 4, mix: 0.5, label: 'Phaser' } as AudioNodeData,
+            };
+        case 'flanger':
+            return {
+                id,
+                type: 'flangerNode',
+                position,
+                dragHandle: '.node-header',
+                data: { type: 'flanger', rate: 0.2, depth: 2, feedback: 0.5, delay: 1, mix: 0.5, label: 'Flanger' } as AudioNodeData,
+            };
+        case 'tremolo':
+            return {
+                id,
+                type: 'tremoloNode',
+                position,
+                dragHandle: '.node-header',
+                data: { type: 'tremolo', rate: 4, depth: 0.5, waveform: 'sine', stereo: false, mix: 0.5, label: 'Tremolo' } as AudioNodeData,
+            };
+        case 'eq3':
+            return {
+                id,
+                type: 'eq3Node',
+                position,
+                dragHandle: '.node-header',
+                data: { type: 'eq3', low: 0, mid: 0, high: 0, lowFrequency: 400, highFrequency: 2500, mix: 1, label: 'EQ3' } as AudioNodeData,
             };
         case 'distortion':
             return {
@@ -213,6 +254,41 @@ export function createPlaygroundNode(
                 position,
                 dragHandle: '.node-header',
                 data: { type: 'mixer', inputs: 3, label: 'Mixer' } as AudioNodeData,
+            };
+        case 'auxSend':
+            return {
+                id,
+                type: 'auxSendNode',
+                position,
+                dragHandle: '.node-header',
+                data: { type: 'auxSend', busId: 'aux', sendGain: 0.5, tap: 'pre', label: 'Aux Send' } as AudioNodeData,
+            };
+        case 'auxReturn':
+            return {
+                id,
+                type: 'auxReturnNode',
+                position,
+                dragHandle: '.node-header',
+                data: { type: 'auxReturn', busId: 'aux', gain: 1, label: 'Aux Return' } as AudioNodeData,
+            };
+        case 'matrixMixer':
+            return {
+                id,
+                type: 'matrixMixerNode',
+                position,
+                dragHandle: '.node-header',
+                data: {
+                    type: 'matrixMixer',
+                    inputs: 4,
+                    outputs: 4,
+                    matrix: [
+                        [1, 0, 0, 0],
+                        [0, 1, 0, 0],
+                        [0, 0, 1, 0],
+                        [0, 0, 0, 1],
+                    ],
+                    label: 'Matrix Mixer',
+                } as AudioNodeData,
             };
         case 'input':
             return {

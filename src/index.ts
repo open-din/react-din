@@ -183,6 +183,10 @@ export {
     Reverb,
     Chorus,
     Distortion,
+    Phaser,
+    Flanger,
+    Tremolo,
+    EQ3,
 } from './effects';
 
 export type {
@@ -197,6 +201,22 @@ export type {
     TremoloProps,
     EQ3Props,
 } from './effects';
+
+// -----------------------------------------------------------------------------
+// Routing
+// -----------------------------------------------------------------------------
+export {
+    AuxSend,
+    AuxReturn,
+    MatrixMixer,
+} from './routing';
+
+export type {
+    RoutingNodeProps,
+    AuxSendProps,
+    AuxReturnProps,
+    MatrixMixerProps,
+} from './routing';
 
 // -----------------------------------------------------------------------------
 // Utils

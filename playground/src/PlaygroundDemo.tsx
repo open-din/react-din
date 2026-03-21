@@ -28,6 +28,10 @@ import {
     DelayNode,
     ReverbNode,
     CompressorNode,
+    PhaserNode,
+    FlangerNode,
+    TremoloNode,
+    EQ3Node,
     DistortionNode,
     ChorusNode,
     NoiseBurstNode,
@@ -37,6 +41,9 @@ import {
     StereoPannerNode,
     Panner3DNode,
     MixerNode,
+    AuxSendNode,
+    AuxReturnNode,
+    MatrixMixerNode,
     InputNode,
     UiTokensNode,
     ConstantSourceNode,
@@ -89,6 +96,10 @@ const nodeTypes: NodeTypes = {
     delayNode: DelayNode as NodeTypes[string],
     reverbNode: ReverbNode as NodeTypes[string],
     compressorNode: CompressorNode as NodeTypes[string],
+    phaserNode: PhaserNode as NodeTypes[string],
+    flangerNode: FlangerNode as NodeTypes[string],
+    tremoloNode: TremoloNode as NodeTypes[string],
+    eq3Node: EQ3Node as NodeTypes[string],
     distortionNode: DistortionNode as NodeTypes[string],
     chorusNode: ChorusNode as NodeTypes[string],
     noiseBurstNode: NoiseBurstNode as NodeTypes[string],
@@ -98,6 +109,9 @@ const nodeTypes: NodeTypes = {
     pannerNode: StereoPannerNode as NodeTypes[string],
     panner3dNode: Panner3DNode as NodeTypes[string],
     mixerNode: MixerNode as NodeTypes[string],
+    auxSendNode: AuxSendNode as NodeTypes[string],
+    auxReturnNode: AuxReturnNode as NodeTypes[string],
+    matrixMixerNode: MatrixMixerNode as NodeTypes[string],
     inputNode: InputNode as NodeTypes[string],
     uiTokensNode: UiTokensNode as NodeTypes[string],
     constantSourceNode: ConstantSourceNode as NodeTypes[string],
@@ -1477,6 +1491,10 @@ export const PlaygroundDemo: FC = () => {
                                         case 'delayNode': return '#4488ff';
                                         case 'reverbNode': return '#8844ff';
                                         case 'compressorNode': return '#5fcd70';
+                                        case 'phaserNode': return '#7a9cff';
+                                        case 'flangerNode': return '#7a9cff';
+                                        case 'tremoloNode': return '#7a9cff';
+                                        case 'eq3Node': return '#7a9cff';
                                         case 'distortionNode': return '#ff7f50';
                                         case 'chorusNode': return '#44ccff';
                                         case 'noiseBurstNode': return '#666666';
@@ -1486,6 +1504,9 @@ export const PlaygroundDemo: FC = () => {
                                         case 'pannerNode': return '#44cccc';
                                         case 'panner3dNode': return '#44cccc';
                                         case 'mixerNode': return '#ffaa44';
+                                        case 'auxSendNode': return '#ffaa44';
+                                        case 'auxReturnNode': return '#ffaa44';
+                                        case 'matrixMixerNode': return '#ffaa44';
                                         case 'uiTokensNode': return '#68a5ff';
                                         case 'constantSourceNode': return '#7bd1ff';
                                         case 'mediaStreamNode': return '#7bd1ff';

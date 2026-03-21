@@ -20,3 +20,7 @@ export type {
 export { Reverb } from './Reverb';
 export { Chorus } from './Chorus';
 export { Distortion } from './Distortion';
+export { Phaser } from './Phaser';
+export { Flanger } from './Flanger';
+export { Tremolo } from './Tremolo';
+export { EQ3 } from './EQ3';

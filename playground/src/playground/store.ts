@@ -98,6 +98,53 @@ export interface CompressorNodeData {
     ratio: number;
     attack: number;
     release: number;
+    sidechainStrength?: number;
+    label: string;
+    [key: string]: unknown;
+}
+
+export interface PhaserNodeData {
+    type: 'phaser';
+    rate: number;
+    depth: number;
+    feedback: number;
+    baseFrequency: number;
+    stages: number;
+    mix: number;
+    label: string;
+    [key: string]: unknown;
+}
+
+export interface FlangerNodeData {
+    type: 'flanger';
+    rate: number;
+    depth: number;
+    feedback: number;
+    delay: number;
+    mix: number;
+    label: string;
+    [key: string]: unknown;
+}
+
+export interface TremoloNodeData {
+    type: 'tremolo';
+    rate: number;
+    depth: number;
+    waveform: 'sine' | 'square' | 'triangle' | 'sawtooth';
+    stereo: boolean;
+    mix: number;
+    label: string;
+    [key: string]: unknown;
+}
+
+export interface EQ3NodeData {
+    type: 'eq3';
+    low: number;
+    mid: number;
+    high: number;
+    lowFrequency: number;
+    highFrequency: number;
+    mix: number;
     label: string;
     [key: string]: unknown;
 }
@@ -216,6 +263,32 @@ export interface StereoPannerNodeData {
 export interface MixerNodeData {
     type: 'mixer';
     inputs: number;
+    label: string;
+    [key: string]: unknown;
+}
+
+export interface AuxSendNodeData {
+    type: 'auxSend';
+    busId: string;
+    sendGain: number;
+    tap: 'pre' | 'post';
+    label: string;
+    [key: string]: unknown;
+}
+
+export interface AuxReturnNodeData {
+    type: 'auxReturn';
+    busId: string;
+    gain: number;
+    label: string;
+    [key: string]: unknown;
+}
+
+export interface MatrixMixerNodeData {
+    type: 'matrixMixer';
+    inputs: number;
+    outputs: number;
+    matrix: number[][];
     label: string;
     [key: string]: unknown;
 }
@@ -436,6 +509,10 @@ export type AudioNodeData = (
     | DelayNodeData
     | ReverbNodeData
     | CompressorNodeData
+    | PhaserNodeData
+    | FlangerNodeData
+    | TremoloNodeData
+    | EQ3NodeData
     | DistortionNodeData
     | ChorusNodeData
     | NoiseBurstNodeData
@@ -448,6 +525,9 @@ export type AudioNodeData = (
     | EventTriggerNodeData
     | StereoPannerNodeData
     | MixerNodeData
+    | AuxSendNodeData
+    | AuxReturnNodeData
+    | MatrixMixerNodeData
     | InputNodeData
     | UiTokensNodeData
     | NoteNodeData
@@ -624,6 +704,7 @@ const requiresConnectionRefresh = (
     if (node.data.type === 'input' && 'params' in data) return true;
     if (node.data.type === 'uiTokens' && 'params' in data) return true;
     if (node.data.type === 'switch' && 'inputs' in data) return true;
+    if (node.data.type === 'matrixMixer' && ('inputs' in data || 'outputs' in data)) return true;
     return false;
 };
 

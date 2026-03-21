@@ -3,6 +3,7 @@ import React, { createRef } from 'react';
 import {
     ADSR,
     AudioProvider,
+    AuxSend,
     Compressor,
     Delay,
     Filter,
@@ -46,8 +47,13 @@ describe('library audio node components', () => {
 
         render(
             <AudioProvider>
+                <AuxSend busId="duck" sendGain={0.8}>
+                    <Osc autoStart frequency={2} />
+                </AuxSend>
                 <Gain gain={0.5} nodeRef={gainRef}>
-                    <FilterHarness />
+                    <Compressor sidechainBusId="duck" sidechainStrength={0.6}>
+                        <FilterHarness />
+                    </Compressor>
                 </Gain>
             </AudioProvider>
         );

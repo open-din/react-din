@@ -1,7 +1,8 @@
-import { useEffect, type FC } from 'react';
+import { useEffect, useRef, type FC } from 'react';
 import type { CompressorProps } from './types';
-import { useAudioNode, useAudioParam } from './useAudioNode';
-import { AudioOutProvider } from '../core/AudioOutContext';
+import { useAudio } from '../core/AudioProvider';
+import { useAudioOut, AudioOutProvider } from '../core/AudioOutContext';
+import { getOrCreateBusNode } from '../routing/busRegistry';
 
 /**
  * DynamicsCompressor node component for dynamic range compression.
@@ -28,29 +29,109 @@ export const Compressor: FC<CompressorProps> = ({
     ratio = 12,
     attack = 0.003,
     release = 0.25,
+    sidechainBusId,
+    sidechainStrength = 0.7,
     id,
 }) => {
-    const { nodeRef, context } = useAudioNode<DynamicsCompressorNode>({
-        createNode: (ctx) => ctx.createDynamicsCompressor(),
-        bypass,
-    });
+    const { context } = useAudio();
+    const { outputNode } = useAudioOut();
+    const inputRef = useRef<GainNode | null>(null);
+    const duckGainRef = useRef<GainNode | null>(null);
+    const compressorRef = useRef<DynamicsCompressorNode | null>(null);
 
-    // Sync external ref
     useEffect(() => {
-        if (externalRef) {
-            (externalRef as React.MutableRefObject<DynamicsCompressorNode | null>).current = nodeRef.current;
-        }
-    }, [externalRef, nodeRef.current]);
+        if (!context || !outputNode) return;
 
-    // Apply parameters
-    useAudioParam(nodeRef.current?.threshold, threshold);
-    useAudioParam(nodeRef.current?.knee, knee);
-    useAudioParam(nodeRef.current?.ratio, ratio);
-    useAudioParam(nodeRef.current?.attack, attack);
-    useAudioParam(nodeRef.current?.release, release);
+        const input = context.createGain();
+        const duckGain = context.createGain();
+        const compressor = context.createDynamicsCompressor();
+
+        duckGain.gain.value = 1;
+
+        input.connect(duckGain);
+        duckGain.connect(compressor);
+        compressor.connect(outputNode);
+
+        inputRef.current = input;
+        duckGainRef.current = duckGain;
+        compressorRef.current = compressor;
+
+        if (externalRef) {
+            (externalRef as React.MutableRefObject<DynamicsCompressorNode | null>).current = compressor;
+        }
+
+        return () => {
+            try { input.disconnect(); } catch { /* noop */ }
+            try { duckGain.disconnect(); } catch { /* noop */ }
+            try { compressor.disconnect(); } catch { /* noop */ }
+            inputRef.current = null;
+            duckGainRef.current = null;
+            compressorRef.current = null;
+            if (externalRef) {
+                (externalRef as React.MutableRefObject<DynamicsCompressorNode | null>).current = null;
+            }
+        };
+    }, [context, outputNode, externalRef]);
+
+    useEffect(() => {
+        if (!context || !compressorRef.current) return;
+        const currentTime = context.currentTime;
+        compressorRef.current.threshold.setTargetAtTime(threshold, currentTime, 0.01);
+        compressorRef.current.knee.setTargetAtTime(knee, currentTime, 0.01);
+        compressorRef.current.ratio.setTargetAtTime(ratio, currentTime, 0.01);
+        compressorRef.current.attack.setTargetAtTime(attack, currentTime, 0.01);
+        compressorRef.current.release.setTargetAtTime(release, currentTime, 0.01);
+    }, [context, threshold, knee, ratio, attack, release]);
+
+    useEffect(() => {
+        if (!context || !duckGainRef.current) return;
+        if (!sidechainBusId) {
+            duckGainRef.current.gain.setTargetAtTime(1, context.currentTime, 0.02);
+            return;
+        }
+
+        const busNode = getOrCreateBusNode(context, sidechainBusId);
+        const analyser = context.createAnalyser();
+        analyser.fftSize = 256;
+        analyser.smoothingTimeConstant = 0.85;
+        const waveform = new Float32Array(analyser.fftSize);
+
+        busNode.connect(analyser);
+
+        const intervalId = window.setInterval(() => {
+            if (!duckGainRef.current) return;
+            analyser.getFloatTimeDomainData(waveform);
+            let sumSquares = 0;
+            for (let i = 0; i < waveform.length; i++) {
+                const sample = waveform[i];
+                sumSquares += sample * sample;
+            }
+
+            const rms = Math.sqrt(sumSquares / waveform.length);
+            const levelDb = 20 * Math.log10(Math.max(rms, 0.0001));
+            const overThreshold = Math.max(0, levelDb - threshold);
+            const normalized = Math.min(1, overThreshold / 24);
+            const ducking = normalized * Math.max(0, Math.min(1, sidechainStrength));
+            const targetGain = Math.max(0.05, 1 - ducking);
+            duckGainRef.current.gain.setTargetAtTime(
+                targetGain,
+                context.currentTime,
+                Math.max(0.005, attack || 0.005)
+            );
+        }, 20);
+
+        return () => {
+            window.clearInterval(intervalId);
+            try { busNode.disconnect(analyser); } catch { /* noop */ }
+            try { analyser.disconnect(); } catch { /* noop */ }
+            if (duckGainRef.current) {
+                duckGainRef.current.gain.setTargetAtTime(1, context.currentTime, Math.max(0.005, release || 0.005));
+            }
+        };
+    }, [context, sidechainBusId, sidechainStrength, threshold, attack, release]);
 
     return (
-        <AudioOutProvider node={bypass ? null : nodeRef.current}>
+        <AudioOutProvider node={bypass ? outputNode : inputRef.current}>
             {children}
         </AudioOutProvider>
     );

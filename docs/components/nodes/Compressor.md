@@ -4,7 +4,7 @@
 Apply dynamic range compression to child audio.
 
 ## Props / Handles
-- Key props: `threshold`, `knee`, `ratio`, `attack`, `release`, `bypass`, `nodeRef`.
+- Key props: `threshold`, `knee`, `ratio`, `attack`, `release`, `sidechainBusId`, `sidechainStrength`, `bypass`, `nodeRef`.
 - Wrap any audio subtree that needs level taming.
 
 ## Defaults
@@ -13,10 +13,12 @@ Apply dynamic range compression to child audio.
 
 ## Integration Notes
 - Place late in a signal chain before the output bus.
+- Set `sidechainBusId` to duck against an aux bus published with `AuxSend`.
 - Combine with analyzer coverage for level checks.
 
 ## Failure Modes
 - Over-compression can mute transient detail.
+- Invalid sidechain bus IDs leave ducking inactive.
 - Missing provider context leaves the compressor inactive.
 
 ## Example

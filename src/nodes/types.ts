@@ -267,6 +267,19 @@ export interface CompressorProps extends AudioNodeProps {
     release?: number;
 
     /**
+     * Optional sidechain bus identifier.
+     * When set, the compressor listens to the matching aux bus and applies
+     * ducking gain reduction to its main input.
+     */
+    sidechainBusId?: string;
+
+    /**
+     * Strength of sidechain ducking (0-1).
+     * @default 0.7
+     */
+    sidechainStrength?: number;
+
+    /**
      * Override nodeRef type for DynamicsCompressorNode specifically.
      */
     nodeRef?: RefObject<DynamicsCompressorNode | null>;

@@ -245,6 +245,69 @@
       "scenarios": ["F01-S03", "F04-S02"]
     },
     {
+      "id": "component:Phaser",
+      "kind": "public-component",
+      "name": "Phaser",
+      "source": "src/effects/Phaser.tsx",
+      "docs": "docs/components/effects/Phaser.md",
+      "tests": ["tests/library/sources-effects.spec.tsx"],
+      "scenarios": ["F01-S03", "F03-S05", "F04-S02"]
+    },
+    {
+      "id": "component:Flanger",
+      "kind": "public-component",
+      "name": "Flanger",
+      "source": "src/effects/Flanger.tsx",
+      "docs": "docs/components/effects/Flanger.md",
+      "tests": ["tests/library/sources-effects.spec.tsx"],
+      "scenarios": ["F01-S03", "F03-S05", "F04-S02"]
+    },
+    {
+      "id": "component:Tremolo",
+      "kind": "public-component",
+      "name": "Tremolo",
+      "source": "src/effects/Tremolo.tsx",
+      "docs": "docs/components/effects/Tremolo.md",
+      "tests": ["tests/library/sources-effects.spec.tsx"],
+      "scenarios": ["F01-S03", "F03-S05", "F04-S02"]
+    },
+    {
+      "id": "component:EQ3",
+      "kind": "public-component",
+      "name": "EQ3",
+      "source": "src/effects/EQ3.tsx",
+      "docs": "docs/components/effects/EQ3.md",
+      "tests": ["tests/library/sources-effects.spec.tsx"],
+      "scenarios": ["F01-S03", "F03-S05", "F04-S02"]
+    },
+    {
+      "id": "component:AuxSend",
+      "kind": "public-component",
+      "name": "AuxSend",
+      "source": "src/routing/AuxSend.tsx",
+      "docs": "docs/components/routing/AuxSend.md",
+      "tests": ["tests/library/sources-effects.spec.tsx", "tests/library/audio-nodes.spec.tsx"],
+      "scenarios": ["F01-S03", "F03-S06", "F04-S02"]
+    },
+    {
+      "id": "component:AuxReturn",
+      "kind": "public-component",
+      "name": "AuxReturn",
+      "source": "src/routing/AuxReturn.tsx",
+      "docs": "docs/components/routing/AuxReturn.md",
+      "tests": ["tests/library/sources-effects.spec.tsx"],
+      "scenarios": ["F01-S03", "F03-S06", "F04-S02"]
+    },
+    {
+      "id": "component:MatrixMixer",
+      "kind": "public-component",
+      "name": "MatrixMixer",
+      "source": "src/routing/MatrixMixer.tsx",
+      "docs": "docs/components/routing/MatrixMixer.md",
+      "tests": ["tests/library/sources-effects.spec.tsx"],
+      "scenarios": ["F01-S03", "F03-S06", "F04-S02"]
+    },
+    {
       "id": "playground-node:OscNode",
       "kind": "playground-node",
       "name": "OscNode",
@@ -331,8 +394,44 @@
       "name": "CompressorNode",
       "source": "playground/src/playground/nodes/CompressorNode.tsx",
       "docs": "docs/playground-nodes/CompressorNode.md",
+      "tests": ["playground/tests/unit/nodes-ui.spec.tsx", "playground/tests/unit/store-and-codegen.spec.ts", "playground/tests/unit/node-helpers.spec.ts"],
+      "scenarios": ["F02-S01", "F03-S06", "F04-S02"]
+    },
+    {
+      "id": "playground-node:PhaserNode",
+      "kind": "playground-node",
+      "name": "PhaserNode",
+      "source": "playground/src/playground/nodes/PhaserNode.tsx",
+      "docs": "docs/playground-nodes/PhaserNode.md",
       "tests": ["playground/tests/unit/nodes-ui.spec.tsx", "playground/tests/unit/store-and-codegen.spec.ts"],
-      "scenarios": ["F02-S01", "F04-S02"]
+      "scenarios": ["F02-S01", "F03-S05", "F04-S02"]
+    },
+    {
+      "id": "playground-node:FlangerNode",
+      "kind": "playground-node",
+      "name": "FlangerNode",
+      "source": "playground/src/playground/nodes/FlangerNode.tsx",
+      "docs": "docs/playground-nodes/FlangerNode.md",
+      "tests": ["playground/tests/unit/nodes-ui.spec.tsx", "playground/tests/unit/store-and-codegen.spec.ts"],
+      "scenarios": ["F02-S01", "F03-S05", "F04-S02"]
+    },
+    {
+      "id": "playground-node:TremoloNode",
+      "kind": "playground-node",
+      "name": "TremoloNode",
+      "source": "playground/src/playground/nodes/TremoloNode.tsx",
+      "docs": "docs/playground-nodes/TremoloNode.md",
+      "tests": ["playground/tests/unit/nodes-ui.spec.tsx", "playground/tests/unit/store-and-codegen.spec.ts"],
+      "scenarios": ["F02-S01", "F03-S05", "F04-S02"]
+    },
+    {
+      "id": "playground-node:EQ3Node",
+      "kind": "playground-node",
+      "name": "EQ3Node",
+      "source": "playground/src/playground/nodes/EQ3Node.tsx",
+      "docs": "docs/playground-nodes/EQ3Node.md",
+      "tests": ["playground/tests/unit/nodes-ui.spec.tsx", "playground/tests/unit/store-and-codegen.spec.ts"],
+      "scenarios": ["F02-S01", "F03-S05", "F04-S02"]
     },
     {
       "id": "playground-node:ConstantSourceNode",
@@ -423,6 +522,33 @@
       "docs": "docs/playground-nodes/MixerNode.md",
       "tests": ["playground/tests/unit/nodes-ui.spec.tsx", "playground/tests/unit/store-and-codegen.spec.ts"],
       "scenarios": ["F02-S01", "F04-S02"]
+    },
+    {
+      "id": "playground-node:AuxSendNode",
+      "kind": "playground-node",
+      "name": "AuxSendNode",
+      "source": "playground/src/playground/nodes/AuxSendNode.tsx",
+      "docs": "docs/playground-nodes/AuxSendNode.md",
+      "tests": ["playground/tests/unit/nodes-ui.spec.tsx", "playground/tests/unit/store-and-codegen.spec.ts"],
+      "scenarios": ["F02-S01", "F03-S06", "F04-S02"]
+    },
+    {
+      "id": "playground-node:AuxReturnNode",
+      "kind": "playground-node",
+      "name": "AuxReturnNode",
+      "source": "playground/src/playground/nodes/AuxReturnNode.tsx",
+      "docs": "docs/playground-nodes/AuxReturnNode.md",
+      "tests": ["playground/tests/unit/nodes-ui.spec.tsx", "playground/tests/unit/store-and-codegen.spec.ts"],
+      "scenarios": ["F02-S01", "F03-S06", "F04-S02"]
+    },
+    {
+      "id": "playground-node:MatrixMixerNode",
+      "kind": "playground-node",
+      "name": "MatrixMixerNode",
+      "source": "playground/src/playground/nodes/MatrixMixerNode.tsx",
+      "docs": "docs/playground-nodes/MatrixMixerNode.md",
+      "tests": ["playground/tests/unit/nodes-ui.spec.tsx", "playground/tests/unit/store-and-codegen.spec.ts", "playground/tests/unit/node-helpers.spec.ts"],
+      "scenarios": ["F02-S01", "F03-S06", "F04-S02"]
     },
     {
       "id": "playground-node:InputNode",

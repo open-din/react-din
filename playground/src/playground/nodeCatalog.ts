@@ -4,6 +4,7 @@ import type {
     UiTokensNodeData,
     MathNodeData,
     SwitchNodeData,
+    MatrixMixerNodeData,
 } from './store';
 import { getInputParamHandleId } from './handleIds';
 
@@ -90,6 +91,10 @@ export const PLAYGROUND_NODE_CATALOG: NodeCatalogEntry[] = [
     { type: 'compressor', category: 'Effects', label: 'Compressor', icon: '🗜️', color: '#44cc44' },
     { type: 'delay', category: 'Effects', label: 'Delay', icon: '⏱️', color: '#4488ff' },
     { type: 'reverb', category: 'Effects', label: 'Reverb', icon: '🏛️', color: '#8844ff' },
+    { type: 'phaser', category: 'Effects', label: 'Phaser', icon: '🌀', color: '#7a9cff' },
+    { type: 'flanger', category: 'Effects', label: 'Flanger', icon: '🧵', color: '#7a9cff' },
+    { type: 'tremolo', category: 'Effects', label: 'Tremolo', icon: '〰️', color: '#7a9cff' },
+    { type: 'eq3', category: 'Effects', label: 'EQ3', icon: '🎚️', color: '#7a9cff' },
     { type: 'distortion', category: 'Effects', label: 'Distortion', icon: '🔥', color: '#ff7f50' },
     { type: 'chorus', category: 'Effects', label: 'Chorus', icon: '🌊', color: '#44ccff' },
     { type: 'waveShaper', category: 'Effects', label: 'WaveShaper', icon: '∿', color: '#ff7f50' },
@@ -98,6 +103,9 @@ export const PLAYGROUND_NODE_CATALOG: NodeCatalogEntry[] = [
     { type: 'panner', category: 'Effects', label: 'Pan', icon: '↔️', color: '#44ffff' },
     { type: 'panner3d', category: 'Effects', label: 'Panner 3D', icon: '🧭', color: '#44ffff' },
     { type: 'mixer', category: 'Routing', label: 'Mixer', icon: '⊕', color: '#ffaa44' },
+    { type: 'auxSend', category: 'Routing', label: 'Aux Send', icon: '↗️', color: '#ffaa44' },
+    { type: 'auxReturn', category: 'Routing', label: 'Aux Return', icon: '↘️', color: '#ffaa44' },
+    { type: 'matrixMixer', category: 'Routing', label: 'Matrix Mixer', icon: '▦', color: '#ffaa44' },
     { type: 'output', category: 'Routing', label: 'Output', icon: '🔊', color: '#ff4466', singleton: true },
     { type: 'math', category: 'Math', label: 'Math', icon: 'fx', color: '#7bd1ff' },
     { type: 'compare', category: 'Math', label: 'Compare', icon: '>=', color: '#7bd1ff' },
@@ -170,12 +178,50 @@ const DEFAULT_HANDLES_BY_TYPE: Record<PlaygroundNodeType, HandleDescriptor[]> = 
     ],
     compressor: [
         { id: 'in', direction: 'target', label: 'In' },
+        { id: 'sidechainIn', direction: 'target', label: 'Sidechain' },
         { id: 'out', direction: 'source', label: 'Out' },
         { id: 'threshold', direction: 'target', label: 'Threshold' },
         { id: 'knee', direction: 'target', label: 'Knee' },
         { id: 'ratio', direction: 'target', label: 'Ratio' },
         { id: 'attack', direction: 'target', label: 'Attack' },
         { id: 'release', direction: 'target', label: 'Release' },
+        { id: 'sidechainStrength', direction: 'target', label: 'SC Amt' },
+    ],
+    phaser: [
+        { id: 'in', direction: 'target', label: 'In' },
+        { id: 'out', direction: 'source', label: 'Out' },
+        { id: 'rate', direction: 'target', label: 'Rate' },
+        { id: 'depth', direction: 'target', label: 'Depth' },
+        { id: 'feedback', direction: 'target', label: 'Feedback' },
+        { id: 'baseFrequency', direction: 'target', label: 'Base Freq' },
+        { id: 'stages', direction: 'target', label: 'Stages' },
+        { id: 'mix', direction: 'target', label: 'Mix' },
+    ],
+    flanger: [
+        { id: 'in', direction: 'target', label: 'In' },
+        { id: 'out', direction: 'source', label: 'Out' },
+        { id: 'rate', direction: 'target', label: 'Rate' },
+        { id: 'depth', direction: 'target', label: 'Depth' },
+        { id: 'feedback', direction: 'target', label: 'Feedback' },
+        { id: 'delay', direction: 'target', label: 'Delay' },
+        { id: 'mix', direction: 'target', label: 'Mix' },
+    ],
+    tremolo: [
+        { id: 'in', direction: 'target', label: 'In' },
+        { id: 'out', direction: 'source', label: 'Out' },
+        { id: 'rate', direction: 'target', label: 'Rate' },
+        { id: 'depth', direction: 'target', label: 'Depth' },
+        { id: 'mix', direction: 'target', label: 'Mix' },
+    ],
+    eq3: [
+        { id: 'in', direction: 'target', label: 'In' },
+        { id: 'out', direction: 'source', label: 'Out' },
+        { id: 'low', direction: 'target', label: 'Low' },
+        { id: 'mid', direction: 'target', label: 'Mid' },
+        { id: 'high', direction: 'target', label: 'High' },
+        { id: 'lowFrequency', direction: 'target', label: 'Low Freq' },
+        { id: 'highFrequency', direction: 'target', label: 'High Freq' },
+        { id: 'mix', direction: 'target', label: 'Mix' },
     ],
     distortion: [
         { id: 'in', direction: 'target', label: 'In' },
@@ -251,6 +297,22 @@ const DEFAULT_HANDLES_BY_TYPE: Record<PlaygroundNodeType, HandleDescriptor[]> = 
         { id: 'in1', direction: 'target', label: 'In 1' },
         { id: 'in2', direction: 'target', label: 'In 2' },
         { id: 'in3', direction: 'target', label: 'In 3' },
+        { id: 'out', direction: 'source', label: 'Out' },
+    ],
+    auxSend: [
+        { id: 'in', direction: 'target', label: 'In' },
+        { id: 'out', direction: 'source', label: 'Out' },
+        { id: 'sendGain', direction: 'target', label: 'Send' },
+    ],
+    auxReturn: [
+        { id: 'out', direction: 'source', label: 'Out' },
+        { id: 'gain', direction: 'target', label: 'Gain' },
+    ],
+    matrixMixer: [
+        { id: 'in1', direction: 'target', label: 'In 1' },
+        { id: 'in2', direction: 'target', label: 'In 2' },
+        { id: 'in3', direction: 'target', label: 'In 3' },
+        { id: 'in4', direction: 'target', label: 'In 4' },
         { id: 'out', direction: 'source', label: 'Out' },
     ],
     output: [
@@ -336,6 +398,30 @@ export function getNodeHandleDescriptors(data: AudioNodeData): HandleDescriptor[
                     label: `In ${index + 1}`,
                 })),
             ];
+        }
+        case 'matrixMixer': {
+            const matrixData = data as MatrixMixerNodeData;
+            const inputs = Math.min(Math.max(matrixData.inputs || 4, 2), 8);
+            const outputs = Math.min(Math.max(matrixData.outputs || 4, 2), 8);
+            const handles: HandleDescriptor[] = [
+                ...Array.from({ length: inputs }, (_, index) => ({
+                    id: `in${index + 1}`,
+                    direction: 'target' as const,
+                    label: `In ${index + 1}`,
+                })),
+                { id: 'out', direction: 'source', label: 'Out' },
+            ];
+
+            for (let row = 0; row < inputs; row++) {
+                for (let column = 0; column < outputs; column++) {
+                    handles.push({
+                        id: `cell:${row}:${column}`,
+                        direction: 'target',
+                        label: `M${row + 1}${column + 1}`,
+                    });
+                }
+            }
+            return handles;
         }
         default:
             return DEFAULT_HANDLES_BY_TYPE[data.type];

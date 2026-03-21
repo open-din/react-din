@@ -79,6 +79,10 @@ const AUDIO_NODE_TYPES = new Set<AudioNodeData['type']>([
     'delay',
     'reverb',
     'compressor',
+    'phaser',
+    'flanger',
+    'tremolo',
+    'eq3',
     'distortion',
     'chorus',
     'noiseBurst',
@@ -88,6 +92,9 @@ const AUDIO_NODE_TYPES = new Set<AudioNodeData['type']>([
     'panner3d',
     'panner',
     'mixer',
+    'auxSend',
+    'auxReturn',
+    'matrixMixer',
     'noise',
     'constantSource',
     'mediaStream',
@@ -135,6 +142,7 @@ const MODULATION_TARGET_HANDLES = new Set([
     'threshold',
     'knee',
     'ratio',
+    'sidechainStrength',
     'level',
     'tone',
     'drive',
@@ -147,6 +155,14 @@ const MODULATION_TARGET_HANDLES = new Set([
     'maxDistance',
     'rolloffFactor',
     'token',
+    'low',
+    'mid',
+    'high',
+    'lowFrequency',
+    'highFrequency',
+    'baseFrequency',
+    'stages',
+    'sendGain',
     'value',
     'min',
     'max',
@@ -265,6 +281,15 @@ export function canConnect(
     const sourceHandle = connection.sourceHandle ?? '';
     const targetHandle = connection.targetHandle;
 
+    if (
+        isAudioNodeType(sourceType)
+        && sourceHandle === 'out'
+        && targetType === 'compressor'
+        && targetHandle === 'sidechainIn'
+    ) {
+        return true;
+    }
+
     if (sourceType === 'transport') {
         return sourceHandle === 'out'
             && targetHandle === 'transport'
@@ -292,6 +317,7 @@ export function canConnect(
         if (sourceHandle === 'velocity') {
             return targetHandle !== 'transport'
                 && targetHandle !== 'in'
+                && targetHandle !== 'sidechainIn'
                 && !targetHandle.startsWith('in');
         }
         return false;
@@ -307,19 +333,23 @@ export function canConnect(
             && targetHandle !== 'trigger'
             && targetHandle !== 'gate'
             && targetHandle !== 'in'
+            && targetHandle !== 'sidechainIn'
             && !targetHandle.startsWith('in');
     }
 
     if (sourceType === 'lfo') {
-        return sourceHandle === 'out' && MODULATION_TARGET_HANDLES.has(targetHandle);
+        return sourceHandle === 'out'
+            && (MODULATION_TARGET_HANDLES.has(targetHandle) || targetHandle.startsWith('cell:'));
     }
 
     if (sourceType === 'adsr') {
-        return sourceHandle === 'envelope' && MODULATION_TARGET_HANDLES.has(targetHandle);
+        return sourceHandle === 'envelope'
+            && (MODULATION_TARGET_HANDLES.has(targetHandle) || targetHandle.startsWith('cell:'));
     }
 
     if (sourceType === 'constantSource') {
-        return sourceHandle === 'out' && MODULATION_TARGET_HANDLES.has(targetHandle);
+        return sourceHandle === 'out'
+            && (MODULATION_TARGET_HANDLES.has(targetHandle) || targetHandle.startsWith('cell:'));
     }
 
     if (isDataNodeType(sourceType)) {
@@ -328,6 +358,7 @@ export function canConnect(
             && targetHandle !== 'trigger'
             && targetHandle !== 'gate'
             && targetHandle !== 'in'
+            && targetHandle !== 'sidechainIn'
             && !targetHandle.startsWith('in');
     }
 

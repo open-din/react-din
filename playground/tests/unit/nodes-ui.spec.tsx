@@ -17,11 +17,18 @@ import ReverbNode from '../../src/playground/nodes/ReverbNode';
 import StereoPannerNode from '../../src/playground/nodes/StereoPannerNode';
 import DistortionNode from '../../src/playground/nodes/DistortionNode';
 import ChorusNode from '../../src/playground/nodes/ChorusNode';
+import PhaserNode from '../../src/playground/nodes/PhaserNode';
+import FlangerNode from '../../src/playground/nodes/FlangerNode';
+import TremoloNode from '../../src/playground/nodes/TremoloNode';
+import EQ3Node from '../../src/playground/nodes/EQ3Node';
 import NoiseBurstNode from '../../src/playground/nodes/NoiseBurstNode';
 import WaveShaperNode from '../../src/playground/nodes/WaveShaperNode';
 import ConvolverNode from '../../src/playground/nodes/ConvolverNode';
 import AnalyzerNode from '../../src/playground/nodes/AnalyzerNode';
 import Panner3DNode from '../../src/playground/nodes/Panner3DNode';
+import AuxSendNode from '../../src/playground/nodes/AuxSendNode';
+import AuxReturnNode from '../../src/playground/nodes/AuxReturnNode';
+import MatrixMixerNode from '../../src/playground/nodes/MatrixMixerNode';
 import ConstantSourceNode from '../../src/playground/nodes/ConstantSourceNode';
 import MediaStreamNode from '../../src/playground/nodes/MediaStreamNode';
 import EventTriggerNode from '../../src/playground/nodes/EventTriggerNode';
@@ -338,14 +345,25 @@ describe('playground node UIs', () => {
 
         render(
             <div>
-                <CompressorNode {...(sharedProps as any)} id="compressor-1" data={{ type: 'compressor', threshold: -24, knee: 30, ratio: 12, attack: 0.003, release: 0.25, label: 'Compressor' }} />
+                <CompressorNode {...(sharedProps as any)} id="compressor-1" data={{ type: 'compressor', threshold: -24, knee: 30, ratio: 12, attack: 0.003, release: 0.25, sidechainStrength: 0.7, label: 'Compressor' }} />
                 <DistortionNode {...(sharedProps as any)} id="distortion-1" data={{ type: 'distortion', distortionType: 'soft', drive: 0.4, level: 0.6, mix: 0.5, tone: 3200, label: 'Distortion' }} />
                 <ChorusNode {...(sharedProps as any)} id="chorus-1" data={{ type: 'chorus', rate: 1.2, depth: 2.4, feedback: 0.2, delay: 18, mix: 0.3, stereo: true, label: 'Chorus' }} />
+                <PhaserNode {...(sharedProps as any)} id="phaser-1" data={{ type: 'phaser', rate: 0.5, depth: 0.5, feedback: 0.7, baseFrequency: 1000, stages: 4, mix: 0.5, label: 'Phaser' }} />
+                <FlangerNode {...(sharedProps as any)} id="flanger-1" data={{ type: 'flanger', rate: 0.2, depth: 2, feedback: 0.5, delay: 1, mix: 0.5, label: 'Flanger' }} />
+                <TremoloNode {...(sharedProps as any)} id="tremolo-1" data={{ type: 'tremolo', rate: 4, depth: 0.5, waveform: 'sine', stereo: false, mix: 0.5, label: 'Tremolo' }} />
+                <EQ3Node {...(sharedProps as any)} id="eq3-1" data={{ type: 'eq3', low: 0, mid: 0, high: 0, lowFrequency: 400, highFrequency: 2500, mix: 1, label: 'EQ3' }} />
                 <NoiseBurstNode {...(sharedProps as any)} id="noise-burst-1" data={{ type: 'noiseBurst', noiseType: 'white', duration: 0.06, gain: 0.7, attack: 0.001, release: 0.02, label: 'Noise Burst' }} />
                 <WaveShaperNode {...(sharedProps as any)} id="wave-shaper-1" data={{ type: 'waveShaper', amount: 0.45, preset: 'softClip', oversample: '2x', label: 'WaveShaper' }} />
                 <ConvolverNode {...(sharedProps as any)} id="convolver-1" data={{ type: 'convolver', impulseSrc: '/impulses/plate.wav', normalize: true, label: 'Convolver' }} />
                 <AnalyzerNode {...(sharedProps as any)} id="analyzer-1" data={{ type: 'analyzer', fftSize: 1024, smoothingTimeConstant: 0.8, updateRate: 60, autoUpdate: true, label: 'Analyzer' }} />
                 <Panner3DNode {...(sharedProps as any)} id="panner3d-1" data={{ type: 'panner3d', positionX: 0, positionY: 0, positionZ: -1, refDistance: 1, maxDistance: 10000, rolloffFactor: 1, panningModel: 'HRTF', distanceModel: 'inverse', label: 'Panner 3D' }} />
+                <AuxSendNode {...(sharedProps as any)} id="aux-send-1" data={{ type: 'auxSend', busId: 'aux', sendGain: 0.5, tap: 'pre', label: 'Aux Send' }} />
+                <AuxReturnNode {...(sharedProps as any)} id="aux-return-1" data={{ type: 'auxReturn', busId: 'aux', gain: 1, label: 'Aux Return' }} />
+                <MatrixMixerNode
+                    {...(sharedProps as any)}
+                    id="matrix-1"
+                    data={{ type: 'matrixMixer', inputs: 2, outputs: 2, matrix: [[1, 0], [0, 1]], label: 'Matrix Mixer' }}
+                />
                 <ConstantSourceNode {...(sharedProps as any)} id="constant-source-1" data={{ type: 'constantSource', offset: 1, label: 'Constant Source' }} />
                 <MediaStreamNode {...(sharedProps as any)} id="media-stream-1" data={{ type: 'mediaStream', requestMic: false, label: 'Media Stream' }} />
                 <EventTriggerNode {...(sharedProps as any)} id="event-trigger-1" data={{ type: 'eventTrigger', token: 0, mode: 'change', cooldownMs: 40, velocity: 1, duration: 0.1, note: 60, trackId: 'event', label: 'Event Trigger' }} />
@@ -355,13 +373,28 @@ describe('playground node UIs', () => {
         expect(screen.getByTestId('handle-threshold')).toBeInTheDocument();
         expect(screen.getByTestId('handle-knee')).toBeInTheDocument();
         expect(screen.getByTestId('handle-ratio')).toBeInTheDocument();
+        expect(screen.getByTestId('handle-sidechainIn')).toBeInTheDocument();
+        expect(screen.getByTestId('handle-sidechainStrength')).toBeInTheDocument();
         expect(screen.getByTestId('handle-drive')).toBeInTheDocument();
         expect(screen.getByTestId('handle-level')).toBeInTheDocument();
         expect(screen.getAllByTestId('handle-mix').length).toBeGreaterThan(0);
         expect(screen.getByTestId('handle-tone')).toBeInTheDocument();
-        expect(screen.getByTestId('handle-rate')).toBeInTheDocument();
-        expect(screen.getByTestId('handle-depth')).toBeInTheDocument();
-        expect(screen.getByTestId('handle-delay')).toBeInTheDocument();
+        expect(screen.getAllByTestId('handle-rate').length).toBeGreaterThan(0);
+        expect(screen.getAllByTestId('handle-depth').length).toBeGreaterThan(0);
+        expect(screen.getByTestId('handle-baseFrequency')).toBeInTheDocument();
+        expect(screen.getByTestId('handle-stages')).toBeInTheDocument();
+        expect(screen.getAllByTestId('handle-delay').length).toBeGreaterThan(0);
+        expect(screen.getByTestId('handle-low')).toBeInTheDocument();
+        expect(screen.getByTestId('handle-mid')).toBeInTheDocument();
+        expect(screen.getByTestId('handle-high')).toBeInTheDocument();
+        expect(screen.getByTestId('handle-lowFrequency')).toBeInTheDocument();
+        expect(screen.getByTestId('handle-highFrequency')).toBeInTheDocument();
+        expect(screen.getByTestId('handle-sendGain')).toBeInTheDocument();
+        expect(screen.getAllByTestId('handle-gain').length).toBeGreaterThan(0);
+        expect(screen.getByTestId('handle-in1')).toBeInTheDocument();
+        expect(screen.getByTestId('handle-in2')).toBeInTheDocument();
+        expect(screen.getByTestId('handle-cell:0:0')).toBeInTheDocument();
+        expect(screen.getByTestId('handle-cell:1:1')).toBeInTheDocument();
         expect(screen.getAllByTestId('handle-trigger').length).toBeGreaterThan(0);
         expect(screen.getByTestId('handle-duration')).toBeInTheDocument();
         expect(screen.getByTestId('handle-amount')).toBeInTheDocument();

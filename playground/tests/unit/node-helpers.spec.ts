@@ -6,6 +6,7 @@ import type { AudioNodeData } from '../../src/playground/store';
 import {
     getCompatibleExistingHandleMatches,
     getCompatibleNodeSuggestions,
+    canConnect,
     normalizeTransportNodeData,
     normalizeConnectionFromStart,
 } from '../../src/playground/nodeHelpers';
@@ -213,5 +214,50 @@ describe('playground connection assist helpers', () => {
         }, nodes);
 
         expect(matches.map((match) => `${match.nodeId}:${match.handleId}`)).toContain('event-1:token');
+    });
+
+    it('accepts audio sidechain links and matrix cell modulation links', () => {
+        const nodes = [
+            createNode({
+                id: 'osc-1',
+                type: 'oscNode',
+                position: { x: 0, y: 0 },
+                data: { type: 'osc', frequency: 440, detune: 0, waveform: 'sine', label: 'Oscillator' },
+            }),
+            createNode({
+                id: 'lfo-1',
+                type: 'lfoNode',
+                position: { x: 0, y: 0 },
+                data: { type: 'lfo', rate: 1, depth: 0.5, waveform: 'sine', label: 'LFO' },
+            }),
+            createNode({
+                id: 'compressor-1',
+                type: 'compressorNode',
+                position: { x: 0, y: 0 },
+                data: { type: 'compressor', threshold: -24, knee: 30, ratio: 12, attack: 0.003, release: 0.25, sidechainStrength: 0.7, label: 'Compressor' },
+            }),
+            createNode({
+                id: 'matrix-1',
+                type: 'matrixMixerNode',
+                position: { x: 0, y: 0 },
+                data: { type: 'matrixMixer', inputs: 2, outputs: 2, matrix: [[1, 0], [0, 1]], label: 'Matrix Mixer' },
+            }),
+        ];
+
+        const nodeById = new Map(nodes.map((node) => [node.id, node]));
+
+        expect(canConnect({
+            source: 'osc-1',
+            sourceHandle: 'out',
+            target: 'compressor-1',
+            targetHandle: 'sidechainIn',
+        }, nodeById)).toBe(true);
+
+        expect(canConnect({
+            source: 'lfo-1',
+            sourceHandle: 'out',
+            target: 'matrix-1',
+            targetHandle: 'cell:0:1',
+        }, nodeById)).toBe(true);
     });
 });

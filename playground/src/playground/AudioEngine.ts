@@ -11,6 +11,10 @@ import type {
     DelayNodeData,
     ReverbNodeData,
     CompressorNodeData,
+    PhaserNodeData,
+    FlangerNodeData,
+    TremoloNodeData,
+    EQ3NodeData,
     DistortionNodeData,
     ChorusNodeData,
     NoiseBurstNodeData,
@@ -22,6 +26,10 @@ import type {
     MediaStreamNodeData,
     EventTriggerNodeData,
     StereoPannerNodeData,
+    MixerNodeData,
+    AuxSendNodeData,
+    AuxReturnNodeData,
+    MatrixMixerNodeData,
     InputNodeData,
     UiTokensNodeData,
     NoteNodeData,
@@ -64,6 +72,41 @@ interface AudioNodeInstance {
     chorusDryGain?: GainNode;
     chorusWetGain?: GainNode;
     chorusLfoGain?: GainNode;
+    phaserDryGain?: GainNode;
+    phaserWetGain?: GainNode;
+    phaserFeedbackGain?: GainNode;
+    phaserLfoGain?: GainNode;
+    phaserStages?: BiquadFilterNode[];
+    flangerDelay?: DelayNode;
+    flangerFeedbackGain?: GainNode;
+    flangerDryGain?: GainNode;
+    flangerWetGain?: GainNode;
+    flangerLfoGain?: GainNode;
+    tremoloDryGain?: GainNode;
+    tremoloWetGain?: GainNode;
+    tremoloAmpGain?: GainNode;
+    tremoloDepthGain?: GainNode;
+    tremoloDepthGainR?: GainNode;
+    eq3DryGain?: GainNode;
+    eq3WetGain?: GainNode;
+    eq3LowShelf?: BiquadFilterNode;
+    eq3MidPeak?: BiquadFilterNode;
+    eq3HighShelf?: BiquadFilterNode;
+    auxSendGain?: GainNode;
+    auxBusId?: string;
+    auxReturnGain?: GainNode;
+    matrixInputs?: number;
+    matrixOutputs?: number;
+    matrixInputMerger?: ChannelMergerNode;
+    matrixSplitter?: ChannelSplitterNode;
+    matrixOutputMerger?: ChannelMergerNode;
+    matrixCells?: GainNode[][];
+    compressorNode?: DynamicsCompressorNode;
+    compressorDuckGain?: GainNode;
+    sidechainAnalyser?: AnalyserNode;
+    sidechainIntervalId?: number;
+    sidechainConnectionCount?: number;
+    sidechainSourceNodes?: Set<AudioNode>;
     convolverNode?: ConvolverNode;
     mediaStreamSource?: MediaStreamAudioSourceNode;
     mediaStream?: MediaStream;
@@ -186,6 +229,26 @@ function createWaveShaperCurve(amount: number, preset: 'softClip' | 'hardClip' |
     return curve;
 }
 
+const MIN_EQ3_GAP_HZ = 50;
+
+function clampMatrixSize(value: number | undefined, fallback: number): number {
+    if (!Number.isFinite(value)) return fallback;
+    return Math.max(2, Math.min(8, Math.floor(Number(value))));
+}
+
+function clampPhaserStages(value: number | undefined): number {
+    if (!Number.isFinite(value)) return 4;
+    return Math.max(2, Math.min(8, Math.floor(Number(value))));
+}
+
+function getSafeMatrixCellValue(matrix: number[][] | undefined, row: number, column: number): number {
+    const value = matrix?.[row]?.[column];
+    if (typeof value === 'number' && Number.isFinite(value)) {
+        return Math.max(0, Math.min(1, value));
+    }
+    return row === column ? 1 : 0;
+}
+
 /**
  * Audio Engine - Manages the actual Web Audio API graph
  */
@@ -197,6 +260,7 @@ export class AudioEngine {
     private isPlaying = false;
     private edges: Edge[] = [];
     private sampleBufferCache: Map<string, AudioBuffer> = new Map();
+    private busNodes: Map<string, GainNode> = new Map();
     private liveControlInputValues: Map<string, number> = new Map();
     private controlValueTimerID: number | undefined = undefined;
 
@@ -256,6 +320,63 @@ export class AudioEngine {
 
     private sanitizeBpm(value: number | undefined): number {
         return this.sanitizePositiveNumber(value, 120);
+    }
+
+    private getOrCreateBusNode(busId: string | undefined): GainNode | null {
+        if (!this.audioContext) return null;
+        const key = (busId || 'aux').trim() || 'aux';
+        const existing = this.busNodes.get(key);
+        if (existing) return existing;
+        const bus = this.audioContext.createGain();
+        bus.gain.value = 1;
+        this.busNodes.set(key, bus);
+        return bus;
+    }
+
+    private clearCompressorSidechain(instance: AudioNodeInstance) {
+        if (instance.sidechainIntervalId !== undefined && typeof window !== 'undefined') {
+            window.clearInterval(instance.sidechainIntervalId);
+        }
+        instance.sidechainIntervalId = undefined;
+        instance.sidechainConnectionCount = 0;
+        instance.sidechainSourceNodes?.clear();
+        if (instance.compressorDuckGain && this.audioContext) {
+            instance.compressorDuckGain.gain.setTargetAtTime(1, this.audioContext.currentTime, 0.02);
+        }
+    }
+
+    private startCompressorSidechain(instance: AudioNodeInstance, data: CompressorNodeData) {
+        if (!this.audioContext || !instance.sidechainAnalyser || !instance.compressorDuckGain) return;
+        if ((instance.sidechainConnectionCount ?? 0) <= 0) {
+            this.clearCompressorSidechain(instance);
+            return;
+        }
+        if (instance.sidechainIntervalId !== undefined || typeof window === 'undefined') return;
+
+        const analyser = instance.sidechainAnalyser;
+        const duckGain = instance.compressorDuckGain;
+        const waveform = new Float32Array(analyser.fftSize);
+
+        const threshold = typeof data.threshold === 'number' ? data.threshold : -24;
+        const sidechainStrength = Math.max(0, Math.min(1, data.sidechainStrength ?? 0.7));
+        const attack = Math.max(0.005, data.attack ?? 0.003);
+
+        instance.sidechainIntervalId = window.setInterval(() => {
+            if (!this.audioContext) return;
+            analyser.getFloatTimeDomainData(waveform);
+            let sumSquares = 0;
+            for (let i = 0; i < waveform.length; i++) {
+                const sample = waveform[i];
+                sumSquares += sample * sample;
+            }
+            const rms = Math.sqrt(sumSquares / waveform.length);
+            const levelDb = 20 * Math.log10(Math.max(rms, 0.0001));
+            const overThreshold = Math.max(0, levelDb - threshold);
+            const normalized = Math.min(1, overThreshold / 24);
+            const ducking = normalized * sidechainStrength;
+            const targetGain = Math.max(0.05, 1 - ducking);
+            duckGain.gain.setTargetAtTime(targetGain, this.audioContext.currentTime, attack);
+        }, 20);
     }
 
     private resyncSchedulerClock(resetStep = false): void {
@@ -331,6 +452,15 @@ export class AudioEngine {
     }
 
     private disconnectInstance(instance: AudioNodeInstance) {
+        if (instance.type === 'compressor') {
+            this.clearCompressorSidechain(instance);
+        }
+        if (instance.type === 'auxReturn' && instance.auxReturnGain) {
+            const bus = this.getOrCreateBusNode(instance.auxBusId);
+            if (bus) {
+                try { bus.disconnect(instance.auxReturnGain); } catch { /* noop */ }
+            }
+        }
         try {
             instance.node.disconnect();
         } catch {
@@ -406,6 +536,133 @@ export class AudioEngine {
                 instance.chorusLfoGain.connect(instance.chorusDelay.delayTime);
             }
         }
+
+        if (
+            instance.type === 'compressor'
+            && instance.inputNode
+            && instance.compressorDuckGain
+            && instance.compressorNode
+        ) {
+            instance.inputNode.connect(instance.compressorDuckGain);
+            instance.compressorDuckGain.connect(instance.compressorNode);
+        }
+
+        if (
+            instance.type === 'phaser'
+            && instance.inputNode
+            && instance.phaserDryGain
+            && instance.phaserWetGain
+            && instance.phaserFeedbackGain
+            && instance.phaserStages
+            && instance.phaserStages.length > 0
+        ) {
+            const firstStage = instance.phaserStages[0];
+            const lastStage = instance.phaserStages[instance.phaserStages.length - 1];
+            instance.inputNode.connect(instance.phaserDryGain);
+            instance.phaserDryGain.connect(instance.node);
+            instance.inputNode.connect(firstStage);
+            for (let i = 0; i < instance.phaserStages.length - 1; i++) {
+                instance.phaserStages[i].connect(instance.phaserStages[i + 1]);
+            }
+            lastStage.connect(instance.phaserWetGain);
+            instance.phaserWetGain.connect(instance.node);
+            lastStage.connect(instance.phaserFeedbackGain);
+            instance.phaserFeedbackGain.connect(firstStage);
+            if (instance.lfoOsc && instance.phaserLfoGain) {
+                instance.lfoOsc.connect(instance.phaserLfoGain);
+                instance.phaserStages.forEach((stage) => instance.phaserLfoGain?.connect(stage.frequency));
+            }
+        }
+
+        if (
+            instance.type === 'flanger'
+            && instance.inputNode
+            && instance.flangerDelay
+            && instance.flangerFeedbackGain
+            && instance.flangerDryGain
+            && instance.flangerWetGain
+        ) {
+            instance.inputNode.connect(instance.flangerDryGain);
+            instance.flangerDryGain.connect(instance.node);
+            instance.inputNode.connect(instance.flangerDelay);
+            instance.flangerDelay.connect(instance.flangerFeedbackGain);
+            instance.flangerFeedbackGain.connect(instance.flangerDelay);
+            instance.flangerDelay.connect(instance.flangerWetGain);
+            instance.flangerWetGain.connect(instance.node);
+            if (instance.lfoOsc && instance.flangerLfoGain) {
+                instance.lfoOsc.connect(instance.flangerLfoGain);
+                instance.flangerLfoGain.connect(instance.flangerDelay.delayTime);
+            }
+        }
+
+        if (
+            instance.type === 'tremolo'
+            && instance.inputNode
+            && instance.tremoloDryGain
+            && instance.tremoloWetGain
+            && instance.tremoloAmpGain
+        ) {
+            instance.inputNode.connect(instance.tremoloDryGain);
+            instance.tremoloDryGain.connect(instance.node);
+            instance.inputNode.connect(instance.tremoloAmpGain);
+            instance.tremoloAmpGain.connect(instance.tremoloWetGain);
+            instance.tremoloWetGain.connect(instance.node);
+            if (instance.lfoOsc && instance.tremoloDepthGain) {
+                instance.lfoOsc.connect(instance.tremoloDepthGain);
+                instance.tremoloDepthGain.connect(instance.tremoloAmpGain.gain);
+            }
+        }
+
+        if (
+            instance.type === 'eq3'
+            && instance.inputNode
+            && instance.eq3DryGain
+            && instance.eq3WetGain
+            && instance.eq3LowShelf
+            && instance.eq3MidPeak
+            && instance.eq3HighShelf
+        ) {
+            instance.inputNode.connect(instance.eq3DryGain);
+            instance.eq3DryGain.connect(instance.node);
+            instance.inputNode.connect(instance.eq3LowShelf);
+            instance.eq3LowShelf.connect(instance.eq3MidPeak);
+            instance.eq3MidPeak.connect(instance.eq3HighShelf);
+            instance.eq3HighShelf.connect(instance.eq3WetGain);
+            instance.eq3WetGain.connect(instance.node);
+        }
+
+        if (instance.type === 'auxSend' && instance.inputNode && instance.auxSendGain) {
+            instance.inputNode.connect(instance.node);
+            instance.inputNode.connect(instance.auxSendGain);
+            const bus = this.getOrCreateBusNode(instance.auxBusId);
+            if (bus) {
+                instance.auxSendGain.connect(bus);
+            }
+        }
+
+        if (instance.type === 'auxReturn' && instance.auxReturnGain) {
+            const bus = this.getOrCreateBusNode(instance.auxBusId);
+            if (bus) {
+                bus.connect(instance.auxReturnGain);
+            }
+        }
+
+        if (
+            instance.type === 'matrixMixer'
+            && instance.matrixInputMerger
+            && instance.matrixSplitter
+            && instance.matrixOutputMerger
+            && instance.matrixCells
+        ) {
+            instance.matrixInputMerger.connect(instance.matrixSplitter);
+            instance.matrixCells.forEach((row, rowIndex) => {
+                row.forEach((cellGain, columnIndex) => {
+                    instance.matrixSplitter?.connect(cellGain, rowIndex, 0);
+                    cellGain.connect(instance.matrixOutputMerger!, 0, columnIndex);
+                });
+            });
+            instance.matrixOutputMerger.connect(instance.node);
+        }
     }
 
     private connectGraph(nodes: Node<AudioNodeData>[], edges: Edge[]) {
@@ -417,6 +674,16 @@ export class AudioEngine {
 
         this.audioNodes.forEach((instance) => {
             this.restoreInternalConnections(instance);
+        });
+
+        this.audioNodes.forEach((instance) => {
+            if (instance.type !== 'compressor') return;
+            if (instance.sidechainSourceNodes && instance.sidechainAnalyser) {
+                instance.sidechainSourceNodes.forEach((sourceNode) => {
+                    try { sourceNode.disconnect(instance.sidechainAnalyser!); } catch { /* noop */ }
+                });
+            }
+            this.clearCompressorSidechain(instance);
         });
 
         edges.forEach((edge) => {
@@ -434,6 +701,30 @@ export class AudioEngine {
                     }
                 }
 
+                if (
+                    targetInstance.type === 'compressor'
+                    && edge.targetHandle === 'sidechainIn'
+                    && targetInstance.sidechainAnalyser
+                ) {
+                    sourceNode.connect(targetInstance.sidechainAnalyser);
+                    targetInstance.sidechainConnectionCount = (targetInstance.sidechainConnectionCount ?? 0) + 1;
+                    if (!targetInstance.sidechainSourceNodes) {
+                        targetInstance.sidechainSourceNodes = new Set();
+                    }
+                    targetInstance.sidechainSourceNodes.add(sourceNode);
+                    return;
+                }
+
+                if (
+                    targetInstance.type === 'matrixMixer'
+                    && edge.targetHandle
+                    && /^in\d+$/.test(edge.targetHandle)
+                ) {
+                    const channelIndex = Math.max(0, Number(edge.targetHandle.slice(2)) - 1);
+                    sourceNode.connect(this.getInputNode(targetInstance), 0, channelIndex);
+                    return;
+                }
+
                 if (targetInstance.params && edge.targetHandle && targetInstance.params.has(edge.targetHandle)) {
                     const param = targetInstance.params.get(edge.targetHandle);
                     if (param) {
@@ -448,6 +739,12 @@ export class AudioEngine {
             } catch (error) {
                 console.warn('Failed to connect nodes:', error);
             }
+        });
+
+        nodes.forEach((node) => {
+            const instance = this.audioNodes.get(node.id);
+            if (!instance || instance.type !== 'compressor') return;
+            this.startCompressorSidechain(instance, node.data as CompressorNodeData);
         });
 
         const outputNode = nodes.find((node) => node.data.type === 'output');
@@ -1043,6 +1340,10 @@ export class AudioEngine {
         });
         this.stopSamplerPlayback();
         this.audioNodes.clear();
+        this.busNodes.forEach((busNode) => {
+            try { busNode.disconnect(); } catch { /* noop */ }
+        });
+        this.busNodes.clear();
         this.liveControlInputValues.clear();
     }
 
@@ -1255,12 +1556,24 @@ export class AudioEngine {
             }
             case 'compressor': {
                 const compressorData = data as CompressorNodeData;
+                const inputGain = ctx.createGain();
+                const duckGain = ctx.createGain();
                 const compressor = ctx.createDynamicsCompressor();
+                const outputGain = ctx.createGain();
+                const sidechainAnalyser = ctx.createAnalyser();
+
+                duckGain.gain.value = 1;
                 compressor.threshold.value = compressorData.threshold;
                 compressor.knee.value = compressorData.knee;
                 compressor.ratio.value = compressorData.ratio;
                 compressor.attack.value = compressorData.attack;
                 compressor.release.value = compressorData.release;
+                sidechainAnalyser.fftSize = 256;
+                sidechainAnalyser.smoothingTimeConstant = 0.85;
+
+                inputGain.connect(duckGain);
+                duckGain.connect(compressor);
+                compressor.connect(outputGain);
 
                 const params = new Map<string, AudioParam>();
                 params.set('threshold', compressor.threshold);
@@ -1268,7 +1581,237 @@ export class AudioEngine {
                 params.set('ratio', compressor.ratio);
                 params.set('attack', compressor.attack);
                 params.set('release', compressor.release);
-                return { node: compressor, type: 'compressor', params };
+                params.set('sidechainStrength', duckGain.gain);
+
+                return {
+                    node: outputGain,
+                    inputNode: inputGain,
+                    internalNodes: [inputGain, duckGain, compressor, sidechainAnalyser],
+                    type: 'compressor',
+                    params,
+                    compressorNode: compressor,
+                    compressorDuckGain: duckGain,
+                    sidechainAnalyser,
+                    sidechainConnectionCount: 0,
+                    sidechainSourceNodes: new Set<AudioNode>(),
+                };
+            }
+            case 'phaser': {
+                const phaserData = data as PhaserNodeData;
+                const stageCount = clampPhaserStages(phaserData.stages);
+
+                const inputGain = ctx.createGain();
+                const outputGain = ctx.createGain();
+                const dryGain = ctx.createGain();
+                const wetGain = ctx.createGain();
+                const feedbackGain = ctx.createGain();
+                const lfo = ctx.createOscillator();
+                const lfoGain = ctx.createGain();
+                const stageNodes: BiquadFilterNode[] = [];
+
+                for (let i = 0; i < stageCount; i++) {
+                    const stage = ctx.createBiquadFilter();
+                    stage.type = 'allpass';
+                    stage.frequency.value = Math.max(20, phaserData.baseFrequency);
+                    stage.Q.value = 0.5;
+                    stageNodes.push(stage);
+                }
+
+                dryGain.gain.value = 1 - phaserData.mix;
+                wetGain.gain.value = phaserData.mix;
+                feedbackGain.gain.value = Math.max(-0.95, Math.min(0.95, phaserData.feedback));
+                lfo.type = 'sine';
+                lfo.frequency.value = Math.max(0.01, phaserData.rate);
+                lfoGain.gain.value = Math.max(0, phaserData.depth) * Math.max(100, phaserData.baseFrequency);
+
+                inputGain.connect(dryGain);
+                dryGain.connect(outputGain);
+                inputGain.connect(stageNodes[0]);
+                for (let i = 0; i < stageNodes.length - 1; i++) {
+                    stageNodes[i].connect(stageNodes[i + 1]);
+                }
+                stageNodes[stageNodes.length - 1].connect(wetGain);
+                wetGain.connect(outputGain);
+                stageNodes[stageNodes.length - 1].connect(feedbackGain);
+                feedbackGain.connect(stageNodes[0]);
+                lfo.connect(lfoGain);
+                stageNodes.forEach((stage) => lfoGain.connect(stage.frequency));
+
+                const params = new Map<string, AudioParam>();
+                params.set('rate', lfo.frequency);
+                params.set('depth', lfoGain.gain);
+                params.set('feedback', feedbackGain.gain);
+                params.set('baseFrequency', stageNodes[0].frequency);
+                params.set('mix', wetGain.gain);
+
+                return {
+                    node: outputGain,
+                    inputNode: inputGain,
+                    internalNodes: [inputGain, outputGain, dryGain, wetGain, feedbackGain, lfo, lfoGain, ...stageNodes],
+                    type: 'phaser',
+                    params,
+                    lfoOsc: lfo,
+                    phaserDryGain: dryGain,
+                    phaserWetGain: wetGain,
+                    phaserFeedbackGain: feedbackGain,
+                    phaserLfoGain: lfoGain,
+                    phaserStages: stageNodes,
+                };
+            }
+            case 'flanger': {
+                const flangerData = data as FlangerNodeData;
+                const inputGain = ctx.createGain();
+                const outputGain = ctx.createGain();
+                const dryGain = ctx.createGain();
+                const wetGain = ctx.createGain();
+                const delay = ctx.createDelay(0.05);
+                const feedbackGain = ctx.createGain();
+                const lfo = ctx.createOscillator();
+                const lfoGain = ctx.createGain();
+
+                const delaySec = Math.max(0, flangerData.delay) / 1000;
+                const depthSec = Math.max(0, flangerData.depth) / 1000;
+
+                dryGain.gain.value = 1 - flangerData.mix;
+                wetGain.gain.value = flangerData.mix;
+                delay.delayTime.value = delaySec;
+                feedbackGain.gain.value = Math.max(-0.95, Math.min(0.95, flangerData.feedback));
+                lfo.type = 'sine';
+                lfo.frequency.value = Math.max(0.01, flangerData.rate);
+                lfoGain.gain.value = depthSec;
+
+                inputGain.connect(dryGain);
+                dryGain.connect(outputGain);
+                inputGain.connect(delay);
+                delay.connect(feedbackGain);
+                feedbackGain.connect(delay);
+                delay.connect(wetGain);
+                wetGain.connect(outputGain);
+                lfo.connect(lfoGain);
+                lfoGain.connect(delay.delayTime);
+
+                const params = new Map<string, AudioParam>();
+                params.set('rate', lfo.frequency);
+                params.set('depth', lfoGain.gain);
+                params.set('feedback', feedbackGain.gain);
+                params.set('delay', delay.delayTime);
+                params.set('mix', wetGain.gain);
+
+                return {
+                    node: outputGain,
+                    inputNode: inputGain,
+                    internalNodes: [inputGain, outputGain, dryGain, wetGain, delay, feedbackGain, lfo, lfoGain],
+                    type: 'flanger',
+                    params,
+                    lfoOsc: lfo,
+                    flangerDelay: delay,
+                    flangerFeedbackGain: feedbackGain,
+                    flangerDryGain: dryGain,
+                    flangerWetGain: wetGain,
+                    flangerLfoGain: lfoGain,
+                };
+            }
+            case 'tremolo': {
+                const tremoloData = data as TremoloNodeData;
+                const inputGain = ctx.createGain();
+                const outputGain = ctx.createGain();
+                const dryGain = ctx.createGain();
+                const wetGain = ctx.createGain();
+                const ampGain = ctx.createGain();
+                const lfo = ctx.createOscillator();
+                const depth = Math.max(0, Math.min(1, tremoloData.depth));
+
+                dryGain.gain.value = 1 - tremoloData.mix;
+                wetGain.gain.value = tremoloData.mix;
+                ampGain.gain.value = 1 - depth * 0.5;
+                lfo.type = tremoloData.waveform;
+                lfo.frequency.value = Math.max(0.01, tremoloData.rate);
+
+                inputGain.connect(dryGain);
+                dryGain.connect(outputGain);
+                inputGain.connect(ampGain);
+                ampGain.connect(wetGain);
+                wetGain.connect(outputGain);
+
+                const lfoDepthGain = ctx.createGain();
+                lfoDepthGain.gain.value = depth * 0.5;
+                lfo.connect(lfoDepthGain);
+                lfoDepthGain.connect(ampGain.gain);
+
+                const params = new Map<string, AudioParam>();
+                params.set('rate', lfo.frequency);
+                params.set('depth', lfoDepthGain.gain);
+                params.set('mix', wetGain.gain);
+
+                return {
+                    node: outputGain,
+                    inputNode: inputGain,
+                    internalNodes: [inputGain, outputGain, dryGain, wetGain, ampGain, lfo, lfoDepthGain],
+                    type: 'tremolo',
+                    params,
+                    lfoOsc: lfo,
+                    tremoloDryGain: dryGain,
+                    tremoloWetGain: wetGain,
+                    tremoloAmpGain: ampGain,
+                    tremoloDepthGain: lfoDepthGain,
+                };
+            }
+            case 'eq3': {
+                const eqData = data as EQ3NodeData;
+                const inputGain = ctx.createGain();
+                const outputGain = ctx.createGain();
+                const dryGain = ctx.createGain();
+                const wetGain = ctx.createGain();
+                const lowShelf = ctx.createBiquadFilter();
+                const midPeak = ctx.createBiquadFilter();
+                const highShelf = ctx.createBiquadFilter();
+
+                const lowFrequency = Math.max(20, eqData.lowFrequency);
+                const highFrequency = Math.max(lowFrequency + MIN_EQ3_GAP_HZ, eqData.highFrequency);
+                const midFrequency = Math.sqrt(lowFrequency * highFrequency);
+
+                lowShelf.type = 'lowshelf';
+                lowShelf.frequency.value = lowFrequency;
+                lowShelf.gain.value = eqData.low;
+                midPeak.type = 'peaking';
+                midPeak.frequency.value = midFrequency;
+                midPeak.Q.value = 0.707;
+                midPeak.gain.value = eqData.mid;
+                highShelf.type = 'highshelf';
+                highShelf.frequency.value = highFrequency;
+                highShelf.gain.value = eqData.high;
+
+                dryGain.gain.value = 1 - eqData.mix;
+                wetGain.gain.value = eqData.mix;
+
+                inputGain.connect(dryGain);
+                dryGain.connect(outputGain);
+                inputGain.connect(lowShelf);
+                lowShelf.connect(midPeak);
+                midPeak.connect(highShelf);
+                highShelf.connect(wetGain);
+                wetGain.connect(outputGain);
+
+                const params = new Map<string, AudioParam>();
+                params.set('low', lowShelf.gain);
+                params.set('mid', midPeak.gain);
+                params.set('high', highShelf.gain);
+                params.set('lowFrequency', lowShelf.frequency);
+                params.set('highFrequency', highShelf.frequency);
+                params.set('mix', wetGain.gain);
+
+                return {
+                    node: outputGain,
+                    inputNode: inputGain,
+                    internalNodes: [inputGain, outputGain, dryGain, wetGain, lowShelf, midPeak, highShelf],
+                    type: 'eq3',
+                    params,
+                    eq3DryGain: dryGain,
+                    eq3WetGain: wetGain,
+                    eq3LowShelf: lowShelf,
+                    eq3MidPeak: midPeak,
+                    eq3HighShelf: highShelf,
+                };
             }
             case 'distortion': {
                 const distortionData = data as DistortionNodeData;
@@ -1438,6 +1981,97 @@ export class AudioEngine {
                 const mixerGain = ctx.createGain();
                 mixerGain.gain.value = 1;
                 return { node: mixerGain, type: 'mixer' };
+            }
+            case 'auxSend': {
+                const auxData = data as AuxSendNodeData;
+                const inputGain = ctx.createGain();
+                const outputGain = ctx.createGain();
+                const sendGain = ctx.createGain();
+                const busId = (auxData.busId || 'aux').trim() || 'aux';
+                const bus = this.getOrCreateBusNode(busId);
+
+                outputGain.gain.value = 1;
+                sendGain.gain.value = Math.max(0, auxData.sendGain);
+                inputGain.connect(outputGain);
+                inputGain.connect(sendGain);
+                if (bus) {
+                    sendGain.connect(bus);
+                }
+
+                const params = new Map<string, AudioParam>();
+                params.set('sendGain', sendGain.gain);
+
+                return {
+                    node: outputGain,
+                    inputNode: inputGain,
+                    internalNodes: [inputGain, outputGain, sendGain],
+                    type: 'auxSend',
+                    params,
+                    auxSendGain: sendGain,
+                    auxBusId: busId,
+                };
+            }
+            case 'auxReturn': {
+                const auxData = data as AuxReturnNodeData;
+                const busId = (auxData.busId || 'aux').trim() || 'aux';
+                const outputGain = ctx.createGain();
+                const bus = this.getOrCreateBusNode(busId);
+
+                outputGain.gain.value = Math.max(0, auxData.gain);
+                if (bus) {
+                    bus.connect(outputGain);
+                }
+
+                const params = new Map<string, AudioParam>();
+                params.set('gain', outputGain.gain);
+
+                return {
+                    node: outputGain,
+                    type: 'auxReturn',
+                    params,
+                    auxReturnGain: outputGain,
+                    auxBusId: busId,
+                };
+            }
+            case 'matrixMixer': {
+                const matrixData = data as MatrixMixerNodeData;
+                const inputCount = clampMatrixSize(matrixData.inputs, 4);
+                const outputCount = clampMatrixSize(matrixData.outputs, 4);
+
+                const inputMerger = ctx.createChannelMerger(inputCount);
+                const splitter = ctx.createChannelSplitter(inputCount);
+                const outputMerger = ctx.createChannelMerger(outputCount);
+                const outputGain = ctx.createGain();
+                const cells: GainNode[][] = [];
+                const params = new Map<string, AudioParam>();
+
+                inputMerger.connect(splitter);
+                for (let row = 0; row < inputCount; row++) {
+                    cells[row] = [];
+                    for (let column = 0; column < outputCount; column++) {
+                        const cellGain = ctx.createGain();
+                        cellGain.gain.value = getSafeMatrixCellValue(matrixData.matrix, row, column);
+                        splitter.connect(cellGain, row, 0);
+                        cellGain.connect(outputMerger, 0, column);
+                        cells[row][column] = cellGain;
+                        params.set(`cell:${row}:${column}`, cellGain.gain);
+                    }
+                }
+                outputMerger.connect(outputGain);
+
+                return {
+                    node: outputGain,
+                    inputNode: inputMerger,
+                    internalNodes: [inputMerger, splitter, outputMerger, outputGain, ...cells.flat()],
+                    type: 'matrixMixer',
+                    params,
+                    matrixInputs: inputCount,
+                    matrixOutputs: outputCount,
+                    matrixInputMerger: inputMerger,
+                    matrixSplitter: splitter,
+                    matrixOutputMerger: outputMerger,
+                    matrixCells: cells,
+                };
             }
             case 'input': {
                 const inputData = data as InputNodeData;
@@ -1745,14 +2379,23 @@ export class AudioEngine {
             'decay',
             'sustain',
             'release',
+            'sidechainStrength',
             'portamento',
             'playbackRate',
             'threshold',
             'knee',
             'ratio',
+            'low',
+            'mid',
+            'high',
+            'lowFrequency',
+            'highFrequency',
+            'baseFrequency',
+            'stages',
             'level',
             'tone',
             'drive',
+            'sendGain',
             'duration',
             'offset',
             'refDistance',
@@ -1767,7 +2410,7 @@ export class AudioEngine {
                 const value = getSourceValue(edge);
                 if (!targetHandle || value === null) return;
                 this.liveControlInputValues.set(this.getControlInputKey(targetNodeId, targetHandle), value);
-                if (liveControlHandles.has(targetHandle)) {
+                if (liveControlHandles.has(targetHandle) || targetHandle.startsWith('cell:')) {
                     this.updateNode(targetNodeId, { [targetHandle]: value } as Partial<AudioNodeData>);
                 }
             });
@@ -1948,12 +2591,105 @@ export class AudioEngine {
                 instance.reverbConvolver.buffer = createReverbImpulse(this.audioContext, data.decay);
             }
         } else if (instance.type === 'compressor') {
-            const node = instance.node as DynamicsCompressorNode;
-            if ('threshold' in data && typeof data.threshold === 'number') node.threshold.setTargetAtTime(data.threshold, currentTime, 0.01);
-            if ('knee' in data && typeof data.knee === 'number') node.knee.setTargetAtTime(data.knee, currentTime, 0.01);
-            if ('ratio' in data && typeof data.ratio === 'number') node.ratio.setTargetAtTime(data.ratio, currentTime, 0.01);
-            if ('attack' in data && typeof data.attack === 'number') node.attack.setTargetAtTime(data.attack, currentTime, 0.01);
-            if ('release' in data && typeof data.release === 'number') node.release.setTargetAtTime(data.release, currentTime, 0.01);
+            const compressor = instance.compressorNode;
+            if (!compressor) return;
+            if ('threshold' in data && typeof data.threshold === 'number') compressor.threshold.setTargetAtTime(data.threshold, currentTime, 0.01);
+            if ('knee' in data && typeof data.knee === 'number') compressor.knee.setTargetAtTime(data.knee, currentTime, 0.01);
+            if ('ratio' in data && typeof data.ratio === 'number') compressor.ratio.setTargetAtTime(data.ratio, currentTime, 0.01);
+            if ('attack' in data && typeof data.attack === 'number') compressor.attack.setTargetAtTime(data.attack, currentTime, 0.01);
+            if ('release' in data && typeof data.release === 'number') compressor.release.setTargetAtTime(data.release, currentTime, 0.01);
+            if ('sidechainStrength' in data && typeof data.sidechainStrength === 'number' && instance.compressorDuckGain) {
+                const next = Math.max(0, Math.min(1, data.sidechainStrength));
+                instance.compressorDuckGain.gain.setTargetAtTime(Math.max(0.05, 1 - next), currentTime, 0.01);
+            }
+            const visualData = this.nodeById.get(nodeId)?.data as CompressorNodeData | undefined;
+            if (visualData && instance.sidechainConnectionCount && instance.sidechainConnectionCount > 0) {
+                this.clearCompressorSidechain(instance);
+                this.startCompressorSidechain(instance, visualData);
+            }
+        } else if (instance.type === 'phaser') {
+            if ('rate' in data && typeof data.rate === 'number' && instance.lfoOsc) {
+                instance.lfoOsc.frequency.setTargetAtTime(Math.max(0.01, data.rate), currentTime, 0.01);
+            }
+            if ('depth' in data && typeof data.depth === 'number' && instance.phaserLfoGain) {
+                const baseFrequency = (this.nodeById.get(nodeId)?.data as PhaserNodeData | undefined)?.baseFrequency ?? 1000;
+                instance.phaserLfoGain.gain.setTargetAtTime(Math.max(0, data.depth) * Math.max(100, baseFrequency), currentTime, 0.01);
+            }
+            if ('feedback' in data && typeof data.feedback === 'number' && instance.phaserFeedbackGain) {
+                instance.phaserFeedbackGain.gain.setTargetAtTime(Math.max(-0.95, Math.min(0.95, data.feedback)), currentTime, 0.01);
+            }
+            if ('mix' in data && typeof data.mix === 'number' && instance.phaserWetGain && instance.phaserDryGain) {
+                instance.phaserWetGain.gain.setTargetAtTime(data.mix, currentTime, 0.01);
+                instance.phaserDryGain.gain.setTargetAtTime(1 - data.mix, currentTime, 0.01);
+            }
+            if ('baseFrequency' in data && typeof data.baseFrequency === 'number' && instance.phaserStages) {
+                const value = Math.max(20, data.baseFrequency);
+                instance.phaserStages.forEach((stage) => stage.frequency.setTargetAtTime(value, currentTime, 0.01));
+            }
+            if ('stages' in data && typeof data.stages === 'number') {
+                this.refreshConnections(this.visualNodes, this.edges);
+            }
+        } else if (instance.type === 'flanger') {
+            if ('rate' in data && typeof data.rate === 'number' && instance.lfoOsc) {
+                instance.lfoOsc.frequency.setTargetAtTime(Math.max(0.01, data.rate), currentTime, 0.01);
+            }
+            if ('depth' in data && typeof data.depth === 'number' && instance.flangerLfoGain) {
+                instance.flangerLfoGain.gain.setTargetAtTime(Math.max(0, data.depth) / 1000, currentTime, 0.01);
+            }
+            if ('feedback' in data && typeof data.feedback === 'number' && instance.flangerFeedbackGain) {
+                instance.flangerFeedbackGain.gain.setTargetAtTime(Math.max(-0.95, Math.min(0.95, data.feedback)), currentTime, 0.01);
+            }
+            if ('delay' in data && typeof data.delay === 'number' && instance.flangerDelay) {
+                instance.flangerDelay.delayTime.setTargetAtTime(Math.max(0, data.delay) / 1000, currentTime, 0.01);
+            }
+            if ('mix' in data && typeof data.mix === 'number' && instance.flangerWetGain && instance.flangerDryGain) {
+                instance.flangerWetGain.gain.setTargetAtTime(data.mix, currentTime, 0.01);
+                instance.flangerDryGain.gain.setTargetAtTime(1 - data.mix, currentTime, 0.01);
+            }
+        } else if (instance.type === 'tremolo') {
+            if ('rate' in data && typeof data.rate === 'number' && instance.lfoOsc) {
+                instance.lfoOsc.frequency.setTargetAtTime(Math.max(0.01, data.rate), currentTime, 0.01);
+            }
+            if ('waveform' in data && typeof data.waveform === 'string' && instance.lfoOsc) {
+                instance.lfoOsc.type = data.waveform as OscillatorType;
+            }
+            if ('depth' in data && typeof data.depth === 'number' && instance.tremoloDepthGain && instance.tremoloAmpGain) {
+                const depthAmount = Math.max(0, Math.min(1, data.depth));
+                instance.tremoloAmpGain.gain.setTargetAtTime(1 - depthAmount * 0.5, currentTime, 0.01);
+                instance.tremoloDepthGain.gain.setTargetAtTime(depthAmount * 0.5, currentTime, 0.01);
+            }
+            if ('mix' in data && typeof data.mix === 'number' && instance.tremoloWetGain && instance.tremoloDryGain) {
+                instance.tremoloWetGain.gain.setTargetAtTime(data.mix, currentTime, 0.01);
+                instance.tremoloDryGain.gain.setTargetAtTime(1 - data.mix, currentTime, 0.01);
+            }
+        } else if (instance.type === 'eq3') {
+            if ('low' in data && typeof data.low === 'number' && instance.eq3LowShelf) {
+                instance.eq3LowShelf.gain.setTargetAtTime(data.low, currentTime, 0.01);
+            }
+            if ('mid' in data && typeof data.mid === 'number' && instance.eq3MidPeak) {
+                instance.eq3MidPeak.gain.setTargetAtTime(data.mid, currentTime, 0.01);
+            }
+            if ('high' in data && typeof data.high === 'number' && instance.eq3HighShelf) {
+                instance.eq3HighShelf.gain.setTargetAtTime(data.high, currentTime, 0.01);
+            }
+            if (
+                ('lowFrequency' in data || 'highFrequency' in data)
+                && instance.eq3LowShelf
+                && instance.eq3MidPeak
+                && instance.eq3HighShelf
+            ) {
+                const visual = this.nodeById.get(nodeId)?.data as EQ3NodeData | undefined;
+                const lowFrequency = Math.max(20, ('lowFrequency' in data && typeof data.lowFrequency === 'number') ? data.lowFrequency : (visual?.lowFrequency ?? 400));
+                const highFrequency = Math.max(lowFrequency + MIN_EQ3_GAP_HZ, ('highFrequency' in data && typeof data.highFrequency === 'number') ? data.highFrequency : (visual?.highFrequency ?? 2500));
+                const midFrequency = Math.sqrt(lowFrequency * highFrequency);
+                instance.eq3LowShelf.frequency.setTargetAtTime(lowFrequency, currentTime, 0.01);
+                instance.eq3MidPeak.frequency.setTargetAtTime(midFrequency, currentTime, 0.01);
+                instance.eq3HighShelf.frequency.setTargetAtTime(highFrequency, currentTime, 0.01);
+            }
+            if ('mix' in data && typeof data.mix === 'number' && instance.eq3WetGain && instance.eq3DryGain) {
+                instance.eq3WetGain.gain.setTargetAtTime(data.mix, currentTime, 0.01);
+                instance.eq3DryGain.gain.setTargetAtTime(1 - data.mix, currentTime, 0.01);
+            }
         } else if (instance.type === 'distortion') {
             if ('drive' in data && typeof data.drive === 'number' && instance.distortionDriveGain) {
                 instance.distortionDriveGain.gain.setTargetAtTime(1 + data.drive * 5, currentTime, 0.01);
@@ -2052,6 +2788,42 @@ export class AudioEngine {
         } else if (instance.type === 'panner') {
             const node = instance.node as StereoPannerNode;
             if ('pan' in data && typeof data.pan === 'number') node.pan.setTargetAtTime(data.pan, currentTime, 0.01);
+        } else if (instance.type === 'auxSend') {
+            if ('sendGain' in data && typeof data.sendGain === 'number' && instance.auxSendGain) {
+                instance.auxSendGain.gain.setTargetAtTime(Math.max(0, data.sendGain), currentTime, 0.01);
+            }
+            if ('busId' in data && typeof data.busId === 'string') {
+                instance.auxBusId = data.busId.trim() || 'aux';
+                this.refreshConnections(this.visualNodes, this.edges);
+            }
+        } else if (instance.type === 'auxReturn') {
+            if ('gain' in data && typeof data.gain === 'number' && instance.auxReturnGain) {
+                instance.auxReturnGain.gain.setTargetAtTime(Math.max(0, data.gain), currentTime, 0.01);
+            }
+            if ('busId' in data && typeof data.busId === 'string') {
+                instance.auxBusId = data.busId.trim() || 'aux';
+                this.refreshConnections(this.visualNodes, this.edges);
+            }
+        } else if (instance.type === 'matrixMixer') {
+            const matrixData = this.nodeById.get(nodeId)?.data as MatrixMixerNodeData | undefined;
+            if (!matrixData) return;
+            if (
+                ('inputs' in data && typeof data.inputs === 'number')
+                || ('outputs' in data && typeof data.outputs === 'number')
+            ) {
+                this.refreshConnections(this.visualNodes, this.edges);
+                return;
+            }
+            const cellEntries = Object.entries(data).filter(([key, value]) => key.startsWith('cell:') && typeof value === 'number');
+            cellEntries.forEach(([key, value]) => {
+                const match = /^cell:(\d+):(\d+)$/.exec(key);
+                if (!match || !instance.matrixCells) return;
+                const row = Number(match[1]);
+                const column = Number(match[2]);
+                const cellGain = instance.matrixCells[row]?.[column];
+                if (!cellGain) return;
+                cellGain.gain.setTargetAtTime(Math.max(0, Math.min(1, value as number)), currentTime, 0.01);
+            });
         } else if (instance.type === 'mediaStream') {
             if ('requestMic' in data && typeof data.requestMic === 'boolean') {
                 this.attachMediaStream(nodeId, data.requestMic);

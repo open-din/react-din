@@ -487,4 +487,48 @@ describe('playground store and code generation', () => {
         expect(code).not.toContain('data:audio/wav;base64');
         expect(code).toContain('<EventTrigger token={hoverToken}');
     });
+
+    it('generates new effects and advanced routing nodes including sidechain bus wiring', async () => {
+        vi.resetModules();
+        const { generateCode } = await import('../../src/playground/CodeGenerator');
+
+        const nodes = [
+            { id: 'osc-main', type: 'oscNode', position: { x: 0, y: 0 }, data: { type: 'osc', frequency: 220, detune: 0, waveform: 'sawtooth', label: 'Main Osc' } },
+            { id: 'osc-sc', type: 'oscNode', position: { x: 0, y: 0 }, data: { type: 'osc', frequency: 4, detune: 0, waveform: 'square', label: 'SC Osc' } },
+            { id: 'phaser-1', type: 'phaserNode', position: { x: 0, y: 0 }, data: { type: 'phaser', rate: 0.6, depth: 0.4, feedback: 0.3, baseFrequency: 1200, stages: 4, mix: 0.5, label: 'Phaser' } },
+            { id: 'flanger-1', type: 'flangerNode', position: { x: 0, y: 0 }, data: { type: 'flanger', rate: 0.2, depth: 2, feedback: 0.25, delay: 1.2, mix: 0.45, label: 'Flanger' } },
+            { id: 'tremolo-1', type: 'tremoloNode', position: { x: 0, y: 0 }, data: { type: 'tremolo', rate: 5, depth: 0.7, waveform: 'triangle', stereo: true, mix: 0.6, label: 'Tremolo' } },
+            { id: 'eq3-1', type: 'eq3Node', position: { x: 0, y: 0 }, data: { type: 'eq3', low: 2, mid: -1, high: 3, lowFrequency: 300, highFrequency: 2800, mix: 1, label: 'EQ3' } },
+            { id: 'compressor-1', type: 'compressorNode', position: { x: 0, y: 0 }, data: { type: 'compressor', threshold: -26, knee: 20, ratio: 8, attack: 0.01, release: 0.2, sidechainStrength: 0.8, label: 'Compressor' } },
+            { id: 'aux-send-1', type: 'auxSendNode', position: { x: 0, y: 0 }, data: { type: 'auxSend', busId: 'fx', sendGain: 0.4, tap: 'pre', label: 'Aux Send' } },
+            { id: 'aux-return-1', type: 'auxReturnNode', position: { x: 0, y: 0 }, data: { type: 'auxReturn', busId: 'fx', gain: 0.7, label: 'Aux Return' } },
+            { id: 'matrix-1', type: 'matrixMixerNode', position: { x: 0, y: 0 }, data: { type: 'matrixMixer', inputs: 2, outputs: 2, matrix: [[1, 0.25], [0.1, 1]], label: 'Matrix Mixer' } },
+            { id: 'output-1', type: 'outputNode', position: { x: 0, y: 0 }, data: { type: 'output', playing: false, masterGain: 0.5, label: 'Output' } },
+        ];
+
+        const edges = [
+            { id: 'a1', source: 'osc-main', sourceHandle: 'out', target: 'phaser-1', targetHandle: 'in' },
+            { id: 'a2', source: 'phaser-1', sourceHandle: 'out', target: 'flanger-1', targetHandle: 'in' },
+            { id: 'a3', source: 'flanger-1', sourceHandle: 'out', target: 'tremolo-1', targetHandle: 'in' },
+            { id: 'a4', source: 'tremolo-1', sourceHandle: 'out', target: 'eq3-1', targetHandle: 'in' },
+            { id: 'a5', source: 'eq3-1', sourceHandle: 'out', target: 'compressor-1', targetHandle: 'in' },
+            { id: 'a6', source: 'compressor-1', sourceHandle: 'out', target: 'aux-send-1', targetHandle: 'in' },
+            { id: 'a7', source: 'aux-send-1', sourceHandle: 'out', target: 'matrix-1', targetHandle: 'in1' },
+            { id: 'a8', source: 'aux-return-1', sourceHandle: 'out', target: 'matrix-1', targetHandle: 'in2' },
+            { id: 'a9', source: 'matrix-1', sourceHandle: 'out', target: 'output-1', targetHandle: 'in' },
+            { id: 'sc', source: 'osc-sc', sourceHandle: 'out', target: 'compressor-1', targetHandle: 'sidechainIn' },
+        ];
+
+        const code = generateCode(nodes as any, edges as any, true, 'Routing Lab');
+
+        expect(code).toContain('Phaser');
+        expect(code).toContain('Flanger');
+        expect(code).toContain('Tremolo');
+        expect(code).toContain('EQ3');
+        expect(code).toContain('AuxSend');
+        expect(code).toContain('AuxReturn');
+        expect(code).toContain('MatrixMixer');
+        expect(code).toContain('sidechainBusId="sc-osc-sc-compressor-1"');
+        expect(code).toContain('<AuxSend busId="sc-osc-sc-compressor-1" sendGain={1}>');
+    });
 });

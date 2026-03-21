@@ -10,8 +10,10 @@ import {
     type ConstantSourceNodeData,
     type ConvolverNodeData,
     type DistortionNodeData,
+    type EQ3NodeData,
     type EventTriggerNodeData,
     type FilterNodeData,
+    type FlangerNodeData,
     type GainNodeData,
     type InputNodeData,
     type UiTokensNodeData,
@@ -29,10 +31,15 @@ import {
     type OutputNodeData,
     type Panner3DNodeData,
     type PianoRollNodeData,
+    type PhaserNodeData,
     type ReverbNodeData,
     type SamplerNodeData,
     type StepSequencerNodeData,
     type StereoPannerNodeData,
+    type TremoloNodeData,
+    type AuxSendNodeData,
+    type AuxReturnNodeData,
+    type MatrixMixerNodeData,
     type WaveShaperNodeData,
     type VoiceNodeData
 } from './store';
@@ -43,16 +50,21 @@ import {
     Analyzer,
     AudioOutProvider,
     AudioProvider,
+    AuxReturn,
+    AuxSend,
     Chorus,
     Compressor,
     ConstantSource,
     Convolver,
     Delay,
     Distortion,
+    EQ3,
     Envelope,
     EventTrigger,
     Filter,
+    Flanger,
     Gain,
+    MatrixMixer,
     MediaStream,
     clamp,
     compare,
@@ -62,11 +74,13 @@ import {
     NoiseBurst,
     Osc,
     Panner,
+    Phaser,
     PresetWaveShaper,
     Reverb,
     Sampler,
     Sequencer,
     StereoPanner,
+    Tremolo,
     TriggeredSampler,
     WaveShaper,
     switchValue,
@@ -203,6 +217,15 @@ export function generateCode(
         list.push(edge);
         controlEdgesByTarget.set(edge.target, list);
     });
+
+    const sidechainEdgesBySource = new Map<string, Edge[]>();
+    controlEdges
+        .filter((edge) => edge.targetHandle === 'sidechainIn')
+        .forEach((edge) => {
+            const list = sidechainEdgesBySource.get(edge.source) ?? [];
+            list.push(edge);
+            sidechainEdgesBySource.set(edge.source, list);
+        });
 
     const inputParamInfo = (() => {
         const paramInfoByHandle = new Map<string, ParamInfo>();
@@ -548,6 +571,15 @@ export function generateCode(
             nodeJsx = `${indentation}<${componentName}${propsString} />`;
         }
 
+        const sidechainEdges = sidechainEdgesBySource.get(node.id) ?? [];
+        if (sidechainEdges.length > 0) {
+            sidechainEdges.forEach((edge) => {
+                const busId = `sc-${edge.source}-${edge.target}`;
+                usedImports.add('AuxSend');
+                nodeJsx = `${indentation}<AuxSend busId=${JSON.stringify(busId)} sendGain={1}>\n${indentLines(nodeJsx, 1, indent)}\n${indentation}</AuxSend>`;
+            });
+        }
+
         if (adsrNode) {
             const adsrData = adsrNode.data as ADSRNodeData;
             const adsrProps = buildAdsrProps(adsrData);
@@ -802,6 +834,10 @@ const AUDIO_COMPONENTS: Record<string, string> = {
     filter: 'Filter',
     delay: 'Delay',
     compressor: 'Compressor',
+    phaser: 'Phaser',
+    flanger: 'Flanger',
+    tremolo: 'Tremolo',
+    eq3: 'EQ3',
     reverb: 'Reverb',
     distortion: 'Distortion',
     chorus: 'Chorus',
@@ -814,6 +850,9 @@ const AUDIO_COMPONENTS: Record<string, string> = {
     mediaStream: 'MediaStream',
     output: 'Gain',
     mixer: 'Gain',
+    auxSend: 'AuxSend',
+    auxReturn: 'AuxReturn',
+    matrixMixer: 'MatrixMixer',
     noise: 'Noise',
     waveShaper: 'WaveShaper',
     sampler: 'Sampler',
@@ -825,6 +864,10 @@ const AUDIO_NODE_COMPONENTS: Record<string, React.ComponentType<any>> = {
     filter: Filter,
     delay: Delay,
     compressor: Compressor,
+    phaser: Phaser,
+    flanger: Flanger,
+    tremolo: Tremolo,
+    eq3: EQ3,
     reverb: Reverb,
     distortion: Distortion,
     chorus: Chorus,
@@ -837,6 +880,9 @@ const AUDIO_NODE_COMPONENTS: Record<string, React.ComponentType<any>> = {
     mediaStream: MediaStream,
     output: Gain,
     mixer: Gain,
+    auxSend: AuxSend,
+    auxReturn: AuxReturn,
+    matrixMixer: MatrixMixer,
     noise: Noise,
     waveShaper: WaveShaper,
     sampler: Sampler,
@@ -1187,6 +1233,70 @@ function buildNodeProps(
             if (attack.value !== undefined) addValueProp('attack', attack.value);
             const release = resolveHandleValue('release', { baseValue: compressor.release, modulatable: true });
             if (release.value !== undefined) addValueProp('release', release.value);
+            const sidechainStrength = resolveHandleValue('sidechainStrength', { baseValue: compressor.sidechainStrength ?? 0.7, modulatable: true });
+            if (sidechainStrength.value !== undefined) addValueProp('sidechainStrength', sidechainStrength.value);
+            const sidechainEdge = controlEdges.find((edge) => edge.targetHandle === 'sidechainIn');
+            if (sidechainEdge) {
+                addStringProp('sidechainBusId', `sc-${sidechainEdge.source}-${sidechainEdge.target}`);
+            }
+            break;
+        }
+        case 'phaser': {
+            const phaser = nodeData as PhaserNodeData;
+            const rate = resolveHandleValue('rate', { baseValue: phaser.rate, modulatable: true });
+            if (rate.value !== undefined) addValueProp('rate', rate.value);
+            const depth = resolveHandleValue('depth', { baseValue: phaser.depth, modulatable: true });
+            if (depth.value !== undefined) addValueProp('depth', depth.value);
+            const feedback = resolveHandleValue('feedback', { baseValue: phaser.feedback, modulatable: true });
+            if (feedback.value !== undefined) addValueProp('feedback', feedback.value);
+            const baseFrequency = resolveHandleValue('baseFrequency', { baseValue: phaser.baseFrequency, modulatable: true });
+            if (baseFrequency.value !== undefined) addValueProp('baseFrequency', baseFrequency.value);
+            const stages = resolveHandleValue('stages', { baseValue: phaser.stages, modulatable: true });
+            if (stages.value !== undefined) addValueProp('stages', stages.value);
+            const mixValue = resolveHandleValue('mix', { baseValue: phaser.mix, modulatable: true });
+            if (mixValue.value !== undefined) addValueProp('mix', mixValue.value);
+            break;
+        }
+        case 'flanger': {
+            const flanger = nodeData as FlangerNodeData;
+            const rate = resolveHandleValue('rate', { baseValue: flanger.rate, modulatable: true });
+            if (rate.value !== undefined) addValueProp('rate', rate.value);
+            const depth = resolveHandleValue('depth', { baseValue: flanger.depth, modulatable: true });
+            if (depth.value !== undefined) addValueProp('depth', depth.value);
+            const feedback = resolveHandleValue('feedback', { baseValue: flanger.feedback, modulatable: true });
+            if (feedback.value !== undefined) addValueProp('feedback', feedback.value);
+            const delay = resolveHandleValue('delay', { baseValue: flanger.delay, modulatable: true });
+            if (delay.value !== undefined) addValueProp('delay', delay.value);
+            const mixValue = resolveHandleValue('mix', { baseValue: flanger.mix, modulatable: true });
+            if (mixValue.value !== undefined) addValueProp('mix', mixValue.value);
+            break;
+        }
+        case 'tremolo': {
+            const tremolo = nodeData as TremoloNodeData;
+            const rate = resolveHandleValue('rate', { baseValue: tremolo.rate, modulatable: true });
+            if (rate.value !== undefined) addValueProp('rate', rate.value);
+            const depth = resolveHandleValue('depth', { baseValue: tremolo.depth, modulatable: true });
+            if (depth.value !== undefined) addValueProp('depth', depth.value);
+            const mixValue = resolveHandleValue('mix', { baseValue: tremolo.mix, modulatable: true });
+            if (mixValue.value !== undefined) addValueProp('mix', mixValue.value);
+            addStringProp('waveform', tremolo.waveform);
+            addBooleanProp('stereo', tremolo.stereo);
+            break;
+        }
+        case 'eq3': {
+            const eq3 = nodeData as EQ3NodeData;
+            const low = resolveHandleValue('low', { baseValue: eq3.low, modulatable: true });
+            if (low.value !== undefined) addValueProp('low', low.value);
+            const mid = resolveHandleValue('mid', { baseValue: eq3.mid, modulatable: true });
+            if (mid.value !== undefined) addValueProp('mid', mid.value);
+            const high = resolveHandleValue('high', { baseValue: eq3.high, modulatable: true });
+            if (high.value !== undefined) addValueProp('high', high.value);
+            const lowFrequency = resolveHandleValue('lowFrequency', { baseValue: eq3.lowFrequency, modulatable: true });
+            if (lowFrequency.value !== undefined) addValueProp('lowFrequency', lowFrequency.value);
+            const highFrequency = resolveHandleValue('highFrequency', { baseValue: eq3.highFrequency, modulatable: true });
+            if (highFrequency.value !== undefined) addValueProp('highFrequency', highFrequency.value);
+            const mixValue = resolveHandleValue('mix', { baseValue: eq3.mix, modulatable: true });
+            if (mixValue.value !== undefined) addValueProp('mix', mixValue.value);
             break;
         }
         case 'reverb': {
@@ -1332,6 +1442,29 @@ function buildNodeProps(
         case 'mixer': {
             break;
         }
+        case 'auxSend': {
+            const auxSend = nodeData as AuxSendNodeData;
+            addStringProp('busId', auxSend.busId || 'aux');
+            addStringProp('tap', auxSend.tap || 'pre');
+            const sendGain = resolveHandleValue('sendGain', { baseValue: auxSend.sendGain, modulatable: true });
+            if (sendGain.value !== undefined) addValueProp('sendGain', sendGain.value);
+            break;
+        }
+        case 'auxReturn': {
+            const auxReturn = nodeData as AuxReturnNodeData;
+            addStringProp('busId', auxReturn.busId || 'aux');
+            const gain = resolveHandleValue('gain', { baseValue: auxReturn.gain, modulatable: true });
+            if (gain.value !== undefined) addValueProp('gain', gain.value);
+            break;
+        }
+        case 'matrixMixer': {
+            const matrix = nodeData as MatrixMixerNodeData;
+            addValueProp('inputs', formatNumber(matrix.inputs));
+            addValueProp('outputs', formatNumber(matrix.outputs));
+            const matrixLiteral = JSON.stringify(matrix.matrix ?? []);
+            props.push(`matrix={${matrixLiteral}}`);
+            break;
+        }
         default:
             break;
     }
@@ -1428,6 +1561,7 @@ interface PreviewGraphData {
     nodeById: Map<string, Node<AudioNodeData>>;
     audioEdgesByTarget: Map<string, Edge[]>;
     controlEdgesByTarget: Map<string, Edge[]>;
+    sidechainEdgesBySource: Map<string, Edge[]>;
     adsrTargets: Map<string, Node<ADSRNodeData>>;
     paramsByHandle: Map<string, number>;
     rootNodes: Node<AudioNodeData>[];
@@ -1456,6 +1590,15 @@ function buildPreviewGraphData(nodes: Node<AudioNodeData>[], edges: Edge[]): Pre
         list.push(edge);
         controlEdgesByTarget.set(edge.target, list);
     });
+
+    const sidechainEdgesBySource = new Map<string, Edge[]>();
+    controlEdges
+        .filter((edge) => edge.targetHandle === 'sidechainIn')
+        .forEach((edge) => {
+            const list = sidechainEdgesBySource.get(edge.source) ?? [];
+            list.push(edge);
+            sidechainEdgesBySource.set(edge.source, list);
+        });
 
     const adsrTargets = new Map<string, Node<ADSRNodeData>>();
     controlEdges.forEach((edge) => {
@@ -1499,6 +1642,7 @@ function buildPreviewGraphData(nodes: Node<AudioNodeData>[], edges: Edge[]): Pre
         nodeById,
         audioEdgesByTarget,
         controlEdgesByTarget,
+        sidechainEdgesBySource,
         adsrTargets,
         paramsByHandle,
         rootNodes,
@@ -1818,6 +1962,17 @@ const PreviewRenderer: React.FC<{ graph: PreviewGraphData; sequencerBpm?: number
             )
             : renderBase(voiceContext);
 
+        const sidechainEdges = graph.sidechainEdgesBySource.get(node.id) ?? [];
+        if (sidechainEdges.length > 0) {
+            sidechainEdges.forEach((edge) => {
+                element = (
+                    <AuxSend busId={`sc-${edge.source}-${edge.target}`} sendGain={1}>
+                        {element}
+                    </AuxSend>
+                );
+            });
+        }
+
         const trackSource = getSequencerSource(node.id)
             || (voiceNode ? getSequencerSource(voiceNode.id) : null)
             || adsrTrackSource;
@@ -2051,6 +2206,70 @@ function buildPreviewProps(
             if (attack.value !== undefined) props.attack = attack.value;
             const release = resolveControlValue('release', { baseValue: compressor.release, modulatable: true });
             if (release.value !== undefined) props.release = release.value;
+            const sidechainStrength = resolveControlValue('sidechainStrength', { baseValue: compressor.sidechainStrength ?? 0.7, modulatable: true });
+            if (sidechainStrength.value !== undefined) props.sidechainStrength = sidechainStrength.value;
+            const sidechainEdge = controlEdges.find((edge) => edge.targetHandle === 'sidechainIn');
+            if (sidechainEdge) {
+                props.sidechainBusId = `sc-${sidechainEdge.source}-${sidechainEdge.target}`;
+            }
+            break;
+        }
+        case 'phaser': {
+            const phaser = nodeData as PhaserNodeData;
+            const rate = resolveControlValue('rate', { baseValue: phaser.rate, modulatable: true });
+            if (rate.value !== undefined) props.rate = rate.value;
+            const depth = resolveControlValue('depth', { baseValue: phaser.depth, modulatable: true });
+            if (depth.value !== undefined) props.depth = depth.value;
+            const feedback = resolveControlValue('feedback', { baseValue: phaser.feedback, modulatable: true });
+            if (feedback.value !== undefined) props.feedback = feedback.value;
+            const baseFrequency = resolveControlValue('baseFrequency', { baseValue: phaser.baseFrequency, modulatable: true });
+            if (baseFrequency.value !== undefined) props.baseFrequency = baseFrequency.value;
+            const stages = resolveControlValue('stages', { baseValue: phaser.stages, modulatable: true });
+            if (stages.value !== undefined) props.stages = stages.value;
+            const mixValue = resolveControlValue('mix', { baseValue: phaser.mix, modulatable: true });
+            if (mixValue.value !== undefined) props.mix = mixValue.value;
+            break;
+        }
+        case 'flanger': {
+            const flanger = nodeData as FlangerNodeData;
+            const rate = resolveControlValue('rate', { baseValue: flanger.rate, modulatable: true });
+            if (rate.value !== undefined) props.rate = rate.value;
+            const depth = resolveControlValue('depth', { baseValue: flanger.depth, modulatable: true });
+            if (depth.value !== undefined) props.depth = depth.value;
+            const feedback = resolveControlValue('feedback', { baseValue: flanger.feedback, modulatable: true });
+            if (feedback.value !== undefined) props.feedback = feedback.value;
+            const delay = resolveControlValue('delay', { baseValue: flanger.delay, modulatable: true });
+            if (delay.value !== undefined) props.delay = delay.value;
+            const mixValue = resolveControlValue('mix', { baseValue: flanger.mix, modulatable: true });
+            if (mixValue.value !== undefined) props.mix = mixValue.value;
+            break;
+        }
+        case 'tremolo': {
+            const tremolo = nodeData as TremoloNodeData;
+            const rate = resolveControlValue('rate', { baseValue: tremolo.rate, modulatable: true });
+            if (rate.value !== undefined) props.rate = rate.value;
+            const depth = resolveControlValue('depth', { baseValue: tremolo.depth, modulatable: true });
+            if (depth.value !== undefined) props.depth = depth.value;
+            const mixValue = resolveControlValue('mix', { baseValue: tremolo.mix, modulatable: true });
+            if (mixValue.value !== undefined) props.mix = mixValue.value;
+            props.waveform = tremolo.waveform;
+            props.stereo = tremolo.stereo;
+            break;
+        }
+        case 'eq3': {
+            const eq3 = nodeData as EQ3NodeData;
+            const low = resolveControlValue('low', { baseValue: eq3.low, modulatable: true });
+            if (low.value !== undefined) props.low = low.value;
+            const mid = resolveControlValue('mid', { baseValue: eq3.mid, modulatable: true });
+            if (mid.value !== undefined) props.mid = mid.value;
+            const high = resolveControlValue('high', { baseValue: eq3.high, modulatable: true });
+            if (high.value !== undefined) props.high = high.value;
+            const lowFrequency = resolveControlValue('lowFrequency', { baseValue: eq3.lowFrequency, modulatable: true });
+            if (lowFrequency.value !== undefined) props.lowFrequency = lowFrequency.value;
+            const highFrequency = resolveControlValue('highFrequency', { baseValue: eq3.highFrequency, modulatable: true });
+            if (highFrequency.value !== undefined) props.highFrequency = highFrequency.value;
+            const mixValue = resolveControlValue('mix', { baseValue: eq3.mix, modulatable: true });
+            if (mixValue.value !== undefined) props.mix = mixValue.value;
             break;
         }
         case 'reverb': {
@@ -2184,6 +2403,28 @@ function buildPreviewProps(
             if (!hasTrigger) {
                 props.autoStart = true;
             }
+            break;
+        }
+        case 'auxSend': {
+            const auxSend = nodeData as AuxSendNodeData;
+            props.busId = auxSend.busId || 'aux';
+            props.tap = auxSend.tap || 'pre';
+            const sendGain = resolveControlValue('sendGain', { baseValue: auxSend.sendGain, modulatable: true });
+            if (sendGain.value !== undefined) props.sendGain = sendGain.value;
+            break;
+        }
+        case 'auxReturn': {
+            const auxReturn = nodeData as AuxReturnNodeData;
+            props.busId = auxReturn.busId || 'aux';
+            const gain = resolveControlValue('gain', { baseValue: auxReturn.gain, modulatable: true });
+            if (gain.value !== undefined) props.gain = gain.value;
+            break;
+        }
+        case 'matrixMixer': {
+            const matrix = nodeData as MatrixMixerNodeData;
+            props.inputs = matrix.inputs;
+            props.outputs = matrix.outputs;
+            props.matrix = matrix.matrix;
             break;
         }
         default:

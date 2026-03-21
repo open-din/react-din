@@ -27,3 +27,15 @@ Exercise the visual playground as an integrated audio-graph editor instead of a 
 **Given** timing-sensitive or browser-only audio behavior changes
 **When** automated mocks are not enough
 **Then** manual smoke coverage remains documented for real browser verification
+
+### F03-S05 New modulation effects stay coherent from node UI to runtime
+
+**Given** a contributor updates `Phaser`, `Flanger`, `Tremolo`, or `EQ3`
+**When** they wire the node in a running graph
+**Then** parameters, handles, engine updates, and code generation stay aligned
+
+### F03-S06 Advanced routing and sidechain remain stable during rewiring
+
+**Given** a contributor uses `AuxSend`, `AuxReturn`, `MatrixMixer`, and compressor sidechain links
+**When** they add/remove/rewire links while playback is running
+**Then** routing updates immediately without stale bus links or broken generated code
