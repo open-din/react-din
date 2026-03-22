@@ -50,6 +50,10 @@ function resolveSourceHandleValue(
         return typeof value === 'number' ? value : null;
     }
 
+    if (sourceData.type === 'voice' || sourceData.type === 'midiNote' || sourceData.type === 'midiCC') {
+        return sourceHandle ? audioEngine.getSourceOutputValue(sourceNode.id, sourceHandle) : null;
+    }
+
     if (isDataNodeType(sourceData.type)) {
         return evaluateDataNode(sourceNode.id, nodeById, controlEdgesByTarget, visiting, cache);
     }

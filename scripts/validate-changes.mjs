@@ -36,6 +36,10 @@ const ignoredComponentFiles = new Set([
     'src/sources/useLFO.ts',
     'src/effects/index.ts',
     'src/effects/types.ts',
+    'src/midi/index.ts',
+    'src/midi/types.ts',
+    'src/midi/runtime.ts',
+    'src/midi/useMidi.ts',
 ]);
 
 const parseDiff = () => {

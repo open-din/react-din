@@ -17,6 +17,8 @@ import '@xyflow/react/dist/style.css';
 import './playground/playground.css';
 import Inspector from './playground/Inspector';
 import ConnectionAssistMenu from './playground/ConnectionAssistMenu';
+import { MidiProvider, useMidi } from '../../src/midi';
+import { graphDocumentToPatch, migratePatchDocument, patchToGraphDocument, type PatchDocument } from '../../src/patch';
 
 import { useAudioGraphStore, type AudioNodeData, type ConvolverNodeData, type SamplerNodeData } from './playground/store';
 import {
@@ -57,6 +59,11 @@ import {
     ADSRNode,
     VoiceNode,
     SamplerNode,
+    MidiNoteNode,
+    MidiCCNode,
+    MidiNoteOutputNode,
+    MidiCCOutputNode,
+    MidiSyncNode,
     MathNode,
     CompareNode,
     MixNode,
@@ -85,6 +92,7 @@ import {
 } from './playground/nodeHelpers';
 import { DEFAULT_NODE_SIZE } from './playground/graphBuilders';
 import { groupCatalogByCategory, type PlaygroundNodeType } from './playground/nodeCatalog';
+import { playgroundMidiRuntime } from './playground/midiRuntime';
 import { createUiTokenParams } from './playground/uiTokens';
 
 const nodeTypes: NodeTypes = {
@@ -125,11 +133,43 @@ const nodeTypes: NodeTypes = {
     adsrNode: ADSRNode as NodeTypes[string],
     voiceNode: VoiceNode as NodeTypes[string],
     samplerNode: SamplerNode as NodeTypes[string],
+    midiNoteNode: MidiNoteNode as NodeTypes[string],
+    midiCCNode: MidiCCNode as NodeTypes[string],
+    midiNoteOutputNode: MidiNoteOutputNode as NodeTypes[string],
+    midiCCOutputNode: MidiCCOutputNode as NodeTypes[string],
+    midiSyncNode: MidiSyncNode as NodeTypes[string],
     mathNode: MathNode as NodeTypes[string],
     compareNode: CompareNode as NodeTypes[string],
     mixNode: MixNode as NodeTypes[string],
     clampNode: ClampNode as NodeTypes[string],
     switchNode: SwitchNode as NodeTypes[string],
+};
+
+const MidiStatusStrip: FC = () => {
+    const midi = useMidi();
+    const defaultInputName = midi.defaultInput?.name ?? 'None';
+    const defaultOutputName = midi.defaultOutput?.name ?? 'None';
+
+    return (
+        <div className="mb-3 rounded-lg border border-[var(--panel-border)] bg-[var(--panel-muted)] px-3 py-2 text-[10px]">
+            <div className="mb-2 flex items-center justify-between gap-3">
+                <span className="font-semibold uppercase tracking-[0.2em] text-[var(--text-subtle)]">MIDI</span>
+                <button
+                    type="button"
+                    onClick={() => void midi.requestAccess()}
+                    className="rounded border border-[var(--panel-border)] px-2 py-1 text-[10px] font-semibold text-[var(--text)] transition hover:border-[var(--accent)] hover:text-[var(--accent)]"
+                >
+                    Connect MIDI
+                </button>
+            </div>
+            <div className="flex items-center justify-between gap-2 text-[var(--text-subtle)]">
+                <span>Status: {midi.status}</span>
+                <span>{midi.clock.running ? 'Clock locked' : 'Clock idle'}</span>
+            </div>
+            <div className="mt-1 text-[var(--text-muted)]">In: {defaultInputName}</div>
+            <div className="text-[var(--text-muted)]">Out: {defaultOutputName}</div>
+        </div>
+    );
 };
 
 const nodeCategories = groupCatalogByCategory();
@@ -1041,7 +1081,7 @@ const NodePalette: FC<{ compact?: boolean }> = ({ compact = false }) => {
     );
 };
 
-export const PlaygroundDemo: FC = () => {
+const PlaygroundDemoContent: FC = () => {
     const nodes = useAudioGraphStore((s) => s.nodes);
     const edges = useAudioGraphStore((s) => s.edges);
     const graphs = useAudioGraphStore((s) => s.graphs);
@@ -1094,6 +1134,7 @@ export const PlaygroundDemo: FC = () => {
     const [libraryPanelError, setLibraryPanelError] = useState<string | null>(null);
     const [isLibraryDragOver, setLibraryDragOver] = useState(false);
     const libraryUploadRef = useRef<HTMLInputElement | null>(null);
+    const patchImportRef = useRef<HTMLInputElement | null>(null);
     const previewAudioRef = useRef<HTMLAudioElement | null>(null);
     const filteredAssistSuggestions = assistSuggestions.filter((suggestion) =>
         suggestion.title.toLowerCase().includes(assistMenuQuery.trim().toLowerCase())
@@ -1452,6 +1493,65 @@ export const PlaygroundDemo: FC = () => {
         }
     }, [activeGraphId, nameDraft, activeGraphName, renameGraph]);
 
+    const buildActivePatch = useCallback(() => {
+        if (!activeGraph) return null;
+        return graphDocumentToPatch({
+            id: activeGraph.id,
+            name: activeGraphName,
+            nodes,
+            edges,
+            createdAt: activeGraph.createdAt,
+            updatedAt: activeGraph.updatedAt,
+            order: activeGraph.order,
+        });
+    }, [activeGraph, activeGraphName, edges, nodes]);
+
+    const handleCopyPatch = useCallback(async () => {
+        const patch = buildActivePatch();
+        if (!patch) return;
+        try {
+            await navigator.clipboard.writeText(JSON.stringify(patch, null, 2));
+        } catch (error) {
+            console.warn('[Playground] Failed to copy patch', error);
+        }
+    }, [buildActivePatch]);
+
+    const handleDownloadPatch = useCallback(() => {
+        const patch = buildActivePatch();
+        if (!patch) return;
+
+        const payload = JSON.stringify(patch, null, 2);
+        const blob = new Blob([payload], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const anchor = document.createElement('a');
+        anchor.href = url;
+        anchor.download = `${componentName || 'patch'}.patch.json`;
+        document.body.appendChild(anchor);
+        anchor.click();
+        document.body.removeChild(anchor);
+        URL.revokeObjectURL(url);
+    }, [buildActivePatch, componentName]);
+
+    const handleImportPatch = useCallback(async (event: ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+
+        try {
+            const payload = await file.text();
+            const parsed = JSON.parse(payload) as PatchDocument;
+            const patch = migratePatchDocument(parsed);
+            const nextOrder = graphs.reduce((max, graph) => Math.max(max, graph.order ?? 0), -1) + 1;
+            const importedGraph = patchToGraphDocument(patch, { order: nextOrder });
+            setGraphs([...graphs, importedGraph], importedGraph.id);
+            setNameDraft(importedGraph.name);
+        } catch (error) {
+            console.warn('[Playground] Failed to import patch', error);
+            window.alert('Invalid patch file.');
+        } finally {
+            event.target.value = '';
+        }
+    }, [graphs, setGraphs]);
+
     const handleDeleteGraph = useCallback((graphId: string | null) => {
         if (!graphId) return;
 
@@ -1767,6 +1867,12 @@ export const PlaygroundDemo: FC = () => {
                     </button>
                 </div>
 
+                {!isPaletteCollapsed && (
+                    <div className="px-3 pt-3">
+                        <MidiStatusStrip />
+                    </div>
+                )}
+
                 <NodePalette compact={isPaletteCollapsed} />
 
                 {!isPaletteCollapsed && (
@@ -1775,6 +1881,64 @@ export const PlaygroundDemo: FC = () => {
                         Templates
                     </h4>
                     <div className="flex flex-col gap-2">
+                        <button
+                            onClick={() => {
+                                const midiNodes: Node<AudioNodeData>[] = [
+                                    { id: 'midi-note', type: 'midiNoteNode', dragHandle: '.node-header', position: { x: 40, y: 180 }, data: { type: 'midiNote', inputId: 'default', channel: 'all', noteMode: 'all', note: 60, noteMin: 48, noteMax: 72, mappingEnabled: false, mappings: [], activeMappingId: null, label: 'Midi In' } as any },
+                                    { id: 'voice', type: 'voiceNode', dragHandle: '.node-header', position: { x: 300, y: 180 }, data: { type: 'voice', portamento: 0.02, label: 'Voice' } as any },
+                                    { id: 'osc', type: 'oscNode', dragHandle: '.node-header', position: { x: 560, y: 120 }, data: { type: 'osc', frequency: 440, detune: 0, waveform: 'sawtooth', label: 'Oscillator' } as any },
+                                    { id: 'adsr', type: 'adsrNode', dragHandle: '.node-header', position: { x: 560, y: 320 }, data: { type: 'adsr', attack: 0.01, decay: 0.12, sustain: 0.7, release: 0.18, label: 'ADSR' } as any },
+                                    { id: 'gain', type: 'gainNode', dragHandle: '.node-header', position: { x: 820, y: 180 }, data: { type: 'gain', gain: 0, label: 'Gain' } as any },
+                                    { id: 'output', type: 'outputNode', dragHandle: '.node-header', position: { x: 1060, y: 180 }, data: { type: 'output', masterGain: 0.45, playing: false, label: 'Output' } as any },
+                                ];
+                                const midiEdges: Edge[] = [
+                                    { id: 'm1', source: 'midi-note', target: 'voice', sourceHandle: 'trigger', targetHandle: 'trigger', style: TRIGGER_EDGE_STYLE, animated: true },
+                                    { id: 'm2', source: 'voice', target: 'osc', sourceHandle: 'note', targetHandle: 'frequency', style: CONTROL_EDGE_STYLE, animated: true },
+                                    { id: 'm3', source: 'voice', target: 'adsr', sourceHandle: 'gate', targetHandle: 'gate', style: CONTROL_EDGE_STYLE, animated: true },
+                                    { id: 'm4', source: 'osc', target: 'gain', sourceHandle: 'out', targetHandle: 'in', style: AUDIO_EDGE_STYLE, animated: false },
+                                    { id: 'm5', source: 'adsr', target: 'gain', sourceHandle: 'envelope', targetHandle: 'gain', style: CONTROL_EDGE_STYLE, animated: true },
+                                    { id: 'm6', source: 'gain', target: 'output', sourceHandle: 'out', targetHandle: 'in', style: AUDIO_EDGE_STYLE, animated: false },
+                                ];
+                                useAudioGraphStore.getState().loadGraph(midiNodes, midiEdges);
+                            }}
+                            className={`${templateButtonBase} border-[var(--accent)] text-[var(--accent)] hover:text-[var(--text)]`}
+                        >
+                            <span className="text-sm">🎹</span>
+                            <span>Keyboard Synth</span>
+                        </button>
+                        <button
+                            onClick={() => {
+                                const midiNodes: Node<AudioNodeData>[] = [
+                                    { id: 'midi-cc', type: 'midiCCNode', dragHandle: '.node-header', position: { x: 40, y: 180 }, data: { type: 'midiCC', inputId: 'default', channel: 'all', cc: 1, label: 'Knob / CC In' } as any },
+                                    { id: 'osc', type: 'oscNode', dragHandle: '.node-header', position: { x: 320, y: 160 }, data: { type: 'osc', frequency: 220, detune: 0, waveform: 'sawtooth', label: 'Oscillator' } as any },
+                                    { id: 'filter', type: 'filterNode', dragHandle: '.node-header', position: { x: 580, y: 160 }, data: { type: 'filter', filterType: 'lowpass', frequency: 1200, detune: 0, q: 2, gain: 0, label: 'Filter' } as any },
+                                    { id: 'output', type: 'outputNode', dragHandle: '.node-header', position: { x: 840, y: 160 }, data: { type: 'output', masterGain: 0.45, playing: false, label: 'Output' } as any },
+                                ];
+                                const midiEdges: Edge[] = [
+                                    { id: 'cc1', source: 'osc', target: 'filter', sourceHandle: 'out', targetHandle: 'in', style: AUDIO_EDGE_STYLE, animated: false },
+                                    { id: 'cc2', source: 'filter', target: 'output', sourceHandle: 'out', targetHandle: 'in', style: AUDIO_EDGE_STYLE, animated: false },
+                                    { id: 'cc3', source: 'midi-cc', target: 'filter', sourceHandle: 'normalized', targetHandle: 'frequency', style: CONTROL_EDGE_STYLE, animated: true },
+                                ];
+                                useAudioGraphStore.getState().loadGraph(midiNodes, midiEdges);
+                            }}
+                            className={templateButtonBase}
+                        >
+                            <span className="text-sm">🎛️</span>
+                            <span>CC Filter Control</span>
+                        </button>
+                        <button
+                            onClick={() => {
+                                const midiNodes: Node<AudioNodeData>[] = [
+                                    { id: 'midi-sync', type: 'midiSyncNode', dragHandle: '.node-header', position: { x: 40, y: 120 }, data: { type: 'midiSync', mode: 'midi-master', inputId: null, outputId: null, sendStartStop: true, sendClock: true, label: 'Sync' } as any },
+                                    { id: 'transport', type: 'transportNode', dragHandle: '.node-header', position: { x: 320, y: 120 }, data: { type: 'transport', bpm: 120, playing: true, beatsPerBar: 4, beatUnit: 4, stepsPerBeat: 4, barsPerPhrase: 4, swing: 0, label: 'Transport' } as any },
+                                ];
+                                useAudioGraphStore.getState().loadGraph(midiNodes, []);
+                            }}
+                            className={templateButtonBase}
+                        >
+                            <span className="text-sm">⏱️</span>
+                            <span>External Clock Sync</span>
+                        </button>
                         <button
                             onClick={() => loadFeedbackTemplate(createUiFeedbackPackTemplate())}
                             className={`${templateButtonBase} border-[var(--accent)] text-[var(--accent)] hover:text-[var(--text)]`}
@@ -2105,6 +2269,13 @@ export const PlaygroundDemo: FC = () => {
 
             <section className="ui-stage flex h-full min-w-0 flex-col">
                 <div className="ui-topbar flex flex-wrap items-center justify-between gap-3 border-b border-[var(--panel-border)] px-4 py-2">
+                    <input
+                        ref={patchImportRef}
+                        type="file"
+                        accept="application/json,.json"
+                        onChange={handleImportPatch}
+                        style={{ display: 'none' }}
+                    />
                     <div className="ui-graph-tabs flex items-center gap-2 overflow-x-auto pr-2">
                         {graphs.map((graph) => (
                             <button
@@ -2166,6 +2337,30 @@ export const PlaygroundDemo: FC = () => {
                         <span className="font-mono text-[10px] text-[var(--text-subtle)]">
                             {componentName}
                         </span>
+                        <button
+                            type="button"
+                            className="rounded-md border border-[var(--panel-border)] px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--text)] transition hover:border-[var(--accent)] hover:text-[var(--accent)]"
+                            onClick={() => void handleCopyPatch()}
+                            title="Copy patch JSON"
+                        >
+                            Copy Patch
+                        </button>
+                        <button
+                            type="button"
+                            className="rounded-md border border-[var(--panel-border)] px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--text)] transition hover:border-[var(--accent)] hover:text-[var(--accent)]"
+                            onClick={handleDownloadPatch}
+                            title="Download patch JSON"
+                        >
+                            Download Patch
+                        </button>
+                        <button
+                            type="button"
+                            className="rounded-md border border-[var(--panel-border)] px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--text)] transition hover:border-[var(--accent)] hover:text-[var(--accent)]"
+                            onClick={() => patchImportRef.current?.click()}
+                            title="Import patch JSON"
+                        >
+                            Import Patch
+                        </button>
                         <button
                             type="button"
                             className="rounded-md border border-[var(--panel-border)] px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--danger)] transition hover:border-[var(--danger)] hover:bg-[var(--danger-soft)]"
@@ -2439,5 +2634,11 @@ export const PlaygroundDemo: FC = () => {
         </div>
     );
 };
+
+export const PlaygroundDemo: FC = () => (
+    <MidiProvider runtime={playgroundMidiRuntime}>
+        <PlaygroundDemoContent />
+    </MidiProvider>
+);
 
 export default PlaygroundDemo;

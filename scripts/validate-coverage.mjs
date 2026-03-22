@@ -34,6 +34,13 @@ const expectedPublicSources = [
     'src/effects/Reverb.tsx',
     'src/effects/Chorus.tsx',
     'src/effects/Distortion.tsx',
+    'src/patch/PatchRenderer.tsx',
+    'src/midi/MidiProvider.tsx',
+    'src/midi/MidiNoteInput.tsx',
+    'src/midi/MidiCCInput.tsx',
+    'src/midi/MidiNoteOutput.tsx',
+    'src/midi/MidiCCOutput.tsx',
+    'src/midi/MidiTransportSync.tsx',
 ];
 
 const expectedNodeSources = fs

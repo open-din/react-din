@@ -10,7 +10,7 @@ import { getInputParamHandleId } from './handleIds';
 
 export type PlaygroundNodeType = AudioNodeData['type'];
 export type HandleDirection = 'source' | 'target';
-export type PaletteCategory = 'Sources' | 'Effects' | 'Routing' | 'Math';
+export type PaletteCategory = 'Sources' | 'MIDI' | 'Effects' | 'Routing' | 'Math';
 
 export interface HandleDescriptor {
     id: string;
@@ -86,6 +86,11 @@ export const PLAYGROUND_NODE_CATALOG: NodeCatalogEntry[] = [
     { type: 'noise', category: 'Sources', label: 'Noise', icon: '〰️', color: '#888888' },
     { type: 'noiseBurst', category: 'Sources', label: 'Noise Burst', icon: '💥', color: '#888888' },
     { type: 'sampler', category: 'Sources', label: 'Sampler', icon: '🎹', color: '#44ccff' },
+    { type: 'midiNote', category: 'MIDI', label: 'Midi In', icon: '🎹', color: '#4dd4a0' },
+    { type: 'midiCC', category: 'MIDI', label: 'Knob / CC In', icon: '🎛️', color: '#4dd4a0' },
+    { type: 'midiNoteOutput', category: 'MIDI', label: 'Note Out', icon: '📤', color: '#4dd4a0' },
+    { type: 'midiCCOutput', category: 'MIDI', label: 'CC Out', icon: '📤', color: '#4dd4a0' },
+    { type: 'midiSync', category: 'MIDI', label: 'Sync', icon: '⏱️', color: '#4dd4a0', singleton: true },
     { type: 'gain', category: 'Effects', label: 'Gain', icon: '◧', color: '#44cc44' },
     { type: 'filter', category: 'Effects', label: 'Filter', icon: '◇', color: '#aa44ff' },
     { type: 'compressor', category: 'Effects', label: 'Compressor', icon: '🗜️', color: '#44cc44' },
@@ -176,6 +181,28 @@ const DEFAULT_HANDLES_BY_TYPE: Record<PlaygroundNodeType, HandleDescriptor[]> = 
         { id: 'playbackRate', direction: 'target', label: 'Speed' },
         { id: 'detune', direction: 'target', label: 'Detune' },
     ],
+    midiNote: [
+        { id: 'trigger', direction: 'source', label: 'Trigger' },
+        { id: 'frequency', direction: 'source', label: 'Frequency' },
+        { id: 'note', direction: 'source', label: 'Note' },
+        { id: 'gate', direction: 'source', label: 'Gate' },
+        { id: 'velocity', direction: 'source', label: 'Velocity' },
+    ],
+    midiCC: [
+        { id: 'normalized', direction: 'source', label: 'Normalized' },
+        { id: 'raw', direction: 'source', label: 'Raw' },
+    ],
+    midiNoteOutput: [
+        { id: 'trigger', direction: 'target', label: 'Trigger' },
+        { id: 'gate', direction: 'target', label: 'Gate' },
+        { id: 'note', direction: 'target', label: 'Note' },
+        { id: 'frequency', direction: 'target', label: 'Frequency' },
+        { id: 'velocity', direction: 'target', label: 'Velocity' },
+    ],
+    midiCCOutput: [
+        { id: 'value', direction: 'target', label: 'Value' },
+    ],
+    midiSync: [],
     compressor: [
         { id: 'in', direction: 'target', label: 'In' },
         { id: 'sidechainIn', direction: 'target', label: 'Sidechain' },
@@ -350,7 +377,7 @@ const DEFAULT_HANDLES_BY_TYPE: Record<PlaygroundNodeType, HandleDescriptor[]> = 
     ],
 };
 
-export const NODE_CATEGORY_ORDER: PaletteCategory[] = ['Sources', 'Effects', 'Routing', 'Math'];
+export const NODE_CATEGORY_ORDER: PaletteCategory[] = ['Sources', 'MIDI', 'Effects', 'Routing', 'Math'];
 
 export function getNodeCatalogEntry(type: PlaygroundNodeType): NodeCatalogEntry {
     const entry = PLAYGROUND_NODE_CATALOG.find((item) => item.type === type);

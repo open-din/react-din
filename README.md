@@ -14,6 +14,7 @@ Build complex audio graphs using React's declarative paradigm. Audio nodes are r
 - 🔊 **AudioContext Management** - Automatic context creation, unlock handling, and master bus
 - 🎹 **Sequencer & Transport** - Musical timing with BPM, time signature, and step sequencing
 - 🎯 **Scoped Triggers** - Per-track trigger events for instruments
+- 🎚️ **MIDI Runtime** - Shared MIDI provider, hooks, transport sync, and declarative MIDI outputs
 - 📊 **Analyzers** - FFT, waveform, and metering analysis
 - 🎨 **Effects** - Reverb, Chorus, Distortion, and more
 - 🖥️ **SSR-Safe** - No AudioContext errors on the server
@@ -105,6 +106,38 @@ function PlayButton() {
 function BeatDisplay() {
   const { beat, bar, step } = useBeat('step');
   return <div>Bar {bar + 1}, Beat {beat + 1}</div>;
+}
+```
+
+### MIDI
+
+Use the shared MIDI runtime for note input, controller input, outbound MIDI, and transport sync:
+
+```tsx
+import {
+  AudioProvider,
+  MidiProvider,
+  MidiNoteInput,
+  MidiCCOutput,
+  MidiTransportSync,
+  TransportProvider,
+} from 'react-din';
+
+function MidiPatch() {
+  return (
+    <MidiProvider requestOnMount>
+      <AudioProvider>
+        <TransportProvider>
+          <MidiTransportSync mode="transport-master" />
+          <MidiNoteInput>
+            {({ note, gate }) => (
+              <MidiCCOutput cc={74} value={gate ? 0.8 : 0.2} />
+            )}
+          </MidiNoteInput>
+        </TransportProvider>
+      </AudioProvider>
+    </MidiProvider>
+  );
 }
 ```
 

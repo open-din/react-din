@@ -219,6 +219,96 @@ export type {
 } from './routing';
 
 // -----------------------------------------------------------------------------
+// MIDI
+// -----------------------------------------------------------------------------
+export {
+    createMidiRuntime,
+    MidiProvider,
+    MidiNoteInput,
+    MidiCCInput,
+    MidiNoteOutput,
+    MidiCCOutput,
+    MidiTransportSync,
+    useMidi,
+    useMidiNote,
+    useMidiCC,
+    useMidiClock,
+} from './midi';
+
+export type {
+    MidiAccessStatus,
+    MidiCCFilterOptions,
+    MidiCCInputProps,
+    MidiCCOutputProps,
+    MidiCCState,
+    MidiCCValue,
+    MidiChannelFilter,
+    MidiClockFilterOptions,
+    MidiClockState,
+    MidiClockValue,
+    MidiContextValue,
+    MidiInputEventData,
+    MidiListenMode,
+    MidiMessageKind,
+    MidiNoteFilter,
+    MidiNoteFilterOptions,
+    MidiNoteInputProps,
+    MidiNoteOutputProps,
+    MidiNoteState,
+    MidiNoteValue,
+    MidiOutputEventData,
+    MidiPortDescriptor,
+    MidiPortSelection,
+    MidiProviderProps,
+    MidiRuntime,
+    MidiRuntimeOptions,
+    MidiRuntimeSnapshot,
+    MidiSendOptions,
+    MidiSourceInfo,
+    MidiStateChangeEvent,
+    MidiTransportSyncMode,
+    MidiTransportSyncProps,
+    MidiValue,
+    MidiValueFormat,
+} from './midi';
+
+// -----------------------------------------------------------------------------
+// Patch
+// -----------------------------------------------------------------------------
+export {
+    PATCH_DOCUMENT_VERSION,
+    PATCH_INPUT_HANDLE_PREFIX,
+    graphDocumentToPatch,
+    patchToGraphDocument,
+    migratePatchDocument,
+    importPatch,
+    PatchRenderer,
+} from './patch';
+
+export type {
+    ImportPatchOptions,
+    PatchConnection,
+    PatchDocument,
+    PatchEvent,
+    PatchInput,
+    PatchInterface,
+    PatchMidiBindings,
+    PatchMidiCCInput,
+    PatchMidiCCOutput,
+    PatchMidiInput,
+    PatchMidiInputBindings,
+    PatchMidiNoteInput,
+    PatchMidiNoteOutput,
+    PatchMidiOutput,
+    PatchMidiOutputBindings,
+    PatchMidiSyncOutput,
+    PatchNode,
+    PatchPosition,
+    PatchProps,
+    PatchRendererProps,
+} from './patch';
+
+// -----------------------------------------------------------------------------
 // Utils
 // -----------------------------------------------------------------------------
 export {

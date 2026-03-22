@@ -21,3 +21,15 @@ Keep the public `react-din` component surface documented, testable, and safe to 
 **Given** a contributor changes `TransportProvider`, `Sequencer`, `Track`, `Analyzer`, a source, or an effect
 **When** they complete the change
 **Then** the published docs and mapped automated coverage reflect the new behavior
+
+### F01-S04 MIDI surfaces stay aligned
+
+**Given** a contributor changes the public MIDI runtime, provider, hooks, or MIDI bridge components
+**When** the change lands
+**Then** docs, automated tests, and manifest mappings reflect the shipped MIDI behavior
+
+### F01-S05 Patch import and runtime surfaces stay aligned
+
+**Given** a contributor changes `PatchRenderer`, `importPatch`, or the published patch document contract
+**When** the change lands
+**Then** the public docs, automated coverage, and manifest mappings still describe the shipped patch behavior

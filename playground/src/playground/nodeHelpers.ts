@@ -3,6 +3,8 @@ import type {
     AudioNodeData,
     InputNodeData,
     InputParam,
+    MidiInMapping,
+    MidiNoteNodeData,
     TransportNodeData,
     UiTokensNodeData,
 } from './store';
@@ -119,6 +121,7 @@ const TRIGGER_SOURCE_TYPES = new Set<AudioNodeData['type']>([
     'stepSequencer',
     'pianoRoll',
     'eventTrigger',
+    'midiNote',
 ]);
 
 const MODULATION_TARGET_HANDLES = new Set([
@@ -247,6 +250,78 @@ export function normalizeTransportNodeData(data: TransportNodeData): TransportNo
     };
 }
 
+const isMidiInputSelection = (value: unknown): value is MidiNoteNodeData['inputId'] =>
+    value === 'default' || value === 'all' || (typeof value === 'string' && value.length > 0);
+
+const clampMidiNote = (value: unknown, fallback: number) => {
+    const numeric = Number(value);
+    if (!Number.isFinite(numeric)) return fallback;
+    return Math.max(0, Math.min(127, Math.round(numeric)));
+};
+
+const normalizeMidiChannel = (value: unknown): MidiNoteNodeData['channel'] => {
+    if (value === 'all') return 'all';
+    const numeric = Number(value);
+    if (!Number.isFinite(numeric)) return 'all';
+    const rounded = Math.round(numeric);
+    return rounded >= 1 && rounded <= 16 ? rounded : 'all';
+};
+
+const normalizeMidiInMapping = (mapping: unknown): MidiInMapping | null => {
+    if (!mapping || typeof mapping !== 'object') return null;
+
+    const candidate = mapping as Partial<MidiInMapping>;
+    if (typeof candidate.inputId !== 'string' || candidate.inputId.length === 0) return null;
+
+    const channel = normalizeMidiChannel(candidate.channel);
+    if (channel === 'all') return null;
+
+    return {
+        mappingId: typeof candidate.mappingId === 'string' && candidate.mappingId.length > 0
+            ? candidate.mappingId
+            : `${candidate.inputId}:${channel}`,
+        inputId: candidate.inputId,
+        inputName: typeof candidate.inputName === 'string' && candidate.inputName.trim().length > 0
+            ? candidate.inputName.trim()
+            : candidate.inputId,
+        channel,
+        lastNote: clampMidiNote(candidate.lastNote, 60),
+        lastVelocity: Number.isFinite(candidate.lastVelocity) ? Math.max(0, Math.min(1, Number(candidate.lastVelocity))) : 0,
+        lastSeenAt: Number.isFinite(candidate.lastSeenAt) ? Number(candidate.lastSeenAt) : 0,
+    };
+};
+
+export function normalizeMidiNoteNodeData(data: MidiNoteNodeData): MidiNoteNodeData {
+    const note = clampMidiNote(data.note, 60);
+    const noteMin = clampMidiNote(data.noteMin, 48);
+    const noteMax = clampMidiNote(data.noteMax, 72);
+    const normalizedMin = Math.min(noteMin, noteMax);
+    const normalizedMax = Math.max(noteMin, noteMax);
+    const mappings = Array.isArray(data.mappings)
+        ? data.mappings
+            .map((mapping) => normalizeMidiInMapping(mapping))
+            .filter((mapping): mapping is MidiInMapping => mapping !== null)
+        : [];
+    const activeMappingId = typeof data.activeMappingId === 'string'
+        && mappings.some((mapping) => mapping.mappingId === data.activeMappingId)
+        ? data.activeMappingId
+        : null;
+
+    return {
+        type: 'midiNote',
+        inputId: isMidiInputSelection(data.inputId) ? data.inputId : 'default',
+        channel: normalizeMidiChannel(data.channel),
+        noteMode: data.noteMode === 'single' || data.noteMode === 'range' ? data.noteMode : 'all',
+        note,
+        noteMin: normalizedMin,
+        noteMax: normalizedMax,
+        mappingEnabled: Boolean(data.mappingEnabled),
+        mappings,
+        activeMappingId,
+        label: data.label?.trim() && data.label.trim() !== 'Keyboard In' ? data.label.trim() : 'Midi In',
+    };
+}
+
 export function getSingletonNodeTypes(): ReadonlySet<AudioNodeData['type']> {
     return SINGLETON_NODE_TYPES;
 }
@@ -304,6 +379,7 @@ export function canConnect(
                 (targetHandle === 'trigger' && (targetType === 'voice' || targetType === 'sampler'))
                 || (targetHandle === 'gate' && targetType === 'adsr')
                 || (targetHandle === 'trigger' && targetType === 'noiseBurst')
+                || (targetHandle === 'trigger' && targetType === 'midiNoteOutput')
             );
     }
 
@@ -323,6 +399,36 @@ export function canConnect(
                 && !targetHandle.startsWith('in');
         }
         return false;
+    }
+
+    if (sourceType === 'midiNote') {
+        if (sourceHandle === 'frequency') {
+            return targetHandle === 'frequency';
+        }
+        if (sourceHandle === 'note') {
+            return targetHandle === 'note' || targetHandle === 'frequency';
+        }
+        if (sourceHandle === 'gate') {
+            return targetHandle === 'gate'
+                || targetHandle === 'trigger'
+                || targetHandle === 'gain';
+        }
+        if (sourceHandle === 'velocity') {
+            return targetHandle !== 'transport'
+                && targetHandle !== 'in'
+                && targetHandle !== 'sidechainIn'
+                && !targetHandle.startsWith('in');
+        }
+        return false;
+    }
+
+    if (sourceType === 'midiCC') {
+        return (sourceHandle === 'normalized' || sourceHandle === 'raw')
+            && targetHandle !== 'transport'
+            && targetHandle !== 'trigger'
+            && targetHandle !== 'in'
+            && targetHandle !== 'sidechainIn'
+            && !targetHandle.startsWith('in');
     }
 
     if (sourceType === 'note') {
@@ -448,6 +554,44 @@ export function getCompatibleNodeSuggestions(
     const existingTypes = new Set(nodes.map((node) => node.data.type));
     const baseLookup = createNodeLookup(nodes);
     const expectedDirection: HandleDirection = start.handleType === 'source' ? 'target' : 'source';
+    const startNodeType = baseLookup.get(start.nodeId)?.data.type;
+
+    const getPriority = (suggestion: NodeSuggestion): number => {
+        if (!start.handleId || !startNodeType) return 0;
+
+        if (startNodeType === 'midiNote' && start.handleId === 'trigger') {
+            if (suggestion.type === 'voice') return 100;
+            if (suggestion.type === 'adsr') return 95;
+            if (suggestion.type === 'sampler') return 90;
+            if (suggestion.type === 'noiseBurst') return 85;
+            if (suggestion.type === 'midiNoteOutput') return 80;
+        }
+
+        if (startNodeType === 'midiNote' && start.handleId === 'frequency') {
+            if (suggestion.type === 'osc') return 100;
+            if (suggestion.type === 'filter') return 70;
+        }
+
+        if (startNodeType === 'midiCC' && (start.handleId === 'normalized' || start.handleId === 'raw')) {
+            if (suggestion.type === 'filter') return 100;
+            if (suggestion.type === 'gain') return 95;
+            if (suggestion.type === 'panner') return 90;
+            if (suggestion.type === 'lfo') return 85;
+            if (suggestion.type === 'midiCCOutput') return 80;
+        }
+
+        if (start.handleId === 'note' && suggestion.type === 'midiNoteOutput') {
+            return 100;
+        }
+        if (start.handleId === 'gate' && suggestion.type === 'midiNoteOutput') {
+            return 95;
+        }
+        if (start.handleId === 'trigger' && suggestion.type === 'midiNoteOutput') {
+            return 90;
+        }
+
+        return 0;
+    };
 
     return PLAYGROUND_NODE_CATALOG.flatMap((entry) => {
         if (entry.singleton && existingTypes.has(entry.type)) {
@@ -481,6 +625,10 @@ export function getCompatibleNodeSuggestions(
                     title: `${entry.label} -> ${handle.label}`,
                 }];
             });
+    }).sort((left, right) => {
+        const score = getPriority(right) - getPriority(left);
+        if (score !== 0) return score;
+        return left.title.localeCompare(right.title);
     });
 }
 
@@ -533,6 +681,13 @@ export function migrateGraphNodes(nodes: Node<AudioNodeData>[]): Node<AudioNodeD
             }];
         }
 
+        if (node.data.type === 'midiNote') {
+            return [{
+                ...node,
+                data: normalizeMidiNoteNodeData(node.data as MidiNoteNodeData),
+            }];
+        }
+
         return [node];
     });
 }
@@ -578,6 +733,7 @@ export function migrateGraphEdges(
                     || targetType === 'sampler'
                     || targetType === 'adsr'
                     || targetType === 'noiseBurst'
+                    || targetType === 'midiNoteOutput'
                 )
             ) {
                 nextEdge = {

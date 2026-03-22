@@ -19,6 +19,7 @@ import {
     migrateGraphEdges,
     migrateGraphNodes,
     normalizeInputNodeData,
+    normalizeMidiNoteNodeData,
     normalizeTransportNodeData,
     getSingletonNodeTypes,
 } from './nodeHelpers';
@@ -28,6 +29,7 @@ import {
     createPlaygroundNode,
 } from './graphBuilders';
 import { normalizeUiTokensNodeData } from './uiTokens';
+import type { MidiTransportSyncMode, MidiValueFormat } from '../../../src/midi';
 
 // ============================================================================
 // Audio Node Data Types
@@ -195,6 +197,7 @@ export interface WaveShaperNodeData {
 export interface ConvolverNodeData {
     type: 'convolver';
     impulseSrc: string;
+    assetPath?: string;
     impulseId?: string;
     impulseFileName?: string;
     normalize: boolean;
@@ -490,12 +493,81 @@ export interface VoiceNodeData {
 export interface SamplerNodeData {
     type: 'sampler';
     src: string;           // URL of the sample
+    assetPath?: string;
     loop: boolean;         // Whether to loop
     playbackRate: number;  // Playback speed (1 = normal)
     detune: number;        // Detune in cents
     loaded: boolean;       // Whether the sample is loaded
     sampleId?: string;     // Cache ID for stored audio
     fileName?: string;     // Original file name
+    label: string;
+    [key: string]: unknown;
+}
+
+export interface MidiInMapping {
+    mappingId: string;
+    inputId: string;
+    inputName: string;
+    channel: number;
+    lastNote: number;
+    lastVelocity: number;
+    lastSeenAt: number;
+}
+
+export interface MidiNoteNodeData {
+    type: 'midiNote';
+    inputId: string | 'default' | 'all';
+    channel: number | 'all';
+    noteMode: 'all' | 'single' | 'range';
+    note: number;
+    noteMin: number;
+    noteMax: number;
+    mappingEnabled: boolean;
+    mappings: MidiInMapping[];
+    activeMappingId: string | null;
+    label: string;
+    [key: string]: unknown;
+}
+
+export interface MidiCCNodeData {
+    type: 'midiCC';
+    inputId: string | 'default' | 'all';
+    channel: number | 'all';
+    cc: number;
+    label: string;
+    [key: string]: unknown;
+}
+
+export interface MidiNoteOutputNodeData {
+    type: 'midiNoteOutput';
+    outputId: string | null;
+    channel: number;
+    gate: number;
+    note: number;
+    frequency: number;
+    velocity: number;
+    label: string;
+    [key: string]: unknown;
+}
+
+export interface MidiCCOutputNodeData {
+    type: 'midiCCOutput';
+    outputId: string | null;
+    channel: number;
+    cc: number;
+    value: number;
+    valueFormat: MidiValueFormat;
+    label: string;
+    [key: string]: unknown;
+}
+
+export interface MidiSyncNodeData {
+    type: 'midiSync';
+    mode: MidiTransportSyncMode;
+    inputId: string | null;
+    outputId: string | null;
+    sendStartStop: boolean;
+    sendClock: boolean;
     label: string;
     [key: string]: unknown;
 }
@@ -538,6 +610,11 @@ export type AudioNodeData = (
     | ADSRNodeData
     | VoiceNodeData
     | SamplerNodeData
+    | MidiNoteNodeData
+    | MidiCCNodeData
+    | MidiNoteOutputNodeData
+    | MidiCCOutputNodeData
+    | MidiSyncNodeData
     | MathNodeData
     | CompareNodeData
     | MixNodeData
@@ -1083,6 +1160,12 @@ export const useAudioGraphStore = create<AudioGraphState>((set, get) => ({
                         return {
                             ...node,
                             data: normalizeTransportNodeData(nextData as TransportNodeData),
+                        };
+                    }
+                    if (nextData.type === 'midiNote') {
+                        return {
+                            ...node,
+                            data: normalizeMidiNoteNodeData(nextData as MidiNoteNodeData),
                         };
                     }
                     return { ...node, data: nextData };

@@ -41,7 +41,12 @@ import {
     type AuxReturnNodeData,
     type MatrixMixerNodeData,
     type WaveShaperNodeData,
-    type VoiceNodeData
+    type VoiceNodeData,
+    type MidiNoteNodeData,
+    type MidiCCNodeData,
+    type MidiNoteOutputNodeData,
+    type MidiCCOutputNodeData,
+    type MidiSyncNodeData
 } from './store';
 import { type Node, type Edge } from '@xyflow/react';
 import { toPascalCase } from './graphUtils';
@@ -87,9 +92,15 @@ import {
     Track,
     TransportProvider,
     Voice,
+    MidiProvider,
+    MidiNoteOutput,
+    MidiCCOutput,
+    MidiTransportSync,
     useAudio,
     useAudioOut,
     useLFO,
+    useMidiNote,
+    useMidiCC,
 } from 'react-din';
 import type { LFOOutput, VoiceRenderProps } from 'react-din';
 import {
@@ -276,6 +287,30 @@ export function generateCode(
                 return Number.isFinite(noteData.frequency) ? formatNumber(noteData.frequency) : '0';
             }
 
+            if (sourceNode.data.type === 'midiNote') {
+                const varName = midiNoteVarsById.get(sourceNode.id);
+                if (!varName) return null;
+                switch (edge.sourceHandle) {
+                    case 'frequency':
+                        return `${varName}.frequency ?? 0`;
+                    case 'note':
+                        return `${varName}.note ?? 0`;
+                    case 'gate':
+                        return `${varName}.gate ? 1 : 0`;
+                    case 'velocity':
+                        return `${varName}.velocity`;
+                    default:
+                        return null;
+                }
+            }
+
+            if (sourceNode.data.type === 'midiCC') {
+                const varName = midiCCVarsById.get(sourceNode.id);
+                if (!varName) return null;
+                if (edge.sourceHandle === 'normalized') return `${varName}.normalized`;
+                if (edge.sourceHandle === 'raw') return `${varName}.raw`;
+            }
+
             if (isDataNodeType(sourceNode.data.type)) {
                 return getDataVar(edge.source) ?? null;
             }
@@ -397,6 +432,36 @@ export function generateCode(
         lfoVarsById.set(node.id, varName);
     });
 
+    const midiNoteNodes = nodes.filter((node) => node.data.type === 'midiNote') as Node<MidiNoteNodeData>[];
+    const midiCCNodes = nodes.filter((node) => node.data.type === 'midiCC') as Node<MidiCCNodeData>[];
+    const midiNoteOutputNodes = nodes.filter((node) => node.data.type === 'midiNoteOutput') as Node<MidiNoteOutputNodeData>[];
+    const midiCCOutputNodes = nodes.filter((node) => node.data.type === 'midiCCOutput') as Node<MidiCCOutputNodeData>[];
+    const midiSyncNode = nodes.find((node) => node.data.type === 'midiSync') as Node<MidiSyncNodeData> | undefined;
+    const hasMidiNodes = midiNoteNodes.length > 0
+        || midiCCNodes.length > 0
+        || midiNoteOutputNodes.length > 0
+        || midiCCOutputNodes.length > 0
+        || Boolean(midiSyncNode);
+    const effectiveIncludeProvider = includeProvider || hasMidiNodes;
+
+    const midiNoteVarsById = new Map<string, string>();
+    const midiCCVarsById = new Map<string, string>();
+    const usedMidiVarNames = new Set<string>();
+
+    midiNoteNodes.forEach((node, index) => {
+        const baseName = toSafeIdentifier(node.data.label || `midiNote${index + 1}`, `midiNote${index + 1}`);
+        const varName = ensureUniqueName(baseName, usedMidiVarNames);
+        usedMidiVarNames.add(varName);
+        midiNoteVarsById.set(node.id, varName);
+    });
+
+    midiCCNodes.forEach((node, index) => {
+        const baseName = toSafeIdentifier(node.data.label || `midiCc${index + 1}`, `midiCc${index + 1}`);
+        const varName = ensureUniqueName(baseName, usedMidiVarNames);
+        usedMidiVarNames.add(varName);
+        midiCCVarsById.set(node.id, varName);
+    });
+
     const adsrTargets = new Map<string, Node<ADSRNodeData>>();
     controlEdges.forEach((edge) => {
         const sourceNode = nodeById.get(edge.source);
@@ -414,6 +479,8 @@ export function generateCode(
         nodeById,
         inputParamInfo,
         lfoVarsById,
+        midiNoteVarsById,
+        midiCCVarsById,
         getDataVar: dataState.getDataVar,
     };
 
@@ -445,6 +512,17 @@ export function generateCode(
         if (!edge) return null;
         const sourceNode = nodeById.get(edge.source);
         return sourceNode?.data.type === 'eventTrigger' ? sourceNode as Node<EventTriggerNodeData> : null;
+    };
+
+    const getMidiNoteTriggerSource = (nodeId: string) => {
+        const edgesForTarget = controlEdgesByTarget.get(nodeId) ?? [];
+        const edge = edgesForTarget.find((item) => {
+            if (item.targetHandle !== 'trigger' && item.targetHandle !== 'gate') return false;
+            return nodeById.get(item.source)?.data.type === 'midiNote';
+        });
+        if (!edge) return null;
+        const sourceNode = nodeById.get(edge.source);
+        return sourceNode?.data.type === 'midiNote' ? sourceNode as Node<MidiNoteNodeData> : null;
     };
 
     const getEventTriggerTokenExpression = (nodeId: string, fallbackValue: number): string => {
@@ -480,6 +558,66 @@ export function generateCode(
         }
 
         return formatNumber(fallbackValue);
+    };
+
+    const getControlExpression = (nodeId: string, handle: string, fallback: string): string => {
+        const edge = (controlEdgesByTarget.get(nodeId) ?? []).find((item) => item.targetHandle === handle);
+        if (!edge) return fallback;
+        const sourceNode = nodeById.get(edge.source);
+        if (!sourceNode) return fallback;
+
+        if (isInputLikeNodeType(sourceNode.data.type)) {
+            return inputParamInfo.paramInfoByHandle.get(`${edge.source}:${edge.sourceHandle}`)?.name ?? fallback;
+        }
+
+        if (sourceNode.data.type === 'note') {
+            const noteData = sourceNode.data as NoteNodeData;
+            return Number.isFinite(noteData.frequency) ? formatNumber(noteData.frequency) : fallback;
+        }
+
+        if (sourceNode.data.type === 'constantSource') {
+            return formatNumber((sourceNode.data as ConstantSourceNodeData).offset);
+        }
+
+        if (sourceNode.data.type === 'eventTrigger') {
+            const triggerData = sourceNode.data as EventTriggerNodeData;
+            return edge.sourceHandle === 'trigger' ? formatNumber(triggerData.token) : fallback;
+        }
+
+        if (sourceNode.data.type === 'midiNote') {
+            const varName = midiNoteVarsById.get(sourceNode.id);
+            if (!varName) return fallback;
+            switch (edge.sourceHandle) {
+                case 'trigger':
+                    return `${varName}.triggerToken`;
+                case 'frequency':
+                    return `${varName}.frequency ?? ${fallback}`;
+                case 'note':
+                    return `${varName}.note ?? ${fallback}`;
+                case 'gate':
+                    return `${varName}.gate`;
+                case 'velocity':
+                    return `${varName}.velocity`;
+                default:
+                    return fallback;
+            }
+        }
+
+        if (sourceNode.data.type === 'midiCC') {
+            const varName = midiCCVarsById.get(sourceNode.id);
+            if (!varName) return fallback;
+            return edge.sourceHandle === 'raw' ? `${varName}.raw` : `${varName}.normalized`;
+        }
+
+        if (sourceNode.data.type === 'lfo') {
+            return lfoVarsById.get(sourceNode.id) ?? fallback;
+        }
+
+        if (isDataNodeType(sourceNode.data.type)) {
+            return dataState.getDataVar(sourceNode.id) ?? fallback;
+        }
+
+        return fallback;
     };
 
     const getTrackInfo = (node: Node<AudioNodeData>): TrackInfo => {
@@ -646,11 +784,25 @@ export function generateCode(
             nodeJsx = `${indentation}<Track ${trackProps.join(' ')}>\n${indentLines(nodeJsx, 1, indent)}\n${indentation}</Track>`;
         }
 
-        const eventSource = !trackSource
+        const midiNoteTriggerSource = !trackSource
+            ? getMidiNoteTriggerSource(node.id)
+                || (voiceNode ? getMidiNoteTriggerSource(voiceNode.id) : null)
+                || (adsrNode ? getMidiNoteTriggerSource(adsrNode.id) : null)
+            : null;
+
+        const eventSource = !trackSource && !midiNoteTriggerSource
             ? getEventTriggerSource(node.id)
                 || (voiceNode ? getEventTriggerSource(voiceNode.id) : null)
                 || (adsrNode ? getEventTriggerSource(adsrNode.id) : null)
             : null;
+
+        if (midiNoteTriggerSource) {
+            const midiVar = midiNoteVarsById.get(midiNoteTriggerSource.id);
+            if (midiVar) {
+                usedImports.add('EventTrigger');
+                nodeJsx = `${indentation}<EventTrigger token={${midiVar}.triggerToken} velocity={${midiVar}.velocity} note={${midiVar}.note ?? 60}>\n${indentLines(nodeJsx, 1, indent)}\n${indentation}</EventTrigger>`;
+            }
+        }
 
         if (eventSource) {
             const triggerData = eventSource.data as EventTriggerNodeData;
@@ -672,6 +824,74 @@ export function generateCode(
         return nodeJsx;
     };
 
+    const midiHookDeclarations: string[] = [];
+
+    midiNoteNodes.forEach((node) => {
+        const varName = midiNoteVarsById.get(node.id);
+        if (!varName) return;
+        usedImports.add('useMidiNote');
+        const options: string[] = [];
+        if (node.data.inputId !== 'default') options.push(`inputId: ${JSON.stringify(node.data.inputId)}`);
+        if (node.data.channel !== 'all') options.push(`channel: ${formatNumber(node.data.channel)}`);
+        if (node.data.noteMode === 'single') {
+            options.push(`note: ${formatNumber(node.data.note)}`);
+        } else if (node.data.noteMode === 'range') {
+            options.push(`note: [${formatNumber(node.data.noteMin)}, ${formatNumber(node.data.noteMax)}]`);
+        }
+        midiHookDeclarations.push(`${indent(1)}const ${varName} = useMidiNote(${options.length ? `{ ${options.join(', ')} }` : ''});`);
+    });
+
+    midiCCNodes.forEach((node) => {
+        const varName = midiCCVarsById.get(node.id);
+        if (!varName) return;
+        usedImports.add('useMidiCC');
+        const options = [
+            `cc: ${formatNumber(node.data.cc)}`,
+        ];
+        if (node.data.inputId !== 'default') options.push(`inputId: ${JSON.stringify(node.data.inputId)}`);
+        if (node.data.channel !== 'all') options.push(`channel: ${formatNumber(node.data.channel)}`);
+        midiHookDeclarations.push(`${indent(1)}const ${varName} = useMidiCC({ ${options.join(', ')} });`);
+    });
+
+    const midiOutputElements = midiNoteOutputNodes.map((node) => {
+        usedImports.add('MidiNoteOutput');
+        const props = [
+            `channel={${formatNumber(node.data.channel)}}`,
+            `note={${getControlExpression(node.id, 'note', formatNumber(node.data.note))}}`,
+            `frequency={${getControlExpression(node.id, 'frequency', formatNumber(node.data.frequency))}}`,
+            `velocity={${getControlExpression(node.id, 'velocity', formatNumber(node.data.velocity))}}`,
+            `gate={${getControlExpression(node.id, 'gate', node.data.gate > 0.5 ? 'true' : 'false')}}`,
+        ];
+        if (node.data.outputId) props.push(`outputId=${JSON.stringify(node.data.outputId)}`);
+        const triggerExpression = getControlExpression(node.id, 'trigger', '');
+        if (triggerExpression) {
+            props.push(`triggerToken={${triggerExpression}}`);
+        }
+        return `${indent(2)}<MidiNoteOutput ${props.join(' ')} />`;
+    });
+
+    const midiCCOutputElements = midiCCOutputNodes.map((node) => {
+        usedImports.add('MidiCCOutput');
+        const props = [
+            `channel={${formatNumber(node.data.channel)}}`,
+            `cc={${formatNumber(node.data.cc)}}`,
+            `value={${getControlExpression(node.id, 'value', formatNumber(node.data.value))}}`,
+        ];
+        if (node.data.outputId) props.push(`outputId=${JSON.stringify(node.data.outputId)}`);
+        if (node.data.valueFormat !== 'normalized') {
+            props.push(`valueFormat=${JSON.stringify(node.data.valueFormat)}`);
+        }
+        return `${indent(2)}<MidiCCOutput ${props.join(' ')} />`;
+    });
+
+    const midiSyncElement = midiSyncNode
+        ? `${indent(2)}<MidiTransportSync mode=${JSON.stringify(midiSyncNode.data.mode)}${midiSyncNode.data.inputId ? ` inputId=${JSON.stringify(midiSyncNode.data.inputId)}` : ''}${midiSyncNode.data.outputId ? ` outputId=${JSON.stringify(midiSyncNode.data.outputId)}` : ''}${!midiSyncNode.data.sendStartStop ? ' sendStartStop={false}' : ''}${!midiSyncNode.data.sendClock ? ' sendClock={false}' : ''} />`
+        : '';
+
+    if (midiSyncElement) {
+        usedImports.add('MidiTransportSync');
+    }
+
     const renderableNodes = nodes.filter((node) => !!getAudioComponentName(node.data.type));
     const nodesWithOutputs = new Set(audioEdges.map((edge) => edge.source));
     const rootNodes = renderableNodes.filter((node) => !nodesWithOutputs.has(node.id));
@@ -679,6 +899,7 @@ export function generateCode(
     const transportNode = nodes.find((node) => node.data.type === 'transport');
 
     const renderGraphContent = (level: number) => {
+        const extraElements = [...midiOutputElements, ...midiCCOutputElements, ...(midiSyncElement ? [midiSyncElement] : [])].join('\n');
         let content = `${indent(level)}return (\n`;
 
         const nodesContent = rootNodes
@@ -704,15 +925,27 @@ export function generateCode(
         }
 
         if (trackSourcesUsed.size > 0) {
-            content += `${indent(level + 1)}<Sequencer ${sequencerProps.join(' ')}>\n`;
+            content += `${indent(level + 1)}<>\n`;
+            content += `${indent(level + 2)}<Sequencer ${sequencerProps.join(' ')}>\n`;
+            if (trimmedNodesContent) {
+                content += `${indentLines(nodesContent, 2, indent)}\n`;
+            } else {
+                content += `${indentLines(fallbackContent, 2, indent)}\n`;
+            }
+            content += `${indent(level + 2)}</Sequencer>\n`;
+            if (extraElements) {
+                content += `${extraElements}\n`;
+            }
+            content += `${indent(level + 1)}</>\n`;
+        } else if (trimmedNodesContent || extraElements) {
+            content += `${indent(level + 1)}<>\n`;
             if (trimmedNodesContent) {
                 content += `${indentLines(nodesContent, 1, indent)}\n`;
-            } else {
-                content += `${indentLines(fallbackContent, 1, indent)}\n`;
             }
-            content += `${indent(level + 1)}</Sequencer>\n`;
-        } else if (trimmedNodesContent) {
-            content += `${nodesContent}\n`;
+            if (extraElements) {
+                content += `${extraElements}\n`;
+            }
+            content += `${indent(level + 1)}</>\n`;
         } else {
             content += `${fallbackContent}\n`;
         }
@@ -725,11 +958,15 @@ export function generateCode(
 
     dataState.dataImports.forEach((value) => usedImports.add(value));
 
-    if (includeProvider) {
+    if (effectiveIncludeProvider) {
         usedImports.add('AudioProvider');
         if (transportNode) {
             usedImports.add('TransportProvider');
         }
+    }
+
+    if (hasMidiNodes) {
+        usedImports.add('MidiProvider');
     }
 
     if (trackSourcesUsed.size > 0) {
@@ -781,10 +1018,13 @@ export function generateCode(
     const propsParam = propsType ? `props: ${propsType}` : '';
     const hasProps = Boolean(propsType);
 
-    if (includeProvider) {
+    if (effectiveIncludeProvider) {
         code += `export const ${rootName} = (${propsParam || ''}) => {\n`;
         code += `${indent(1)}return (\n`;
-        code += `${indent(2)}<AudioProvider>\n`;
+        if (hasMidiNodes) {
+            code += `${indent(2)}<MidiProvider>\n`;
+        }
+        code += `${indent(hasMidiNodes ? 3 : 2)}<AudioProvider>\n`;
 
         if (transportNode) {
             const tData = transportNode.data as any;
@@ -795,15 +1035,19 @@ export function generateCode(
             if (tData.stepsPerBeat) transportProps.push(`stepsPerBeat={${formatNumber(tData.stepsPerBeat)}}`);
             if (tData.barsPerPhrase) transportProps.push(`barsPerPhrase={${formatNumber(tData.barsPerPhrase)}}`);
             if (tData.swing) transportProps.push(`swing={${formatNumber(tData.swing)}}`);
+            if (midiSyncNode?.data.mode === 'midi-master') transportProps.push(`mode="manual"`);
 
-            code += `${indent(3)}<TransportProvider${transportProps.length ? ' ' + transportProps.join(' ') : ''}>\n`;
-            code += `${indent(4)}<${componentName}${hasProps ? ' {...props}' : ''} />\n`;
-            code += `${indent(3)}</TransportProvider>\n`;
+            code += `${indent(hasMidiNodes ? 4 : 3)}<TransportProvider${transportProps.length ? ' ' + transportProps.join(' ') : ''}>\n`;
+            code += `${indent(hasMidiNodes ? 5 : 4)}<${componentName}${hasProps ? ' {...props}' : ''} />\n`;
+            code += `${indent(hasMidiNodes ? 4 : 3)}</TransportProvider>\n`;
         } else {
-            code += `${indent(3)}<${componentName}${hasProps ? ' {...props}' : ''} />\n`;
+            code += `${indent(hasMidiNodes ? 4 : 3)}<${componentName}${hasProps ? ' {...props}' : ''} />\n`;
         }
 
-        code += `${indent(2)}</AudioProvider>\n`;
+        code += `${indent(hasMidiNodes ? 3 : 2)}</AudioProvider>\n`;
+        if (hasMidiNodes) {
+            code += `${indent(2)}</MidiProvider>\n`;
+        }
         code += `${indent(1)});\n`;
         code += `};\n\n`;
     }
@@ -812,6 +1056,10 @@ export function generateCode(
     if (hasProps) {
         const propLines = usedParamInfo.map((param) => `${param.name} = ${formatNumber(param.defaultValue)}`);
         code += `${indent(1)}const { ${propLines.join(', ')} } = props;\n\n`;
+    }
+
+    if (midiHookDeclarations.length > 0) {
+        code += `${midiHookDeclarations.join('\n')}\n\n`;
     }
 
     if (lfoDeclarations.length > 0) {
@@ -964,6 +1212,11 @@ function ensureUniqueName(base: string, usedNames: Set<string>): string {
 }
 
 function resolveConvolverImpulseForExport(convolver: ConvolverNodeData): string | undefined {
+    const externalAssetPath = typeof convolver.assetPath === 'string' ? convolver.assetPath.trim() : '';
+    if (externalAssetPath) {
+        return externalAssetPath;
+    }
+
     const rawImpulse = typeof convolver.impulseSrc === 'string' ? convolver.impulseSrc.trim() : '';
     if (!rawImpulse) {
         const rawFileName = typeof convolver.impulseFileName === 'string' ? convolver.impulseFileName.trim() : '';
@@ -987,6 +1240,11 @@ function resolveConvolverImpulseForExport(convolver: ConvolverNodeData): string 
 }
 
 function resolveSamplerSrcForExport(sampler: SamplerNodeData): string {
+    const externalAssetPath = typeof sampler.assetPath === 'string' ? sampler.assetPath.trim() : '';
+    if (externalAssetPath) {
+        return externalAssetPath;
+    }
+
     const rawSrc = typeof sampler.src === 'string' ? sampler.src.trim() : '';
     const isEphemeralSource = rawSrc.startsWith('blob:') || rawSrc.startsWith('data:');
     if (rawSrc && !isEphemeralSource) {
@@ -1061,6 +1319,8 @@ function buildNodeProps(
         nodeById: Map<string, Node<AudioNodeData>>;
         inputParamInfo: { paramInfoByHandle: Map<string, ParamInfo> };
         lfoVarsById: Map<string, string>;
+        midiNoteVarsById: Map<string, string>;
+        midiCCVarsById: Map<string, string>;
         getDataVar: (nodeId: string) => string | undefined;
     }
 ): string[] {
@@ -1118,6 +1378,27 @@ function buildNodeProps(
             }
         }
 
+        const midiNoteEdge = edgesForHandle.find(
+            (edge) => context.nodeById.get(edge.source)?.data.type === 'midiNote'
+        );
+        if (midiNoteEdge) {
+            const varName = context.midiNoteVarsById.get(midiNoteEdge.source);
+            if (varName) {
+                switch (midiNoteEdge.sourceHandle) {
+                    case 'frequency':
+                        return { value: `${varName}.frequency ?? 0` };
+                    case 'note':
+                        return { value: `${varName}.note ?? 0` };
+                    case 'gate':
+                        return { value: options.numericGate ? `(${varName}.gate ? 1 : 0)` : `${varName}.gate` };
+                    case 'velocity':
+                        return { value: `${varName}.velocity` };
+                    default:
+                        break;
+                }
+            }
+        }
+
         const dataEdge = edgesForHandle.find((edge) => {
             const sourceNode = context.nodeById.get(edge.source);
             return sourceNode ? isDataNodeType(sourceNode.data.type) : false;
@@ -1135,6 +1416,16 @@ function buildNodeProps(
             : undefined;
         const inputValue = inputInfo?.name;
 
+        const midiCCEdge = edgesForHandle.find(
+            (edge) => context.nodeById.get(edge.source)?.data.type === 'midiCC'
+        );
+        const midiCCVar = midiCCEdge ? context.midiCCVarsById.get(midiCCEdge.source) : undefined;
+        const midiCCValue = midiCCVar
+            ? midiCCEdge?.sourceHandle === 'raw'
+                ? `${midiCCVar}.raw`
+                : `${midiCCVar}.normalized`
+            : undefined;
+
         const lfoEdge = edgesForHandle.find(
             (edge) => context.nodeById.get(edge.source)?.data.type === 'lfo'
         );
@@ -1150,6 +1441,10 @@ function buildNodeProps(
 
         if (inputValue) {
             return { value: inputValue };
+        }
+
+        if (midiCCValue) {
+            return { value: midiCCValue };
         }
 
         if (options.baseValue !== undefined) {
@@ -1531,6 +1826,14 @@ const PreviewGraph: React.FC<PreviewGraphProps> = ({ nodes, edges, includeProvid
     }, [transportNode]);
 
     const graphData = useMemo(() => buildPreviewGraphData(nodes, edges), [nodes, edges]);
+    const hasMidiNodes = useMemo(
+        () => nodes.some((node) => node.data.type === 'midiNote'
+            || node.data.type === 'midiCC'
+            || node.data.type === 'midiNoteOutput'
+            || node.data.type === 'midiCCOutput'
+            || node.data.type === 'midiSync'),
+        [nodes]
+    );
 
     const sequencerBpm = useMemo(() => {
         if (!transportNode) return undefined;
@@ -1544,7 +1847,7 @@ const PreviewGraph: React.FC<PreviewGraphProps> = ({ nodes, edges, includeProvid
         </LfoRegistry>
     );
 
-    return (
+    const wrappedContent = (
         <AudioProvider>
             {includeProvider && transportNode ? (
                 <TransportProvider {...transportProps}>
@@ -1555,6 +1858,12 @@ const PreviewGraph: React.FC<PreviewGraphProps> = ({ nodes, edges, includeProvid
             )}
         </AudioProvider>
     );
+
+    return hasMidiNodes ? (
+        <MidiProvider>
+            {wrappedContent}
+        </MidiProvider>
+    ) : wrappedContent;
 };
 
 interface PreviewGraphData {

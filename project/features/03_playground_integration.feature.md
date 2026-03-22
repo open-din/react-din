@@ -39,3 +39,15 @@ Exercise the visual playground as an integrated audio-graph editor instead of a 
 **Given** a contributor uses `AuxSend`, `AuxReturn`, `MatrixMixer`, and compressor sidechain links
 **When** they add/remove/rewire links while playback is running
 **Then** routing updates immediately without stale bus links or broken generated code
+
+### F03-S07 MIDI note, CC, and clock flows stay coherent across node UI, runtime, and generated code
+
+**Given** a contributor builds a graph with MIDI input, MIDI output, or MIDI sync nodes
+**When** they rewire the graph or open the code generator
+**Then** node UI, runtime behavior, and generated React code stay coherent
+
+### F03-S08 Patch export and round-trip import stay coherent
+
+**Given** a contributor exports the active playground graph as patch JSON
+**When** they import that patch back into the playground or render it through `importPatch`
+**Then** the interface contract, MIDI metadata, positions, and external asset references stay coherent

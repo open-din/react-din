@@ -77,6 +77,7 @@ export const TransportProvider: FC<TransportProviderProps> = ({
     stepsPerBeat = DEFAULT_CONFIG.stepsPerBeat,
     swing = DEFAULT_CONFIG.swing,
     swingSubdivision = DEFAULT_CONFIG.swingSubdivision,
+    mode = DEFAULT_CONFIG.mode,
     onStep,
     onBeat,
     onBar,
@@ -96,7 +97,7 @@ export const TransportProvider: FC<TransportProviderProps> = ({
         stepsPerBeat,
         swing,
         swingSubdivision,
-        mode: 'raf',
+        mode,
     });
 
     const schedulerRef = useRef<number | null>(null);
@@ -167,12 +168,20 @@ export const TransportProvider: FC<TransportProviderProps> = ({
 
     // Set tempo
     const setTempo = useCallback((newBpm: number) => {
-        setConfigState((prev) => ({ ...prev, bpm: Math.max(20, Math.min(300, newBpm)) }));
+        const nextBpm = Math.max(20, Math.min(300, newBpm));
+        setConfigState((prev) => (prev.bpm === nextBpm ? prev : { ...prev, bpm: nextBpm }));
     }, []);
 
     // Set config
     const setConfig = useCallback((updates: Partial<TransportConfig>) => {
-        setConfigState((prev) => ({ ...prev, ...updates }));
+        setConfigState((prev) => {
+            const next = { ...prev, ...updates };
+            const changed = Object.keys(updates).some((key) => {
+                const typedKey = key as keyof TransportConfig;
+                return !Object.is(prev[typedKey], next[typedKey]);
+            });
+            return changed ? next : prev;
+        });
     }, []);
 
     // Toggle play/stop
@@ -246,19 +255,24 @@ export const TransportProvider: FC<TransportProviderProps> = ({
 
     // Individual setters
     const setBpm = useCallback((newBpm: number) => {
-        setConfigState((prev) => ({ ...prev, bpm: Math.max(20, Math.min(300, newBpm)) }));
+        const nextBpm = Math.max(20, Math.min(300, newBpm));
+        setConfigState((prev) => (prev.bpm === nextBpm ? prev : { ...prev, bpm: nextBpm }));
     }, []);
 
     const setTimeSignature = useCallback((beatsPerBar: number, beatUnit = 4) => {
-        setConfigState((prev) => ({ ...prev, beatsPerBar, beatUnit }));
+        setConfigState((prev) => (
+            prev.beatsPerBar === beatsPerBar && prev.beatUnit === beatUnit
+                ? prev
+                : { ...prev, beatsPerBar, beatUnit }
+        ));
     }, []);
 
     const setStepsPerBeat = useCallback((steps: number) => {
-        setConfigState((prev) => ({ ...prev, stepsPerBeat: steps }));
+        setConfigState((prev) => (prev.stepsPerBeat === steps ? prev : { ...prev, stepsPerBeat: steps }));
     }, []);
 
     const setPhraseBars = useCallback((bars: number) => {
-        setConfigState((prev) => ({ ...prev, barsPerPhrase: bars }));
+        setConfigState((prev) => (prev.barsPerPhrase === bars ? prev : { ...prev, barsPerPhrase: bars }));
     }, []);
 
     // Scheduler loop (only for 'raf' mode)

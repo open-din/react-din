@@ -92,6 +92,26 @@
         "types": "./dist/effects/index.d.cts",
         "default": "./dist/effects/index.cjs"
       }
+    },
+    "./midi": {
+      "import": {
+        "types": "./dist/midi/index.d.ts",
+        "default": "./dist/midi/index.js"
+      },
+      "require": {
+        "types": "./dist/midi/index.d.cts",
+        "default": "./dist/midi/index.cjs"
+      }
+    },
+    "./patch": {
+      "import": {
+        "types": "./dist/patch/index.d.ts",
+        "default": "./dist/patch/index.js"
+      },
+      "require": {
+        "types": "./dist/patch/index.d.cts",
+        "default": "./dist/patch/index.cjs"
+      }
     }
   },
   "files": [

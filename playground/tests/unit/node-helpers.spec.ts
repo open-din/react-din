@@ -267,4 +267,149 @@ describe('playground connection assist helpers', () => {
             targetHandle: 'cell:0:1',
         }, nodeById)).toBe(true);
     });
+
+    it('prioritizes MIDI suggestions and supports MIDI output targets', () => {
+        const midiNoteNode = createNode({
+            id: 'midi-note-1',
+            type: 'midiNoteNode',
+            position: { x: 0, y: 0 },
+            data: { type: 'midiNote', inputId: 'default', channel: 'all', noteMode: 'all', note: 60, noteMin: 48, noteMax: 72, mappingEnabled: false, mappings: [], activeMappingId: null, label: 'Midi In' },
+        });
+        const midiCCNode = createNode({
+            id: 'midi-cc-1',
+            type: 'midiCCNode',
+            position: { x: 0, y: 0 },
+            data: { type: 'midiCC', inputId: 'default', channel: 'all', cc: 1, label: 'Knob / CC In' },
+        });
+        const voiceNode = createNode({
+            id: 'voice-1',
+            type: 'voiceNode',
+            position: { x: 0, y: 0 },
+            data: { type: 'voice', portamento: 0, label: 'Voice' },
+        });
+        const adsrNode = createNode({
+            id: 'adsr-1',
+            type: 'adsrNode',
+            position: { x: 0, y: 0 },
+            data: { type: 'adsr', attack: 0.1, decay: 0.2, sustain: 0.5, release: 0.5, label: 'ADSR' },
+        });
+        const samplerNode = createNode({
+            id: 'sampler-1',
+            type: 'samplerNode',
+            position: { x: 0, y: 0 },
+            data: { type: 'sampler', src: '', loop: false, playbackRate: 1, detune: 0, loaded: false, label: 'Sampler' },
+        });
+        const noiseBurstNode = createNode({
+            id: 'noise-burst-1',
+            type: 'noiseBurstNode',
+            position: { x: 0, y: 0 },
+            data: { type: 'noiseBurst', noiseType: 'white', duration: 0.1, gain: 1, attack: 0.001, release: 0.05, label: 'Noise Burst' },
+        });
+        const filterNode = createNode({
+            id: 'filter-1',
+            type: 'filterNode',
+            position: { x: 0, y: 0 },
+            data: { type: 'filter', filterType: 'lowpass', frequency: 1000, detune: 0, q: 1, gain: 0, label: 'Filter' },
+        });
+        const gainNode = createNode({
+            id: 'gain-1',
+            type: 'gainNode',
+            position: { x: 0, y: 0 },
+            data: { type: 'gain', gain: 0.5, label: 'Gain' },
+        });
+        const pannerNode = createNode({
+            id: 'panner-1',
+            type: 'stereoPannerNode',
+            position: { x: 0, y: 0 },
+            data: { type: 'panner', pan: 0, label: 'Pan' },
+        });
+        const lfoNode = createNode({
+            id: 'lfo-1',
+            type: 'lfoNode',
+            position: { x: 0, y: 0 },
+            data: { type: 'lfo', rate: 1, depth: 0.5, waveform: 'sine', label: 'LFO' },
+        });
+        const midiNoteOutputNode = createNode({
+            id: 'midi-note-out-1',
+            type: 'midiNoteOutputNode',
+            position: { x: 0, y: 0 },
+            data: { type: 'midiNoteOutput', outputId: null, channel: 1, gate: 0, note: 60, frequency: 261.63, velocity: 1, label: 'Note Out' },
+        });
+        const midiCCOutputNode = createNode({
+            id: 'midi-cc-out-1',
+            type: 'midiCCOutputNode',
+            position: { x: 0, y: 0 },
+            data: { type: 'midiCCOutput', outputId: null, channel: 1, cc: 1, value: 0, valueFormat: 'normalized', label: 'CC Out' },
+        });
+
+        const nodes = [
+            midiNoteNode,
+            midiCCNode,
+            voiceNode,
+            adsrNode,
+            samplerNode,
+            noiseBurstNode,
+            filterNode,
+            gainNode,
+            pannerNode,
+            lfoNode,
+            midiNoteOutputNode,
+            midiCCOutputNode,
+        ];
+        const nodeById = new Map(nodes.map((node) => [node.id, node]));
+
+        const midiTriggerMatches = getCompatibleExistingHandleMatches({
+            nodeId: 'midi-note-1',
+            handleId: 'trigger',
+            handleType: 'source',
+        }, nodes);
+
+        expect(midiTriggerMatches.map((match) => `${match.nodeId}:${match.handleId}`)).toEqual(expect.arrayContaining([
+            'voice-1:trigger',
+            'adsr-1:gate',
+            'sampler-1:trigger',
+            'noise-burst-1:trigger',
+            'midi-note-out-1:trigger',
+        ]));
+
+        const midiTriggerSuggestions = getCompatibleNodeSuggestions({
+            nodeId: 'midi-note-1',
+            handleId: 'trigger',
+            handleType: 'source',
+        }, [midiNoteNode]);
+
+        expect(midiTriggerSuggestions.slice(0, 5).map((suggestion) => suggestion.type)).toEqual([
+            'voice',
+            'adsr',
+            'sampler',
+            'noiseBurst',
+            'midiNoteOutput',
+        ]);
+
+        const midiCCSuggestions = getCompatibleNodeSuggestions({
+            nodeId: 'midi-cc-1',
+            handleId: 'normalized',
+            handleType: 'source',
+        }, [midiCCNode]);
+
+        expect(midiCCSuggestions[0]?.type).toBe('filter');
+        expect(midiCCSuggestions.some((suggestion) => suggestion.type === 'gain')).toBe(true);
+        expect(midiCCSuggestions.some((suggestion) => suggestion.type === 'panner')).toBe(true);
+        expect(midiCCSuggestions.some((suggestion) => suggestion.type === 'lfo')).toBe(true);
+        expect(midiCCSuggestions.some((suggestion) => suggestion.type === 'midiCCOutput')).toBe(true);
+
+        expect(canConnect({
+            source: 'midi-note-1',
+            sourceHandle: 'trigger',
+            target: 'midi-note-out-1',
+            targetHandle: 'trigger',
+        }, nodeById)).toBe(true);
+
+        expect(canConnect({
+            source: 'midi-cc-1',
+            sourceHandle: 'normalized',
+            target: 'midi-cc-out-1',
+            targetHandle: 'value',
+        }, nodeById)).toBe(true);
+    });
 });

@@ -120,4 +120,33 @@ describe('transport and sequencer components', () => {
             expect(screen.getByTestId('event-count')).toHaveTextContent('2');
         });
     });
+
+    it('advances in manual mode when update is called externally', async () => {
+        function ManualProbe() {
+            const transport = useTransport();
+            return (
+                <>
+                    <button type="button" onClick={transport.play}>play</button>
+                    <button type="button" onClick={() => transport.update(1)}>tick</button>
+                    <span data-testid="manual-steps">{transport.totalSteps}</span>
+                </>
+            );
+        }
+
+        render(
+            <AudioProvider>
+                <TransportProvider mode="manual">
+                    <ManualProbe />
+                </TransportProvider>
+            </AudioProvider>
+        );
+
+        fireEvent.click(document);
+        fireEvent.click(screen.getByRole('button', { name: 'play' }));
+        fireEvent.click(screen.getByRole('button', { name: 'tick' }));
+
+        await waitFor(() => {
+            expect(Number(screen.getByTestId('manual-steps').textContent ?? '0')).toBeGreaterThan(0);
+        });
+    });
 });

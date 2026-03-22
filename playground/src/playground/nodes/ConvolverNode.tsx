@@ -11,6 +11,7 @@ const ConvolverNode = memo(({ id, data, selected }: NodeProps) => {
     const [uploadError, setUploadError] = useState<string | null>(null);
     const [libraryAssets, setLibraryAssets] = useState<AudioLibraryAsset[]>([]);
     const [libraryQuery, setLibraryQuery] = useState('');
+    const externalAssetPath = typeof convolverData.assetPath === 'string' ? convolverData.assetPath.trim() : '';
 
     const selectedImpulseId = typeof convolverData.impulseId === 'string' ? convolverData.impulseId : '';
 
@@ -40,6 +41,7 @@ const ConvolverNode = memo(({ id, data, selected }: NodeProps) => {
         if (!assetId) {
             setUploadError(null);
             applyImpulseUpdate({
+                assetPath: '',
                 impulseId: '',
                 impulseSrc: '',
                 impulseFileName: '',
@@ -56,6 +58,7 @@ const ConvolverNode = memo(({ id, data, selected }: NodeProps) => {
         const asset = libraryAssets.find((entry) => entry.id === assetId);
         setUploadError(null);
         applyImpulseUpdate({
+            assetPath: externalAssetPath || (asset?.name ? `/impulses/${asset.name}` : undefined),
             impulseId: assetId,
             impulseSrc: objectUrl,
             impulseFileName: asset?.name || fallbackName || convolverData.impulseFileName || 'Impulse',
@@ -94,6 +97,7 @@ const ConvolverNode = memo(({ id, data, selected }: NodeProps) => {
     const handleClearFile = useCallback(() => {
         setUploadError(null);
         applyImpulseUpdate({
+            assetPath: '',
             impulseId: '',
             impulseSrc: '',
             impulseFileName: '',
@@ -166,6 +170,11 @@ const ConvolverNode = memo(({ id, data, selected }: NodeProps) => {
                 <div className="node-control" style={{ fontSize: '10px', color: hasImpulse ? '#44cc44' : '#888' }}>
                     {hasImpulse ? `✅ ${fileLabel}` : '⚪ No file selected'}
                 </div>
+                {!hasImpulse && externalAssetPath && (
+                    <div className="node-control" style={{ fontSize: '10px', color: '#ffcc66' }}>
+                        External patch asset: {externalAssetPath}
+                    </div>
+                )}
                 {uploadError && (
                     <div className="node-control" style={{ fontSize: '10px', color: '#ff6b6b' }}>
                         {uploadError}

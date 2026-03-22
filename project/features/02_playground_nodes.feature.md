@@ -21,3 +21,9 @@ Keep every playground node registered, documented, and testable across UI, store
 **Given** a contributor changes `TransportNode`, `StepSequencerNode`, `PianoRollNode`, `LFONode`, `ADSRNode`, or `VoiceNode`
 **When** the change is reviewed
 **Then** graph execution, code generation, docs, and tests stay consistent
+
+### F02-S04 MIDI nodes stay aligned
+
+**Given** a contributor changes `MidiNoteNode`, `MidiCCNode`, `MidiNoteOutputNode`, `MidiCCOutputNode`, or `MidiSyncNode`
+**When** the node contract changes
+**Then** handles, defaults, code generation, docs, and tests stay aligned

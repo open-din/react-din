@@ -1,5 +1,16 @@
 import type { Node } from '@xyflow/react';
-import type { AudioNodeData, OutputNodeData, TransportNodeData, InputNodeData, UiTokensNodeData } from './store';
+import type {
+    AudioNodeData,
+    InputNodeData,
+    MidiCCNodeData,
+    MidiCCOutputNodeData,
+    MidiNoteNodeData,
+    MidiNoteOutputNodeData,
+    MidiSyncNodeData,
+    OutputNodeData,
+    TransportNodeData,
+    UiTokensNodeData,
+} from './store';
 import type { PlaygroundNodeType } from './nodeCatalog';
 import { createUiTokenParams, normalizeUiTokensNodeData } from './uiTokens';
 
@@ -39,6 +50,59 @@ export const createDefaultUiTokensData = (): UiTokensNodeData =>
         params: createUiTokenParams(),
         label: 'UI Tokens',
     });
+
+export const createDefaultMidiNoteData = (): MidiNoteNodeData => ({
+    type: 'midiNote',
+    inputId: 'default',
+    channel: 'all',
+    noteMode: 'all',
+    note: 60,
+    noteMin: 48,
+    noteMax: 72,
+    mappingEnabled: false,
+    mappings: [],
+    activeMappingId: null,
+    label: 'Midi In',
+});
+
+export const createDefaultMidiCCData = (): MidiCCNodeData => ({
+    type: 'midiCC',
+    inputId: 'default',
+    channel: 'all',
+    cc: 1,
+    label: 'Knob / CC In',
+});
+
+export const createDefaultMidiNoteOutputData = (): MidiNoteOutputNodeData => ({
+    type: 'midiNoteOutput',
+    outputId: null,
+    channel: 1,
+    gate: 0,
+    note: 60,
+    frequency: 261.63,
+    velocity: 1,
+    label: 'Note Out',
+});
+
+export const createDefaultMidiCCOutputData = (): MidiCCOutputNodeData => ({
+    type: 'midiCCOutput',
+    outputId: null,
+    channel: 1,
+    cc: 1,
+    value: 0,
+    valueFormat: 'normalized',
+    label: 'CC Out',
+});
+
+export const createDefaultMidiSyncData = (): MidiSyncNodeData => ({
+    type: 'midiSync',
+    mode: 'transport-master',
+    inputId: null,
+    outputId: null,
+    sendStartStop: true,
+    sendClock: true,
+    label: 'Sync',
+});
 
 export function createPlaygroundNode(
     id: string,
@@ -414,6 +478,46 @@ export function createPlaygroundNode(
                     loaded: false,
                     label: 'Sampler',
                 } as AudioNodeData,
+            };
+        case 'midiNote':
+            return {
+                id,
+                type: 'midiNoteNode',
+                position,
+                dragHandle: '.node-header',
+                data: createDefaultMidiNoteData() as AudioNodeData,
+            };
+        case 'midiCC':
+            return {
+                id,
+                type: 'midiCCNode',
+                position,
+                dragHandle: '.node-header',
+                data: createDefaultMidiCCData() as AudioNodeData,
+            };
+        case 'midiNoteOutput':
+            return {
+                id,
+                type: 'midiNoteOutputNode',
+                position,
+                dragHandle: '.node-header',
+                data: createDefaultMidiNoteOutputData() as AudioNodeData,
+            };
+        case 'midiCCOutput':
+            return {
+                id,
+                type: 'midiCCOutputNode',
+                position,
+                dragHandle: '.node-header',
+                data: createDefaultMidiCCOutputData() as AudioNodeData,
+            };
+        case 'midiSync':
+            return {
+                id,
+                type: 'midiSyncNode',
+                position,
+                dragHandle: '.node-header',
+                data: createDefaultMidiSyncData() as AudioNodeData,
             };
         case 'math':
             return {

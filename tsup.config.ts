@@ -10,6 +10,8 @@ export default defineConfig({
         'analyzers/index': 'src/analyzers/index.ts',
         'sources/index': 'src/sources/index.ts',
         'effects/index': 'src/effects/index.ts',
+        'midi/index': 'src/midi/index.ts',
+        'patch/index': 'src/patch/index.ts',
     },
     format: ['esm', 'cjs'],
     dts: true,

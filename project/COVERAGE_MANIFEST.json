@@ -7,8 +7,13 @@
       "name": "AudioProvider",
       "source": "src/core/AudioProvider.tsx",
       "docs": "docs/components/core/AudioProvider.md",
-      "tests": ["tests/library/core-components.spec.tsx"],
-      "scenarios": ["F01-S01", "F04-S01"]
+      "tests": [
+        "tests/library/core-components.spec.tsx"
+      ],
+      "scenarios": [
+        "F01-S01",
+        "F04-S01"
+      ]
     },
     {
       "id": "component:Gain",
@@ -16,8 +21,13 @@
       "name": "Gain",
       "source": "src/nodes/Gain.tsx",
       "docs": "docs/components/nodes/Gain.md",
-      "tests": ["tests/library/audio-nodes.spec.tsx"],
-      "scenarios": ["F01-S02", "F04-S02"]
+      "tests": [
+        "tests/library/audio-nodes.spec.tsx"
+      ],
+      "scenarios": [
+        "F01-S02",
+        "F04-S02"
+      ]
     },
     {
       "id": "component:Filter",
@@ -25,8 +35,13 @@
       "name": "Filter",
       "source": "src/nodes/Filter.tsx",
       "docs": "docs/components/nodes/Filter.md",
-      "tests": ["tests/library/audio-nodes.spec.tsx"],
-      "scenarios": ["F01-S02", "F04-S02"]
+      "tests": [
+        "tests/library/audio-nodes.spec.tsx"
+      ],
+      "scenarios": [
+        "F01-S02",
+        "F04-S02"
+      ]
     },
     {
       "id": "component:Osc",
@@ -34,8 +49,13 @@
       "name": "Osc",
       "source": "src/nodes/Osc.tsx",
       "docs": "docs/components/nodes/Osc.md",
-      "tests": ["tests/library/audio-nodes.spec.tsx"],
-      "scenarios": ["F01-S02", "F04-S02"]
+      "tests": [
+        "tests/library/audio-nodes.spec.tsx"
+      ],
+      "scenarios": [
+        "F01-S02",
+        "F04-S02"
+      ]
     },
     {
       "id": "component:Delay",
@@ -43,8 +63,13 @@
       "name": "Delay",
       "source": "src/nodes/Delay.tsx",
       "docs": "docs/components/nodes/Delay.md",
-      "tests": ["tests/library/audio-nodes.spec.tsx"],
-      "scenarios": ["F01-S02", "F04-S02"]
+      "tests": [
+        "tests/library/audio-nodes.spec.tsx"
+      ],
+      "scenarios": [
+        "F01-S02",
+        "F04-S02"
+      ]
     },
     {
       "id": "component:Compressor",
@@ -52,8 +77,13 @@
       "name": "Compressor",
       "source": "src/nodes/Compressor.tsx",
       "docs": "docs/components/nodes/Compressor.md",
-      "tests": ["tests/library/audio-nodes.spec.tsx"],
-      "scenarios": ["F01-S02", "F04-S02"]
+      "tests": [
+        "tests/library/audio-nodes.spec.tsx"
+      ],
+      "scenarios": [
+        "F01-S02",
+        "F04-S02"
+      ]
     },
     {
       "id": "component:Convolver",
@@ -61,8 +91,13 @@
       "name": "Convolver",
       "source": "src/nodes/Convolver.tsx",
       "docs": "docs/components/nodes/Convolver.md",
-      "tests": ["tests/library/audio-nodes.spec.tsx"],
-      "scenarios": ["F01-S02", "F04-S02"]
+      "tests": [
+        "tests/library/audio-nodes.spec.tsx"
+      ],
+      "scenarios": [
+        "F01-S02",
+        "F04-S02"
+      ]
     },
     {
       "id": "component:Panner",
@@ -70,8 +105,13 @@
       "name": "Panner",
       "source": "src/nodes/Panner.tsx",
       "docs": "docs/components/nodes/Panner.md",
-      "tests": ["tests/library/audio-nodes.spec.tsx"],
-      "scenarios": ["F01-S02", "F04-S02"]
+      "tests": [
+        "tests/library/audio-nodes.spec.tsx"
+      ],
+      "scenarios": [
+        "F01-S02",
+        "F04-S02"
+      ]
     },
     {
       "id": "component:StereoPanner",
@@ -79,8 +119,13 @@
       "name": "StereoPanner",
       "source": "src/nodes/StereoPanner.tsx",
       "docs": "docs/components/nodes/StereoPanner.md",
-      "tests": ["tests/library/audio-nodes.spec.tsx"],
-      "scenarios": ["F01-S02", "F04-S02"]
+      "tests": [
+        "tests/library/audio-nodes.spec.tsx"
+      ],
+      "scenarios": [
+        "F01-S02",
+        "F04-S02"
+      ]
     },
     {
       "id": "component:WaveShaper",
@@ -88,8 +133,13 @@
       "name": "WaveShaper",
       "source": "src/nodes/WaveShaper.tsx",
       "docs": "docs/components/nodes/WaveShaper.md",
-      "tests": ["tests/library/audio-nodes.spec.tsx"],
-      "scenarios": ["F01-S02", "F04-S02"]
+      "tests": [
+        "tests/library/audio-nodes.spec.tsx"
+      ],
+      "scenarios": [
+        "F01-S02",
+        "F04-S02"
+      ]
     },
     {
       "id": "component:PresetWaveShaper",
@@ -97,8 +147,13 @@
       "name": "PresetWaveShaper",
       "source": "src/nodes/PresetWaveShaper.tsx",
       "docs": "docs/components/nodes/PresetWaveShaper.md",
-      "tests": ["tests/library/audio-nodes.spec.tsx"],
-      "scenarios": ["F01-S03", "F04-S02"]
+      "tests": [
+        "tests/library/audio-nodes.spec.tsx"
+      ],
+      "scenarios": [
+        "F01-S03",
+        "F04-S02"
+      ]
     },
     {
       "id": "component:ADSR",
@@ -106,8 +161,13 @@
       "name": "ADSR",
       "source": "src/nodes/ADSR.tsx",
       "docs": "docs/components/nodes/ADSR.md",
-      "tests": ["tests/library/audio-nodes.spec.tsx"],
-      "scenarios": ["F01-S02", "F04-S02"]
+      "tests": [
+        "tests/library/audio-nodes.spec.tsx"
+      ],
+      "scenarios": [
+        "F01-S02",
+        "F04-S02"
+      ]
     },
     {
       "id": "component:TransportProvider",
@@ -115,8 +175,13 @@
       "name": "TransportProvider",
       "source": "src/transport/TransportContext.tsx",
       "docs": "docs/components/transport/TransportProvider.md",
-      "tests": ["tests/library/transport-sequencer.spec.tsx"],
-      "scenarios": ["F01-S03", "F04-S02"]
+      "tests": [
+        "tests/library/transport-sequencer.spec.tsx"
+      ],
+      "scenarios": [
+        "F01-S03",
+        "F04-S02"
+      ]
     },
     {
       "id": "component:Sequencer",
@@ -124,8 +189,13 @@
       "name": "Sequencer",
       "source": "src/sequencer/Sequencer.tsx",
       "docs": "docs/components/sequencer/Sequencer.md",
-      "tests": ["tests/library/transport-sequencer.spec.tsx"],
-      "scenarios": ["F01-S03", "F04-S02"]
+      "tests": [
+        "tests/library/transport-sequencer.spec.tsx"
+      ],
+      "scenarios": [
+        "F01-S03",
+        "F04-S02"
+      ]
     },
     {
       "id": "component:Track",
@@ -133,8 +203,13 @@
       "name": "Track",
       "source": "src/sequencer/Track.tsx",
       "docs": "docs/components/sequencer/Track.md",
-      "tests": ["tests/library/transport-sequencer.spec.tsx"],
-      "scenarios": ["F01-S03", "F04-S02"]
+      "tests": [
+        "tests/library/transport-sequencer.spec.tsx"
+      ],
+      "scenarios": [
+        "F01-S03",
+        "F04-S02"
+      ]
     },
     {
       "id": "component:EventTrigger",
@@ -142,8 +217,13 @@
       "name": "EventTrigger",
       "source": "src/sequencer/EventTrigger.tsx",
       "docs": "docs/components/sequencer/EventTrigger.md",
-      "tests": ["tests/library/transport-sequencer.spec.tsx"],
-      "scenarios": ["F01-S03", "F04-S02"]
+      "tests": [
+        "tests/library/transport-sequencer.spec.tsx"
+      ],
+      "scenarios": [
+        "F01-S03",
+        "F04-S02"
+      ]
     },
     {
       "id": "component:Analyzer",
@@ -151,8 +231,13 @@
       "name": "Analyzer",
       "source": "src/analyzers/Analyzer.tsx",
       "docs": "docs/components/analyzers/Analyzer.md",
-      "tests": ["tests/library/analyzers.spec.tsx"],
-      "scenarios": ["F01-S03", "F04-S02"]
+      "tests": [
+        "tests/library/analyzers.spec.tsx"
+      ],
+      "scenarios": [
+        "F01-S03",
+        "F04-S02"
+      ]
     },
     {
       "id": "component:Sampler",
@@ -160,8 +245,13 @@
       "name": "Sampler",
       "source": "src/sources/Sampler.tsx",
       "docs": "docs/components/sources/Sampler.md",
-      "tests": ["tests/library/sources-effects.spec.tsx"],
-      "scenarios": ["F01-S03", "F04-S02"]
+      "tests": [
+        "tests/library/sources-effects.spec.tsx"
+      ],
+      "scenarios": [
+        "F01-S03",
+        "F04-S02"
+      ]
     },
     {
       "id": "component:TriggeredSampler",
@@ -169,8 +259,13 @@
       "name": "TriggeredSampler",
       "source": "src/sources/TriggeredSampler.tsx",
       "docs": "docs/components/sources/TriggeredSampler.md",
-      "tests": ["tests/library/sources-effects.spec.tsx"],
-      "scenarios": ["F01-S03", "F04-S02"]
+      "tests": [
+        "tests/library/sources-effects.spec.tsx"
+      ],
+      "scenarios": [
+        "F01-S03",
+        "F04-S02"
+      ]
     },
     {
       "id": "component:Noise",
@@ -178,8 +273,13 @@
       "name": "Noise",
       "source": "src/sources/Noise.tsx",
       "docs": "docs/components/sources/Noise.md",
-      "tests": ["tests/library/sources-effects.spec.tsx"],
-      "scenarios": ["F01-S03", "F04-S02"]
+      "tests": [
+        "tests/library/sources-effects.spec.tsx"
+      ],
+      "scenarios": [
+        "F01-S03",
+        "F04-S02"
+      ]
     },
     {
       "id": "component:NoiseBurst",
@@ -187,8 +287,13 @@
       "name": "NoiseBurst",
       "source": "src/sources/NoiseBurst.tsx",
       "docs": "docs/components/sources/NoiseBurst.md",
-      "tests": ["tests/library/sources-effects.spec.tsx"],
-      "scenarios": ["F01-S03", "F04-S02"]
+      "tests": [
+        "tests/library/sources-effects.spec.tsx"
+      ],
+      "scenarios": [
+        "F01-S03",
+        "F04-S02"
+      ]
     },
     {
       "id": "component:MediaStream",
@@ -196,8 +301,13 @@
       "name": "MediaStream",
       "source": "src/sources/MediaStream.tsx",
       "docs": "docs/components/sources/MediaStream.md",
-      "tests": ["tests/library/sources-effects.spec.tsx"],
-      "scenarios": ["F01-S03", "F04-S02"]
+      "tests": [
+        "tests/library/sources-effects.spec.tsx"
+      ],
+      "scenarios": [
+        "F01-S03",
+        "F04-S02"
+      ]
     },
     {
       "id": "component:ConstantSource",
@@ -205,8 +315,13 @@
       "name": "ConstantSource",
       "source": "src/sources/ConstantSource.tsx",
       "docs": "docs/components/sources/ConstantSource.md",
-      "tests": ["tests/library/sources-effects.spec.tsx"],
-      "scenarios": ["F01-S03", "F04-S02"]
+      "tests": [
+        "tests/library/sources-effects.spec.tsx"
+      ],
+      "scenarios": [
+        "F01-S03",
+        "F04-S02"
+      ]
     },
     {
       "id": "component:LFO",
@@ -214,8 +329,13 @@
       "name": "LFO",
       "source": "src/sources/LFO.tsx",
       "docs": "docs/components/sources/LFO.md",
-      "tests": ["tests/library/sources-effects.spec.tsx"],
-      "scenarios": ["F01-S03", "F04-S02"]
+      "tests": [
+        "tests/library/sources-effects.spec.tsx"
+      ],
+      "scenarios": [
+        "F01-S03",
+        "F04-S02"
+      ]
     },
     {
       "id": "component:Reverb",
@@ -223,8 +343,13 @@
       "name": "Reverb",
       "source": "src/effects/Reverb.tsx",
       "docs": "docs/components/effects/Reverb.md",
-      "tests": ["tests/library/sources-effects.spec.tsx"],
-      "scenarios": ["F01-S03", "F04-S02"]
+      "tests": [
+        "tests/library/sources-effects.spec.tsx"
+      ],
+      "scenarios": [
+        "F01-S03",
+        "F04-S02"
+      ]
     },
     {
       "id": "component:Chorus",
@@ -232,8 +357,13 @@
       "name": "Chorus",
       "source": "src/effects/Chorus.tsx",
       "docs": "docs/components/effects/Chorus.md",
-      "tests": ["tests/library/sources-effects.spec.tsx"],
-      "scenarios": ["F01-S03", "F04-S02"]
+      "tests": [
+        "tests/library/sources-effects.spec.tsx"
+      ],
+      "scenarios": [
+        "F01-S03",
+        "F04-S02"
+      ]
     },
     {
       "id": "component:Distortion",
@@ -241,8 +371,13 @@
       "name": "Distortion",
       "source": "src/effects/Distortion.tsx",
       "docs": "docs/components/effects/Distortion.md",
-      "tests": ["tests/library/sources-effects.spec.tsx"],
-      "scenarios": ["F01-S03", "F04-S02"]
+      "tests": [
+        "tests/library/sources-effects.spec.tsx"
+      ],
+      "scenarios": [
+        "F01-S03",
+        "F04-S02"
+      ]
     },
     {
       "id": "component:Phaser",
@@ -250,8 +385,14 @@
       "name": "Phaser",
       "source": "src/effects/Phaser.tsx",
       "docs": "docs/components/effects/Phaser.md",
-      "tests": ["tests/library/sources-effects.spec.tsx"],
-      "scenarios": ["F01-S03", "F03-S05", "F04-S02"]
+      "tests": [
+        "tests/library/sources-effects.spec.tsx"
+      ],
+      "scenarios": [
+        "F01-S03",
+        "F03-S05",
+        "F04-S02"
+      ]
     },
     {
       "id": "component:Flanger",
@@ -259,8 +400,14 @@
       "name": "Flanger",
       "source": "src/effects/Flanger.tsx",
       "docs": "docs/components/effects/Flanger.md",
-      "tests": ["tests/library/sources-effects.spec.tsx"],
-      "scenarios": ["F01-S03", "F03-S05", "F04-S02"]
+      "tests": [
+        "tests/library/sources-effects.spec.tsx"
+      ],
+      "scenarios": [
+        "F01-S03",
+        "F03-S05",
+        "F04-S02"
+      ]
     },
     {
       "id": "component:Tremolo",
@@ -268,8 +415,14 @@
       "name": "Tremolo",
       "source": "src/effects/Tremolo.tsx",
       "docs": "docs/components/effects/Tremolo.md",
-      "tests": ["tests/library/sources-effects.spec.tsx"],
-      "scenarios": ["F01-S03", "F03-S05", "F04-S02"]
+      "tests": [
+        "tests/library/sources-effects.spec.tsx"
+      ],
+      "scenarios": [
+        "F01-S03",
+        "F03-S05",
+        "F04-S02"
+      ]
     },
     {
       "id": "component:EQ3",
@@ -277,8 +430,14 @@
       "name": "EQ3",
       "source": "src/effects/EQ3.tsx",
       "docs": "docs/components/effects/EQ3.md",
-      "tests": ["tests/library/sources-effects.spec.tsx"],
-      "scenarios": ["F01-S03", "F03-S05", "F04-S02"]
+      "tests": [
+        "tests/library/sources-effects.spec.tsx"
+      ],
+      "scenarios": [
+        "F01-S03",
+        "F03-S05",
+        "F04-S02"
+      ]
     },
     {
       "id": "component:AuxSend",
@@ -286,8 +445,15 @@
       "name": "AuxSend",
       "source": "src/routing/AuxSend.tsx",
       "docs": "docs/components/routing/AuxSend.md",
-      "tests": ["tests/library/sources-effects.spec.tsx", "tests/library/audio-nodes.spec.tsx"],
-      "scenarios": ["F01-S03", "F03-S06", "F04-S02"]
+      "tests": [
+        "tests/library/sources-effects.spec.tsx",
+        "tests/library/audio-nodes.spec.tsx"
+      ],
+      "scenarios": [
+        "F01-S03",
+        "F03-S06",
+        "F04-S02"
+      ]
     },
     {
       "id": "component:AuxReturn",
@@ -295,8 +461,14 @@
       "name": "AuxReturn",
       "source": "src/routing/AuxReturn.tsx",
       "docs": "docs/components/routing/AuxReturn.md",
-      "tests": ["tests/library/sources-effects.spec.tsx"],
-      "scenarios": ["F01-S03", "F03-S06", "F04-S02"]
+      "tests": [
+        "tests/library/sources-effects.spec.tsx"
+      ],
+      "scenarios": [
+        "F01-S03",
+        "F03-S06",
+        "F04-S02"
+      ]
     },
     {
       "id": "component:MatrixMixer",
@@ -304,8 +476,14 @@
       "name": "MatrixMixer",
       "source": "src/routing/MatrixMixer.tsx",
       "docs": "docs/components/routing/MatrixMixer.md",
-      "tests": ["tests/library/sources-effects.spec.tsx"],
-      "scenarios": ["F01-S03", "F03-S06", "F04-S02"]
+      "tests": [
+        "tests/library/sources-effects.spec.tsx"
+      ],
+      "scenarios": [
+        "F01-S03",
+        "F03-S06",
+        "F04-S02"
+      ]
     },
     {
       "id": "playground-node:OscNode",
@@ -313,8 +491,14 @@
       "name": "OscNode",
       "source": "playground/src/playground/nodes/OscNode.tsx",
       "docs": "docs/playground-nodes/OscNode.md",
-      "tests": ["playground/tests/unit/nodes-ui.spec.tsx", "playground/tests/unit/store-and-codegen.spec.ts"],
-      "scenarios": ["F02-S01", "F04-S02"]
+      "tests": [
+        "playground/tests/unit/nodes-ui.spec.tsx",
+        "playground/tests/unit/store-and-codegen.spec.ts"
+      ],
+      "scenarios": [
+        "F02-S01",
+        "F04-S02"
+      ]
     },
     {
       "id": "playground-node:GainNode",
@@ -322,8 +506,14 @@
       "name": "GainNode",
       "source": "playground/src/playground/nodes/GainNode.tsx",
       "docs": "docs/playground-nodes/GainNode.md",
-      "tests": ["playground/tests/unit/nodes-ui.spec.tsx", "playground/tests/unit/store-and-codegen.spec.ts"],
-      "scenarios": ["F02-S01", "F04-S02"]
+      "tests": [
+        "playground/tests/unit/nodes-ui.spec.tsx",
+        "playground/tests/unit/store-and-codegen.spec.ts"
+      ],
+      "scenarios": [
+        "F02-S01",
+        "F04-S02"
+      ]
     },
     {
       "id": "playground-node:FilterNode",
@@ -331,8 +521,14 @@
       "name": "FilterNode",
       "source": "playground/src/playground/nodes/FilterNode.tsx",
       "docs": "docs/playground-nodes/FilterNode.md",
-      "tests": ["playground/tests/unit/nodes-ui.spec.tsx", "playground/tests/unit/store-and-codegen.spec.ts"],
-      "scenarios": ["F02-S01", "F04-S02"]
+      "tests": [
+        "playground/tests/unit/nodes-ui.spec.tsx",
+        "playground/tests/unit/store-and-codegen.spec.ts"
+      ],
+      "scenarios": [
+        "F02-S01",
+        "F04-S02"
+      ]
     },
     {
       "id": "playground-node:OutputNode",
@@ -340,8 +536,15 @@
       "name": "OutputNode",
       "source": "playground/src/playground/nodes/OutputNode.tsx",
       "docs": "docs/playground-nodes/OutputNode.md",
-      "tests": ["playground/tests/unit/nodes-ui.spec.tsx", "playground/tests/unit/store-and-codegen.spec.ts", "playground/tests/e2e/playground.spec.ts"],
-      "scenarios": ["F02-S01", "F04-S02"]
+      "tests": [
+        "playground/tests/unit/nodes-ui.spec.tsx",
+        "playground/tests/unit/store-and-codegen.spec.ts",
+        "playground/tests/e2e/playground.spec.ts"
+      ],
+      "scenarios": [
+        "F02-S01",
+        "F04-S02"
+      ]
     },
     {
       "id": "playground-node:NoiseNode",
@@ -349,8 +552,14 @@
       "name": "NoiseNode",
       "source": "playground/src/playground/nodes/NoiseNode.tsx",
       "docs": "docs/playground-nodes/NoiseNode.md",
-      "tests": ["playground/tests/unit/nodes-ui.spec.tsx", "playground/tests/unit/store-and-codegen.spec.ts"],
-      "scenarios": ["F02-S01", "F04-S02"]
+      "tests": [
+        "playground/tests/unit/nodes-ui.spec.tsx",
+        "playground/tests/unit/store-and-codegen.spec.ts"
+      ],
+      "scenarios": [
+        "F02-S01",
+        "F04-S02"
+      ]
     },
     {
       "id": "playground-node:DelayNode",
@@ -358,8 +567,14 @@
       "name": "DelayNode",
       "source": "playground/src/playground/nodes/DelayNode.tsx",
       "docs": "docs/playground-nodes/DelayNode.md",
-      "tests": ["playground/tests/unit/nodes-ui.spec.tsx", "playground/tests/unit/store-and-codegen.spec.ts"],
-      "scenarios": ["F02-S01", "F04-S02"]
+      "tests": [
+        "playground/tests/unit/nodes-ui.spec.tsx",
+        "playground/tests/unit/store-and-codegen.spec.ts"
+      ],
+      "scenarios": [
+        "F02-S01",
+        "F04-S02"
+      ]
     },
     {
       "id": "playground-node:ReverbNode",
@@ -367,8 +582,14 @@
       "name": "ReverbNode",
       "source": "playground/src/playground/nodes/ReverbNode.tsx",
       "docs": "docs/playground-nodes/ReverbNode.md",
-      "tests": ["playground/tests/unit/nodes-ui.spec.tsx", "playground/tests/unit/store-and-codegen.spec.ts"],
-      "scenarios": ["F02-S01", "F04-S02"]
+      "tests": [
+        "playground/tests/unit/nodes-ui.spec.tsx",
+        "playground/tests/unit/store-and-codegen.spec.ts"
+      ],
+      "scenarios": [
+        "F02-S01",
+        "F04-S02"
+      ]
     },
     {
       "id": "playground-node:AnalyzerNode",
@@ -376,8 +597,14 @@
       "name": "AnalyzerNode",
       "source": "playground/src/playground/nodes/AnalyzerNode.tsx",
       "docs": "docs/playground-nodes/AnalyzerNode.md",
-      "tests": ["playground/tests/unit/nodes-ui.spec.tsx", "playground/tests/unit/store-and-codegen.spec.ts"],
-      "scenarios": ["F02-S01", "F04-S02"]
+      "tests": [
+        "playground/tests/unit/nodes-ui.spec.tsx",
+        "playground/tests/unit/store-and-codegen.spec.ts"
+      ],
+      "scenarios": [
+        "F02-S01",
+        "F04-S02"
+      ]
     },
     {
       "id": "playground-node:ChorusNode",
@@ -385,8 +612,14 @@
       "name": "ChorusNode",
       "source": "playground/src/playground/nodes/ChorusNode.tsx",
       "docs": "docs/playground-nodes/ChorusNode.md",
-      "tests": ["playground/tests/unit/nodes-ui.spec.tsx", "playground/tests/unit/store-and-codegen.spec.ts"],
-      "scenarios": ["F02-S01", "F04-S02"]
+      "tests": [
+        "playground/tests/unit/nodes-ui.spec.tsx",
+        "playground/tests/unit/store-and-codegen.spec.ts"
+      ],
+      "scenarios": [
+        "F02-S01",
+        "F04-S02"
+      ]
     },
     {
       "id": "playground-node:CompressorNode",
@@ -394,8 +627,16 @@
       "name": "CompressorNode",
       "source": "playground/src/playground/nodes/CompressorNode.tsx",
       "docs": "docs/playground-nodes/CompressorNode.md",
-      "tests": ["playground/tests/unit/nodes-ui.spec.tsx", "playground/tests/unit/store-and-codegen.spec.ts", "playground/tests/unit/node-helpers.spec.ts"],
-      "scenarios": ["F02-S01", "F03-S06", "F04-S02"]
+      "tests": [
+        "playground/tests/unit/nodes-ui.spec.tsx",
+        "playground/tests/unit/store-and-codegen.spec.ts",
+        "playground/tests/unit/node-helpers.spec.ts"
+      ],
+      "scenarios": [
+        "F02-S01",
+        "F03-S06",
+        "F04-S02"
+      ]
     },
     {
       "id": "playground-node:PhaserNode",
@@ -403,8 +644,15 @@
       "name": "PhaserNode",
       "source": "playground/src/playground/nodes/PhaserNode.tsx",
       "docs": "docs/playground-nodes/PhaserNode.md",
-      "tests": ["playground/tests/unit/nodes-ui.spec.tsx", "playground/tests/unit/store-and-codegen.spec.ts"],
-      "scenarios": ["F02-S01", "F03-S05", "F04-S02"]
+      "tests": [
+        "playground/tests/unit/nodes-ui.spec.tsx",
+        "playground/tests/unit/store-and-codegen.spec.ts"
+      ],
+      "scenarios": [
+        "F02-S01",
+        "F03-S05",
+        "F04-S02"
+      ]
     },
     {
       "id": "playground-node:FlangerNode",
@@ -412,8 +660,15 @@
       "name": "FlangerNode",
       "source": "playground/src/playground/nodes/FlangerNode.tsx",
       "docs": "docs/playground-nodes/FlangerNode.md",
-      "tests": ["playground/tests/unit/nodes-ui.spec.tsx", "playground/tests/unit/store-and-codegen.spec.ts"],
-      "scenarios": ["F02-S01", "F03-S05", "F04-S02"]
+      "tests": [
+        "playground/tests/unit/nodes-ui.spec.tsx",
+        "playground/tests/unit/store-and-codegen.spec.ts"
+      ],
+      "scenarios": [
+        "F02-S01",
+        "F03-S05",
+        "F04-S02"
+      ]
     },
     {
       "id": "playground-node:TremoloNode",
@@ -421,8 +676,15 @@
       "name": "TremoloNode",
       "source": "playground/src/playground/nodes/TremoloNode.tsx",
       "docs": "docs/playground-nodes/TremoloNode.md",
-      "tests": ["playground/tests/unit/nodes-ui.spec.tsx", "playground/tests/unit/store-and-codegen.spec.ts"],
-      "scenarios": ["F02-S01", "F03-S05", "F04-S02"]
+      "tests": [
+        "playground/tests/unit/nodes-ui.spec.tsx",
+        "playground/tests/unit/store-and-codegen.spec.ts"
+      ],
+      "scenarios": [
+        "F02-S01",
+        "F03-S05",
+        "F04-S02"
+      ]
     },
     {
       "id": "playground-node:EQ3Node",
@@ -430,8 +692,15 @@
       "name": "EQ3Node",
       "source": "playground/src/playground/nodes/EQ3Node.tsx",
       "docs": "docs/playground-nodes/EQ3Node.md",
-      "tests": ["playground/tests/unit/nodes-ui.spec.tsx", "playground/tests/unit/store-and-codegen.spec.ts"],
-      "scenarios": ["F02-S01", "F03-S05", "F04-S02"]
+      "tests": [
+        "playground/tests/unit/nodes-ui.spec.tsx",
+        "playground/tests/unit/store-and-codegen.spec.ts"
+      ],
+      "scenarios": [
+        "F02-S01",
+        "F03-S05",
+        "F04-S02"
+      ]
     },
     {
       "id": "playground-node:ConstantSourceNode",
@@ -439,8 +708,14 @@
       "name": "ConstantSourceNode",
       "source": "playground/src/playground/nodes/ConstantSourceNode.tsx",
       "docs": "docs/playground-nodes/ConstantSourceNode.md",
-      "tests": ["playground/tests/unit/nodes-ui.spec.tsx", "playground/tests/unit/store-and-codegen.spec.ts"],
-      "scenarios": ["F02-S02", "F04-S02"]
+      "tests": [
+        "playground/tests/unit/nodes-ui.spec.tsx",
+        "playground/tests/unit/store-and-codegen.spec.ts"
+      ],
+      "scenarios": [
+        "F02-S02",
+        "F04-S02"
+      ]
     },
     {
       "id": "playground-node:ConvolverNode",
@@ -448,8 +723,16 @@
       "name": "ConvolverNode",
       "source": "playground/src/playground/nodes/ConvolverNode.tsx",
       "docs": "docs/playground-nodes/ConvolverNode.md",
-      "tests": ["playground/tests/unit/nodes-ui.spec.tsx", "playground/tests/unit/store-and-codegen.spec.ts", "playground/tests/unit/audio-library.spec.ts", "playground/tests/unit/playground-connection-assist.spec.tsx"],
-      "scenarios": ["F02-S01", "F04-S02"]
+      "tests": [
+        "playground/tests/unit/nodes-ui.spec.tsx",
+        "playground/tests/unit/store-and-codegen.spec.ts",
+        "playground/tests/unit/audio-library.spec.ts",
+        "playground/tests/unit/playground-connection-assist.spec.tsx"
+      ],
+      "scenarios": [
+        "F02-S01",
+        "F04-S02"
+      ]
     },
     {
       "id": "playground-node:DistortionNode",
@@ -457,8 +740,14 @@
       "name": "DistortionNode",
       "source": "playground/src/playground/nodes/DistortionNode.tsx",
       "docs": "docs/playground-nodes/DistortionNode.md",
-      "tests": ["playground/tests/unit/nodes-ui.spec.tsx", "playground/tests/unit/store-and-codegen.spec.ts"],
-      "scenarios": ["F02-S01", "F04-S02"]
+      "tests": [
+        "playground/tests/unit/nodes-ui.spec.tsx",
+        "playground/tests/unit/store-and-codegen.spec.ts"
+      ],
+      "scenarios": [
+        "F02-S01",
+        "F04-S02"
+      ]
     },
     {
       "id": "playground-node:EventTriggerNode",
@@ -466,8 +755,14 @@
       "name": "EventTriggerNode",
       "source": "playground/src/playground/nodes/EventTriggerNode.tsx",
       "docs": "docs/playground-nodes/EventTriggerNode.md",
-      "tests": ["playground/tests/unit/nodes-ui.spec.tsx", "playground/tests/unit/store-and-codegen.spec.ts"],
-      "scenarios": ["F02-S03", "F04-S02"]
+      "tests": [
+        "playground/tests/unit/nodes-ui.spec.tsx",
+        "playground/tests/unit/store-and-codegen.spec.ts"
+      ],
+      "scenarios": [
+        "F02-S03",
+        "F04-S02"
+      ]
     },
     {
       "id": "playground-node:MediaStreamNode",
@@ -475,8 +770,14 @@
       "name": "MediaStreamNode",
       "source": "playground/src/playground/nodes/MediaStreamNode.tsx",
       "docs": "docs/playground-nodes/MediaStreamNode.md",
-      "tests": ["playground/tests/unit/nodes-ui.spec.tsx", "playground/tests/unit/store-and-codegen.spec.ts"],
-      "scenarios": ["F02-S01", "F04-S02"]
+      "tests": [
+        "playground/tests/unit/nodes-ui.spec.tsx",
+        "playground/tests/unit/store-and-codegen.spec.ts"
+      ],
+      "scenarios": [
+        "F02-S01",
+        "F04-S02"
+      ]
     },
     {
       "id": "playground-node:NoiseBurstNode",
@@ -484,8 +785,14 @@
       "name": "NoiseBurstNode",
       "source": "playground/src/playground/nodes/NoiseBurstNode.tsx",
       "docs": "docs/playground-nodes/NoiseBurstNode.md",
-      "tests": ["playground/tests/unit/nodes-ui.spec.tsx", "playground/tests/unit/store-and-codegen.spec.ts"],
-      "scenarios": ["F02-S01", "F04-S02"]
+      "tests": [
+        "playground/tests/unit/nodes-ui.spec.tsx",
+        "playground/tests/unit/store-and-codegen.spec.ts"
+      ],
+      "scenarios": [
+        "F02-S01",
+        "F04-S02"
+      ]
     },
     {
       "id": "playground-node:Panner3DNode",
@@ -493,8 +800,14 @@
       "name": "Panner3DNode",
       "source": "playground/src/playground/nodes/Panner3DNode.tsx",
       "docs": "docs/playground-nodes/Panner3DNode.md",
-      "tests": ["playground/tests/unit/nodes-ui.spec.tsx", "playground/tests/unit/store-and-codegen.spec.ts"],
-      "scenarios": ["F02-S01", "F04-S02"]
+      "tests": [
+        "playground/tests/unit/nodes-ui.spec.tsx",
+        "playground/tests/unit/store-and-codegen.spec.ts"
+      ],
+      "scenarios": [
+        "F02-S01",
+        "F04-S02"
+      ]
     },
     {
       "id": "playground-node:StereoPannerNode",
@@ -502,8 +815,14 @@
       "name": "StereoPannerNode",
       "source": "playground/src/playground/nodes/StereoPannerNode.tsx",
       "docs": "docs/playground-nodes/StereoPannerNode.md",
-      "tests": ["playground/tests/unit/nodes-ui.spec.tsx", "playground/tests/unit/store-and-codegen.spec.ts"],
-      "scenarios": ["F02-S01", "F04-S02"]
+      "tests": [
+        "playground/tests/unit/nodes-ui.spec.tsx",
+        "playground/tests/unit/store-and-codegen.spec.ts"
+      ],
+      "scenarios": [
+        "F02-S01",
+        "F04-S02"
+      ]
     },
     {
       "id": "playground-node:WaveShaperNode",
@@ -511,8 +830,14 @@
       "name": "WaveShaperNode",
       "source": "playground/src/playground/nodes/WaveShaperNode.tsx",
       "docs": "docs/playground-nodes/WaveShaperNode.md",
-      "tests": ["playground/tests/unit/nodes-ui.spec.tsx", "playground/tests/unit/store-and-codegen.spec.ts"],
-      "scenarios": ["F02-S01", "F04-S02"]
+      "tests": [
+        "playground/tests/unit/nodes-ui.spec.tsx",
+        "playground/tests/unit/store-and-codegen.spec.ts"
+      ],
+      "scenarios": [
+        "F02-S01",
+        "F04-S02"
+      ]
     },
     {
       "id": "playground-node:MixerNode",
@@ -520,8 +845,14 @@
       "name": "MixerNode",
       "source": "playground/src/playground/nodes/MixerNode.tsx",
       "docs": "docs/playground-nodes/MixerNode.md",
-      "tests": ["playground/tests/unit/nodes-ui.spec.tsx", "playground/tests/unit/store-and-codegen.spec.ts"],
-      "scenarios": ["F02-S01", "F04-S02"]
+      "tests": [
+        "playground/tests/unit/nodes-ui.spec.tsx",
+        "playground/tests/unit/store-and-codegen.spec.ts"
+      ],
+      "scenarios": [
+        "F02-S01",
+        "F04-S02"
+      ]
     },
     {
       "id": "playground-node:AuxSendNode",
@@ -529,8 +860,15 @@
       "name": "AuxSendNode",
       "source": "playground/src/playground/nodes/AuxSendNode.tsx",
       "docs": "docs/playground-nodes/AuxSendNode.md",
-      "tests": ["playground/tests/unit/nodes-ui.spec.tsx", "playground/tests/unit/store-and-codegen.spec.ts"],
-      "scenarios": ["F02-S01", "F03-S06", "F04-S02"]
+      "tests": [
+        "playground/tests/unit/nodes-ui.spec.tsx",
+        "playground/tests/unit/store-and-codegen.spec.ts"
+      ],
+      "scenarios": [
+        "F02-S01",
+        "F03-S06",
+        "F04-S02"
+      ]
     },
     {
       "id": "playground-node:AuxReturnNode",
@@ -538,8 +876,15 @@
       "name": "AuxReturnNode",
       "source": "playground/src/playground/nodes/AuxReturnNode.tsx",
       "docs": "docs/playground-nodes/AuxReturnNode.md",
-      "tests": ["playground/tests/unit/nodes-ui.spec.tsx", "playground/tests/unit/store-and-codegen.spec.ts"],
-      "scenarios": ["F02-S01", "F03-S06", "F04-S02"]
+      "tests": [
+        "playground/tests/unit/nodes-ui.spec.tsx",
+        "playground/tests/unit/store-and-codegen.spec.ts"
+      ],
+      "scenarios": [
+        "F02-S01",
+        "F03-S06",
+        "F04-S02"
+      ]
     },
     {
       "id": "playground-node:MatrixMixerNode",
@@ -547,8 +892,16 @@
       "name": "MatrixMixerNode",
       "source": "playground/src/playground/nodes/MatrixMixerNode.tsx",
       "docs": "docs/playground-nodes/MatrixMixerNode.md",
-      "tests": ["playground/tests/unit/nodes-ui.spec.tsx", "playground/tests/unit/store-and-codegen.spec.ts", "playground/tests/unit/node-helpers.spec.ts"],
-      "scenarios": ["F02-S01", "F03-S06", "F04-S02"]
+      "tests": [
+        "playground/tests/unit/nodes-ui.spec.tsx",
+        "playground/tests/unit/store-and-codegen.spec.ts",
+        "playground/tests/unit/node-helpers.spec.ts"
+      ],
+      "scenarios": [
+        "F02-S01",
+        "F03-S06",
+        "F04-S02"
+      ]
     },
     {
       "id": "playground-node:InputNode",
@@ -556,8 +909,14 @@
       "name": "InputNode",
       "source": "playground/src/playground/nodes/InputNode.tsx",
       "docs": "docs/playground-nodes/InputNode.md",
-      "tests": ["playground/tests/unit/nodes-ui.spec.tsx", "playground/tests/unit/store-and-codegen.spec.ts"],
-      "scenarios": ["F02-S02", "F04-S02"]
+      "tests": [
+        "playground/tests/unit/nodes-ui.spec.tsx",
+        "playground/tests/unit/store-and-codegen.spec.ts"
+      ],
+      "scenarios": [
+        "F02-S02",
+        "F04-S02"
+      ]
     },
     {
       "id": "playground-node:UiTokensNode",
@@ -565,8 +924,15 @@
       "name": "UiTokensNode",
       "source": "playground/src/playground/nodes/UiTokensNode.tsx",
       "docs": "docs/playground-nodes/UiTokensNode.md",
-      "tests": ["playground/tests/unit/nodes-ui.spec.tsx", "playground/tests/unit/store-and-codegen.spec.ts", "playground/tests/unit/node-helpers.spec.ts"],
-      "scenarios": ["F02-S02", "F04-S02"]
+      "tests": [
+        "playground/tests/unit/nodes-ui.spec.tsx",
+        "playground/tests/unit/store-and-codegen.spec.ts",
+        "playground/tests/unit/node-helpers.spec.ts"
+      ],
+      "scenarios": [
+        "F02-S02",
+        "F04-S02"
+      ]
     },
     {
       "id": "playground-node:NoteNode",
@@ -574,8 +940,14 @@
       "name": "NoteNode",
       "source": "playground/src/playground/nodes/NoteNode.tsx",
       "docs": "docs/playground-nodes/NoteNode.md",
-      "tests": ["playground/tests/unit/nodes-ui.spec.tsx", "playground/tests/unit/store-and-codegen.spec.ts"],
-      "scenarios": ["F02-S02", "F04-S02"]
+      "tests": [
+        "playground/tests/unit/nodes-ui.spec.tsx",
+        "playground/tests/unit/store-and-codegen.spec.ts"
+      ],
+      "scenarios": [
+        "F02-S02",
+        "F04-S02"
+      ]
     },
     {
       "id": "playground-node:TransportNode",
@@ -583,8 +955,15 @@
       "name": "TransportNode",
       "source": "playground/src/playground/nodes/TransportNode.tsx",
       "docs": "docs/playground-nodes/TransportNode.md",
-      "tests": ["playground/tests/unit/nodes-ui.spec.tsx", "playground/tests/unit/store-and-codegen.spec.ts", "playground/tests/e2e/playground.spec.ts"],
-      "scenarios": ["F02-S03", "F04-S02"]
+      "tests": [
+        "playground/tests/unit/nodes-ui.spec.tsx",
+        "playground/tests/unit/store-and-codegen.spec.ts",
+        "playground/tests/e2e/playground.spec.ts"
+      ],
+      "scenarios": [
+        "F02-S03",
+        "F04-S02"
+      ]
     },
     {
       "id": "playground-node:StepSequencerNode",
@@ -592,8 +971,15 @@
       "name": "StepSequencerNode",
       "source": "playground/src/playground/nodes/StepSequencerNode.tsx",
       "docs": "docs/playground-nodes/StepSequencerNode.md",
-      "tests": ["playground/tests/unit/nodes-ui.spec.tsx", "playground/tests/unit/store-and-codegen.spec.ts", "playground/tests/e2e/playground.spec.ts"],
-      "scenarios": ["F02-S03", "F04-S02"]
+      "tests": [
+        "playground/tests/unit/nodes-ui.spec.tsx",
+        "playground/tests/unit/store-and-codegen.spec.ts",
+        "playground/tests/e2e/playground.spec.ts"
+      ],
+      "scenarios": [
+        "F02-S03",
+        "F04-S02"
+      ]
     },
     {
       "id": "playground-node:PianoRollNode",
@@ -601,8 +987,14 @@
       "name": "PianoRollNode",
       "source": "playground/src/playground/nodes/PianoRollNode.tsx",
       "docs": "docs/playground-nodes/PianoRollNode.md",
-      "tests": ["playground/tests/unit/nodes-ui.spec.tsx", "playground/tests/unit/store-and-codegen.spec.ts"],
-      "scenarios": ["F02-S03", "F04-S02"]
+      "tests": [
+        "playground/tests/unit/nodes-ui.spec.tsx",
+        "playground/tests/unit/store-and-codegen.spec.ts"
+      ],
+      "scenarios": [
+        "F02-S03",
+        "F04-S02"
+      ]
     },
     {
       "id": "playground-node:LFONode",
@@ -610,8 +1002,14 @@
       "name": "LFONode",
       "source": "playground/src/playground/nodes/LFONode.tsx",
       "docs": "docs/playground-nodes/LFONode.md",
-      "tests": ["playground/tests/unit/nodes-ui.spec.tsx", "playground/tests/unit/store-and-codegen.spec.ts"],
-      "scenarios": ["F02-S03", "F04-S02"]
+      "tests": [
+        "playground/tests/unit/nodes-ui.spec.tsx",
+        "playground/tests/unit/store-and-codegen.spec.ts"
+      ],
+      "scenarios": [
+        "F02-S03",
+        "F04-S02"
+      ]
     },
     {
       "id": "playground-node:ADSRNode",
@@ -619,8 +1017,14 @@
       "name": "ADSRNode",
       "source": "playground/src/playground/nodes/ADSRNode.tsx",
       "docs": "docs/playground-nodes/ADSRNode.md",
-      "tests": ["playground/tests/unit/nodes-ui.spec.tsx", "playground/tests/unit/store-and-codegen.spec.ts"],
-      "scenarios": ["F02-S03", "F04-S02"]
+      "tests": [
+        "playground/tests/unit/nodes-ui.spec.tsx",
+        "playground/tests/unit/store-and-codegen.spec.ts"
+      ],
+      "scenarios": [
+        "F02-S03",
+        "F04-S02"
+      ]
     },
     {
       "id": "playground-node:VoiceNode",
@@ -628,8 +1032,15 @@
       "name": "VoiceNode",
       "source": "playground/src/playground/nodes/VoiceNode.tsx",
       "docs": "docs/playground-nodes/VoiceNode.md",
-      "tests": ["playground/tests/unit/nodes-ui.spec.tsx", "playground/tests/unit/store-and-codegen.spec.ts", "playground/tests/e2e/playground.spec.ts"],
-      "scenarios": ["F02-S03", "F04-S02"]
+      "tests": [
+        "playground/tests/unit/nodes-ui.spec.tsx",
+        "playground/tests/unit/store-and-codegen.spec.ts",
+        "playground/tests/e2e/playground.spec.ts"
+      ],
+      "scenarios": [
+        "F02-S03",
+        "F04-S02"
+      ]
     },
     {
       "id": "playground-node:SamplerNode",
@@ -637,8 +1048,16 @@
       "name": "SamplerNode",
       "source": "playground/src/playground/nodes/SamplerNode.tsx",
       "docs": "docs/playground-nodes/SamplerNode.md",
-      "tests": ["playground/tests/unit/nodes-ui.spec.tsx", "playground/tests/unit/store-and-codegen.spec.ts", "playground/tests/unit/audio-library.spec.ts", "playground/tests/unit/playground-connection-assist.spec.tsx"],
-      "scenarios": ["F02-S01", "F04-S02"]
+      "tests": [
+        "playground/tests/unit/nodes-ui.spec.tsx",
+        "playground/tests/unit/store-and-codegen.spec.ts",
+        "playground/tests/unit/audio-library.spec.ts",
+        "playground/tests/unit/playground-connection-assist.spec.tsx"
+      ],
+      "scenarios": [
+        "F02-S01",
+        "F04-S02"
+      ]
     },
     {
       "id": "playground-node:MathNode",
@@ -646,8 +1065,14 @@
       "name": "MathNode",
       "source": "playground/src/playground/nodes/MathNode.tsx",
       "docs": "docs/playground-nodes/MathNode.md",
-      "tests": ["playground/tests/unit/nodes-ui.spec.tsx", "playground/tests/unit/store-and-codegen.spec.ts"],
-      "scenarios": ["F02-S02", "F04-S02"]
+      "tests": [
+        "playground/tests/unit/nodes-ui.spec.tsx",
+        "playground/tests/unit/store-and-codegen.spec.ts"
+      ],
+      "scenarios": [
+        "F02-S02",
+        "F04-S02"
+      ]
     },
     {
       "id": "playground-node:CompareNode",
@@ -655,8 +1080,14 @@
       "name": "CompareNode",
       "source": "playground/src/playground/nodes/CompareNode.tsx",
       "docs": "docs/playground-nodes/CompareNode.md",
-      "tests": ["playground/tests/unit/nodes-ui.spec.tsx", "playground/tests/unit/store-and-codegen.spec.ts"],
-      "scenarios": ["F02-S02", "F04-S02"]
+      "tests": [
+        "playground/tests/unit/nodes-ui.spec.tsx",
+        "playground/tests/unit/store-and-codegen.spec.ts"
+      ],
+      "scenarios": [
+        "F02-S02",
+        "F04-S02"
+      ]
     },
     {
       "id": "playground-node:MixNode",
@@ -664,8 +1095,14 @@
       "name": "MixNode",
       "source": "playground/src/playground/nodes/MixNode.tsx",
       "docs": "docs/playground-nodes/MixNode.md",
-      "tests": ["playground/tests/unit/nodes-ui.spec.tsx", "playground/tests/unit/store-and-codegen.spec.ts"],
-      "scenarios": ["F02-S02", "F04-S02"]
+      "tests": [
+        "playground/tests/unit/nodes-ui.spec.tsx",
+        "playground/tests/unit/store-and-codegen.spec.ts"
+      ],
+      "scenarios": [
+        "F02-S02",
+        "F04-S02"
+      ]
     },
     {
       "id": "playground-node:ClampNode",
@@ -673,8 +1110,14 @@
       "name": "ClampNode",
       "source": "playground/src/playground/nodes/ClampNode.tsx",
       "docs": "docs/playground-nodes/ClampNode.md",
-      "tests": ["playground/tests/unit/nodes-ui.spec.tsx", "playground/tests/unit/store-and-codegen.spec.ts"],
-      "scenarios": ["F02-S02", "F04-S02"]
+      "tests": [
+        "playground/tests/unit/nodes-ui.spec.tsx",
+        "playground/tests/unit/store-and-codegen.spec.ts"
+      ],
+      "scenarios": [
+        "F02-S02",
+        "F04-S02"
+      ]
     },
     {
       "id": "playground-node:SwitchNode",
@@ -682,8 +1125,197 @@
       "name": "SwitchNode",
       "source": "playground/src/playground/nodes/SwitchNode.tsx",
       "docs": "docs/playground-nodes/SwitchNode.md",
-      "tests": ["playground/tests/unit/nodes-ui.spec.tsx", "playground/tests/unit/store-and-codegen.spec.ts"],
-      "scenarios": ["F02-S02", "F04-S02"]
+      "tests": [
+        "playground/tests/unit/nodes-ui.spec.tsx",
+        "playground/tests/unit/store-and-codegen.spec.ts"
+      ],
+      "scenarios": [
+        "F02-S02",
+        "F04-S02"
+      ]
+    },
+    {
+      "id": "component:MidiProvider",
+      "kind": "public-component",
+      "name": "MidiProvider",
+      "source": "src/midi/MidiProvider.tsx",
+      "docs": "docs/components/midi/MidiProvider.md",
+      "tests": [
+        "tests/library/midi.spec.tsx"
+      ],
+      "scenarios": [
+        "F01-S04",
+        "F04-S02"
+      ]
+    },
+    {
+      "id": "component:PatchRenderer",
+      "kind": "public-component",
+      "name": "PatchRenderer",
+      "source": "src/patch/PatchRenderer.tsx",
+      "docs": "docs/components/patch/PatchRenderer.md",
+      "tests": [
+        "tests/library/patch.spec.tsx",
+        "playground/tests/unit/store-and-codegen.spec.ts"
+      ],
+      "scenarios": [
+        "F01-S05",
+        "F03-S08",
+        "F04-S03"
+      ]
+    },
+    {
+      "id": "component:MidiNoteInput",
+      "kind": "public-component",
+      "name": "MidiNoteInput",
+      "source": "src/midi/MidiNoteInput.tsx",
+      "docs": "docs/components/midi/MidiNoteInput.md",
+      "tests": [
+        "tests/library/midi.spec.tsx"
+      ],
+      "scenarios": [
+        "F01-S04",
+        "F04-S02"
+      ]
+    },
+    {
+      "id": "component:MidiCCInput",
+      "kind": "public-component",
+      "name": "MidiCCInput",
+      "source": "src/midi/MidiCCInput.tsx",
+      "docs": "docs/components/midi/MidiCCInput.md",
+      "tests": [
+        "tests/library/midi.spec.tsx"
+      ],
+      "scenarios": [
+        "F01-S04",
+        "F04-S02"
+      ]
+    },
+    {
+      "id": "component:MidiNoteOutput",
+      "kind": "public-component",
+      "name": "MidiNoteOutput",
+      "source": "src/midi/MidiNoteOutput.tsx",
+      "docs": "docs/components/midi/MidiNoteOutput.md",
+      "tests": [
+        "tests/library/midi.spec.tsx"
+      ],
+      "scenarios": [
+        "F01-S04",
+        "F04-S02"
+      ]
+    },
+    {
+      "id": "component:MidiCCOutput",
+      "kind": "public-component",
+      "name": "MidiCCOutput",
+      "source": "src/midi/MidiCCOutput.tsx",
+      "docs": "docs/components/midi/MidiCCOutput.md",
+      "tests": [
+        "tests/library/midi.spec.tsx"
+      ],
+      "scenarios": [
+        "F01-S04",
+        "F04-S02"
+      ]
+    },
+    {
+      "id": "component:MidiTransportSync",
+      "kind": "public-component",
+      "name": "MidiTransportSync",
+      "source": "src/midi/MidiTransportSync.tsx",
+      "docs": "docs/components/midi/MidiTransportSync.md",
+      "tests": [
+        "tests/library/midi.spec.tsx",
+        "tests/library/transport-sequencer.spec.tsx"
+      ],
+      "scenarios": [
+        "F01-S04",
+        "F04-S02"
+      ]
+    },
+    {
+      "id": "node:MidiNoteNode",
+      "kind": "playground-node",
+      "name": "MidiNoteNode",
+      "source": "playground/src/playground/nodes/MidiNoteNode.tsx",
+      "docs": "docs/playground-nodes/MidiNoteNode.md",
+      "tests": [
+        "playground/tests/unit/nodes-ui.spec.tsx",
+        "playground/tests/unit/node-helpers.spec.ts",
+        "playground/tests/unit/store-and-codegen.spec.ts"
+      ],
+      "scenarios": [
+        "F02-S04",
+        "F03-S07",
+        "F04-S03"
+      ]
+    },
+    {
+      "id": "node:MidiCCNode",
+      "kind": "playground-node",
+      "name": "MidiCCNode",
+      "source": "playground/src/playground/nodes/MidiCCNode.tsx",
+      "docs": "docs/playground-nodes/MidiCCNode.md",
+      "tests": [
+        "playground/tests/unit/nodes-ui.spec.tsx",
+        "playground/tests/unit/node-helpers.spec.ts",
+        "playground/tests/unit/store-and-codegen.spec.ts"
+      ],
+      "scenarios": [
+        "F02-S04",
+        "F03-S07",
+        "F04-S03"
+      ]
+    },
+    {
+      "id": "node:MidiNoteOutputNode",
+      "kind": "playground-node",
+      "name": "MidiNoteOutputNode",
+      "source": "playground/src/playground/nodes/MidiNoteOutputNode.tsx",
+      "docs": "docs/playground-nodes/MidiNoteOutputNode.md",
+      "tests": [
+        "playground/tests/unit/nodes-ui.spec.tsx",
+        "playground/tests/unit/store-and-codegen.spec.ts"
+      ],
+      "scenarios": [
+        "F02-S04",
+        "F03-S07",
+        "F04-S03"
+      ]
+    },
+    {
+      "id": "node:MidiCCOutputNode",
+      "kind": "playground-node",
+      "name": "MidiCCOutputNode",
+      "source": "playground/src/playground/nodes/MidiCCOutputNode.tsx",
+      "docs": "docs/playground-nodes/MidiCCOutputNode.md",
+      "tests": [
+        "playground/tests/unit/nodes-ui.spec.tsx",
+        "playground/tests/unit/store-and-codegen.spec.ts"
+      ],
+      "scenarios": [
+        "F02-S04",
+        "F03-S07",
+        "F04-S03"
+      ]
+    },
+    {
+      "id": "node:MidiSyncNode",
+      "kind": "playground-node",
+      "name": "MidiSyncNode",
+      "source": "playground/src/playground/nodes/MidiSyncNode.tsx",
+      "docs": "docs/playground-nodes/MidiSyncNode.md",
+      "tests": [
+        "playground/tests/unit/nodes-ui.spec.tsx",
+        "playground/tests/unit/store-and-codegen.spec.ts"
+      ],
+      "scenarios": [
+        "F02-S04",
+        "F03-S07",
+        "F04-S03"
+      ]
     }
   ]
 }

@@ -2,6 +2,11 @@ import type { Node, Edge } from '@xyflow/react';
 import type {
     AudioNodeData,
     ADSRNodeData,
+    MidiCCNodeData,
+    MidiCCOutputNodeData,
+    MidiNoteNodeData,
+    MidiNoteOutputNodeData,
+    MidiSyncNodeData,
     PianoRollNodeData,
     OscNodeData,
     GainNodeData,
@@ -44,6 +49,7 @@ import type {
     SwitchNodeData,
 } from './store';
 import { math, compare, mix, clamp, switchValue } from '../../../src/data/values';
+import { playgroundMidiRuntime } from './midiRuntime';
 import {
     getInputParamHandleId,
     getTransportConnections,
@@ -147,6 +153,17 @@ interface AudioNodeInstance {
     };
     lfoOsc?: OscillatorNode; // For LFO waveform updates
     lastTriggerValue?: number;
+    midiNoteOutputState?: {
+        active: boolean;
+        note: number | null;
+        outputId: string | null;
+        channel: number;
+        velocity: number;
+    };
+    midiCCOutputState?: {
+        signature: string;
+    };
+    lastMidiEventSeq?: number;
 }
 
 /**
@@ -265,9 +282,13 @@ export class AudioEngine {
     private busNodes: Map<string, GainNode> = new Map();
     private liveControlInputValues: Map<string, number> = new Map();
     private controlValueTimerID: number | undefined = undefined;
+    private midiRuntimeUnsubscribe: (() => void) | null = null;
 
     constructor() {
         this.audioContext = null;
+        this.midiRuntimeUnsubscribe = playgroundMidiRuntime.subscribe(() => {
+            this.handleMidiRuntimeChange();
+        });
     }
 
     private syncVisualGraph(nodes: Node<AudioNodeData>[], edges: Edge[]) {
@@ -282,6 +303,16 @@ export class AudioEngine {
 
     public getControlInputValue(nodeId: string, targetHandle: string): number | null {
         return this.liveControlInputValues.get(this.getControlInputKey(nodeId, targetHandle)) ?? null;
+    }
+
+    public getSourceOutputValue(nodeId: string, sourceHandle: string): number | null {
+        const instance = this.audioNodes.get(nodeId);
+        if (!instance?.outputs) return null;
+        const output = instance.outputs.get(sourceHandle);
+        if (output instanceof ConstantSourceNode) {
+            return output.offset.value;
+        }
+        return null;
     }
 
     private startControlValueLoop() {
@@ -322,6 +353,149 @@ export class AudioEngine {
 
     private sanitizeBpm(value: number | undefined): number {
         return this.sanitizePositiveNumber(value, 120);
+    }
+
+    private matchesMidiInputSelection(
+        inputId: string,
+        selection: string | 'default' | 'all',
+        snapshot: ReturnType<typeof playgroundMidiRuntime.getSnapshot>
+    ): boolean {
+        if (selection === 'all') return true;
+        const defaultInputId = snapshot.defaultInputId ?? snapshot.inputs[0]?.id ?? null;
+        if (selection === 'default') {
+            return inputId === defaultInputId;
+        }
+        return inputId === selection;
+    }
+
+    private matchesMidiChannel(channel: number, filter: number | 'all'): boolean {
+        return filter === 'all' || channel === filter;
+    }
+
+    private matchesMidiNote(
+        note: number,
+        data: MidiNoteNodeData
+    ): boolean {
+        if (data.noteMode === 'single') return note === data.note;
+        if (data.noteMode === 'range') return note >= data.noteMin && note <= data.noteMax;
+        return true;
+    }
+
+    private getMidiNoteDuration(): number {
+        return 0.25;
+    }
+
+    private frequencyToMidiNote(frequency: number): number {
+        if (!Number.isFinite(frequency) || frequency <= 0) return 60;
+        return Math.max(0, Math.min(127, Math.round(69 + (12 * Math.log2(frequency / 440)))));
+    }
+
+    private handleMidiRuntimeChange(): void {
+        if (!this.isPlaying || !this.audioContext) return;
+
+        const snapshot = playgroundMidiRuntime.getSnapshot();
+        const now = this.audioContext.currentTime;
+
+        this.visualNodes.forEach((node) => {
+            const instance = this.audioNodes.get(node.id);
+            if (!instance?.outputs) return;
+
+            if (node.data.type === 'midiNote') {
+                const midiData = node.data as MidiNoteNodeData;
+                const matchingNotes = Array.from(snapshot.activeNotes.values())
+                    .filter((activeNote) => this.matchesMidiInputSelection(activeNote.inputId, midiData.inputId, snapshot)
+                        && this.matchesMidiChannel(activeNote.channel, midiData.channel)
+                        && this.matchesMidiNote(activeNote.note, midiData))
+                    .sort((left, right) => left.lastUpdatedAt - right.lastUpdatedAt);
+                const current = matchingNotes.length > 0 ? matchingNotes[matchingNotes.length - 1] : null;
+
+                const noteOutput = instance.outputs.get('note');
+                if (noteOutput instanceof ConstantSourceNode) {
+                    noteOutput.offset.setTargetAtTime(current?.note ?? 0, now, 0.01);
+                }
+
+                const frequencyOutput = instance.outputs.get('frequency');
+                if (frequencyOutput instanceof ConstantSourceNode) {
+                    const frequency = current
+                        ? 440 * Math.pow(2, (current.note - 69) / 12)
+                        : 0;
+                    frequencyOutput.offset.setTargetAtTime(frequency, now, 0.01);
+                }
+
+                const gateOutput = instance.outputs.get('gate');
+                if (gateOutput instanceof ConstantSourceNode) {
+                    gateOutput.offset.setTargetAtTime(current ? 1 : 0, now, 0.01);
+                }
+
+                const velocityOutput = instance.outputs.get('velocity');
+                if (velocityOutput instanceof ConstantSourceNode) {
+                    velocityOutput.offset.setTargetAtTime(current?.velocity ?? 0, now, 0.01);
+                }
+
+                const event = snapshot.lastInputEvent;
+                if (event && event.seq !== instance.lastMidiEventSeq) {
+                    instance.lastMidiEventSeq = event.seq;
+                    if (
+                        event.kind === 'noteon'
+                        && event.note !== null
+                        && event.velocity !== null
+                        && event.channel !== null
+                        && this.matchesMidiInputSelection(event.inputId, midiData.inputId, snapshot)
+                        && this.matchesMidiChannel(event.channel, midiData.channel)
+                        && this.matchesMidiNote(event.note, midiData)
+                    ) {
+                        const triggerOutput = instance.outputs.get('trigger');
+                        if (triggerOutput instanceof ConstantSourceNode) {
+                            triggerOutput.offset.cancelScheduledValues(now);
+                            triggerOutput.offset.setValueAtTime(event.seq, now);
+                            triggerOutput.offset.setValueAtTime(0, now + 0.02);
+                        }
+
+                        this.triggerSequencerTargets(
+                            node.id,
+                            now,
+                            event.velocity,
+                            this.getMidiNoteDuration(),
+                            event.note
+                        );
+                    }
+                }
+            }
+
+            if (node.data.type === 'midiCC') {
+                const midiData = node.data as MidiCCNodeData;
+                const matchingCC = Array.from(snapshot.ccValues.values())
+                    .filter((ccValue) => this.matchesMidiInputSelection(ccValue.inputId, midiData.inputId, snapshot)
+                        && this.matchesMidiChannel(ccValue.channel, midiData.channel)
+                        && ccValue.cc === midiData.cc)
+                    .sort((left, right) => left.lastUpdatedAt - right.lastUpdatedAt);
+                const current = matchingCC.length > 0 ? matchingCC[matchingCC.length - 1] : null;
+
+                const normalizedOutput = instance.outputs.get('normalized');
+                if (normalizedOutput instanceof ConstantSourceNode) {
+                    normalizedOutput.offset.setTargetAtTime(current?.normalized ?? 0, now, 0.01);
+                }
+
+                const rawOutput = instance.outputs.get('raw');
+                if (rawOutput instanceof ConstantSourceNode) {
+                    rawOutput.offset.setTargetAtTime(current?.raw ?? 0, now, 0.01);
+                }
+            }
+        });
+
+        const syncNode = this.visualNodes.find((node) => node.data.type === 'midiSync');
+        const transportNode = this.visualNodes.find((node) => node.data.type === 'transport');
+        if (!syncNode || !transportNode) return;
+
+        const syncData = syncNode.data as MidiSyncNodeData;
+        if (syncData.mode !== 'midi-master' || !snapshot.clock.running) return;
+        if (!snapshot.clock.sourceInputId || !this.matchesMidiInputSelection(snapshot.clock.sourceInputId, syncData.inputId ?? 'default', snapshot)) {
+            return;
+        }
+
+        if (snapshot.clock.bpmEstimate) {
+            this.updateNode(transportNode.id, { bpm: snapshot.clock.bpmEstimate } as Partial<AudioNodeData>);
+        }
     }
 
     private getOrCreateBusNode(busId: string | undefined): GainNode | null {
@@ -811,6 +985,52 @@ export class AudioEngine {
         };
     }
 
+    private triggerMidiNoteOutput(
+        nodeId: string,
+        time: number,
+        velocity: number,
+        duration: number,
+        midiPitch?: number
+    ) {
+        const visualData = this.nodeById.get(nodeId)?.data as MidiNoteOutputNodeData | undefined;
+        if (!visualData) return;
+
+        const frequencyInput = this.getControlInputValue(nodeId, 'frequency');
+        const noteInput = this.getControlInputValue(nodeId, 'note');
+        const velocityInput = this.getControlInputValue(nodeId, 'velocity');
+        const note = typeof midiPitch === 'number'
+            ? midiPitch
+            : typeof noteInput === 'number'
+                ? Math.round(noteInput)
+                : typeof frequencyInput === 'number'
+                    ? this.frequencyToMidiNote(frequencyInput)
+                    : Math.round(visualData.note);
+        const nextVelocity = Math.max(
+            0,
+            Math.min(1, typeof velocityInput === 'number' ? velocityInput : velocity)
+        );
+        const outputId = visualData.outputId ?? null;
+        const channel = visualData.channel;
+
+        playgroundMidiRuntime.sendNoteOn({
+            outputId,
+            channel,
+            note,
+            velocity: nextVelocity,
+        });
+
+        if (typeof window !== 'undefined') {
+            window.setTimeout(() => {
+                playgroundMidiRuntime.sendNoteOff({
+                    outputId,
+                    channel,
+                    note,
+                    velocity: 0,
+                });
+            }, Math.max(0.02, duration) * 1000);
+        }
+    }
+
     private triggerSequencerTargets(sourceId: string, time: number, velocity: number, duration: number, midiPitch?: number) {
         const connectedEdges = this.edges.filter((edge) => edge.source === sourceId);
 
@@ -830,6 +1050,8 @@ export class AudioEngine {
                 this.triggerSampler(edge.target, time, duration);
             } else if (targetInstance.type === 'noiseBurst' && edge.targetHandle === 'trigger') {
                 this.triggerNoiseBurst(edge.target, time, velocity);
+            } else if (targetInstance.type === 'midiNoteOutput' && edge.targetHandle === 'trigger') {
+                this.triggerMidiNoteOutput(edge.target, time, velocity, duration, midiPitch);
             }
         });
     }
@@ -1172,6 +1394,8 @@ export class AudioEngine {
                 this.triggerSampler(edge.target, time, duration);
             } else if (targetInstance.type === 'noiseBurst' && edge.targetHandle === 'trigger') {
                 this.triggerNoiseBurst(edge.target, time, velocity);
+            } else if (targetInstance.type === 'midiNoteOutput' && edge.targetHandle === 'trigger') {
+                this.triggerMidiNoteOutput(edge.target, time, velocity, duration);
             }
         });
     }
@@ -1291,6 +1515,7 @@ export class AudioEngine {
         this.updateDataValues(nodes, edges);
 
         this.isPlaying = true;
+        this.handleMidiRuntimeChange();
         this.startControlValueLoop();
         if (this.isTransportRunning()) {
             this.startScheduler();
@@ -1314,6 +1539,14 @@ export class AudioEngine {
     private cleanup(): void {
         this.audioNodes.forEach((instance) => {
             try {
+                if (instance.midiNoteOutputState?.active && instance.midiNoteOutputState.note !== null) {
+                    playgroundMidiRuntime.sendNoteOff({
+                        outputId: instance.midiNoteOutputState.outputId,
+                        channel: instance.midiNoteOutputState.channel,
+                        note: instance.midiNoteOutputState.note,
+                        velocity: 0,
+                    });
+                }
                 if (instance.node instanceof OscillatorNode ||
                     instance.node instanceof AudioBufferSourceNode ||
                     instance.node instanceof ConstantSourceNode) {
@@ -2143,6 +2376,46 @@ export class AudioEngine {
 
                 return { node: freqSource, type: 'note' };
             }
+            case 'midiNote': {
+                const dummy = ctx.createGain();
+                const outputs = new Map<string, AudioNode>();
+
+                const triggerSource = ctx.createConstantSource();
+                triggerSource.offset.value = 0;
+                outputs.set('trigger', triggerSource);
+
+                const frequencySource = ctx.createConstantSource();
+                frequencySource.offset.value = 0;
+                outputs.set('frequency', frequencySource);
+
+                const noteSource = ctx.createConstantSource();
+                noteSource.offset.value = 0;
+                outputs.set('note', noteSource);
+
+                const gateSource = ctx.createConstantSource();
+                gateSource.offset.value = 0;
+                outputs.set('gate', gateSource);
+
+                const velocitySource = ctx.createConstantSource();
+                velocitySource.offset.value = 0;
+                outputs.set('velocity', velocitySource);
+
+                return { node: dummy, type: 'midiNote', outputs };
+            }
+            case 'midiCC': {
+                const dummy = ctx.createGain();
+                const outputs = new Map<string, AudioNode>();
+
+                const normalizedSource = ctx.createConstantSource();
+                normalizedSource.offset.value = 0;
+                outputs.set('normalized', normalizedSource);
+
+                const rawSource = ctx.createConstantSource();
+                rawSource.offset.value = 0;
+                outputs.set('raw', rawSource);
+
+                return { node: dummy, type: 'midiCC', outputs };
+            }
             case 'eventTrigger': {
                 const triggerData = data as EventTriggerNodeData;
                 const source = ctx.createConstantSource();
@@ -2198,6 +2471,32 @@ export class AudioEngine {
                 source.offset.value = 0;
                 return { node: source, type: data.type };
             }
+            case 'midiNoteOutput': {
+                const dummy = ctx.createGain();
+                return {
+                    node: dummy,
+                    type: 'midiNoteOutput',
+                    midiNoteOutputState: {
+                        active: false,
+                        note: null,
+                        outputId: null,
+                        channel: 1,
+                        velocity: 1,
+                    },
+                };
+            }
+            case 'midiCCOutput': {
+                const dummy = ctx.createGain();
+                return {
+                    node: dummy,
+                    type: 'midiCCOutput',
+                    midiCCOutputState: {
+                        signature: '',
+                    },
+                };
+            }
+            case 'midiSync':
+                return null;
             default:
                 return null;
         }
@@ -2239,6 +2538,17 @@ export class AudioEngine {
                 case 'note': {
                     const noteData = sourceNode.data as NoteNodeData;
                     return Number.isFinite(noteData.frequency) ? noteData.frequency : null;
+                }
+                case 'midiNote':
+                case 'midiCC':
+                case 'voice': {
+                    const instance = this.audioNodes.get(sourceNode.id);
+                    if (!instance?.outputs) return null;
+                    const output = instance.outputs.get(edge.sourceHandle ?? '');
+                    if (output instanceof ConstantSourceNode) {
+                        return output.offset.value;
+                    }
+                    return null;
                 }
                 case 'lfo': {
                     const lfoData = sourceNode.data as AudioNodeData & { rate?: number; depth?: number; waveform?: string };
@@ -2287,15 +2597,6 @@ export class AudioEngine {
                 case 'clamp':
                 case 'switch':
                     return evaluateDataNode(sourceNode.id);
-                case 'voice': {
-                    const instance = this.audioNodes.get(sourceNode.id);
-                    if (!instance?.outputs) return null;
-                    const output = instance.outputs.get(edge.sourceHandle ?? '');
-                    if (output instanceof ConstantSourceNode) {
-                        return output.offset.value;
-                    }
-                    return null;
-                }
                 default:
                     return null;
             }
@@ -2422,6 +2723,10 @@ export class AudioEngine {
             'maxDistance',
             'rolloffFactor',
             'token',
+            'gate',
+            'note',
+            'velocity',
+            'value',
         ]);
 
         controlEdgesByTarget.forEach((edgesForTarget, targetNodeId) => {
@@ -2922,6 +3227,85 @@ export class AudioEngine {
                     instance.eventTriggerData.note
                 );
             }
+        } else if (instance.type === 'midiNoteOutput') {
+            if (!instance.midiNoteOutputState) return;
+            const visualData = this.nodeById.get(nodeId)?.data as MidiNoteOutputNodeData | undefined;
+            if (!visualData) return;
+
+            const gateInput = this.getControlInputValue(nodeId, 'gate');
+            const noteInput = this.getControlInputValue(nodeId, 'note');
+            const frequencyInput = this.getControlInputValue(nodeId, 'frequency');
+            const velocityInput = this.getControlInputValue(nodeId, 'velocity');
+            const nextGate = (typeof gateInput === 'number' ? gateInput : visualData.gate) > 0.5;
+            const nextVelocity = Math.max(0, Math.min(1, typeof velocityInput === 'number' ? velocityInput : visualData.velocity));
+            const nextNote = typeof noteInput === 'number'
+                ? Math.round(noteInput)
+                : typeof frequencyInput === 'number'
+                    ? this.frequencyToMidiNote(frequencyInput)
+                    : Math.round(visualData.note);
+            const previous = instance.midiNoteOutputState;
+
+            if (
+                previous.active
+                && previous.note !== null
+                && (
+                    !nextGate
+                    || previous.note !== nextNote
+                    || previous.outputId !== visualData.outputId
+                    || previous.channel !== visualData.channel
+                )
+            ) {
+                playgroundMidiRuntime.sendNoteOff({
+                    outputId: previous.outputId,
+                    channel: previous.channel,
+                    note: previous.note,
+                    velocity: 0,
+                });
+            }
+
+            if (
+                nextGate
+                && (
+                    !previous.active
+                    || previous.note !== nextNote
+                    || previous.outputId !== visualData.outputId
+                    || previous.channel !== visualData.channel
+                    || previous.velocity !== nextVelocity
+                )
+            ) {
+                playgroundMidiRuntime.sendNoteOn({
+                    outputId: visualData.outputId ?? null,
+                    channel: visualData.channel,
+                    note: nextNote,
+                    velocity: nextVelocity,
+                });
+            }
+
+            instance.midiNoteOutputState = {
+                active: nextGate,
+                note: nextNote,
+                outputId: visualData.outputId ?? null,
+                channel: visualData.channel,
+                velocity: nextVelocity,
+            };
+        } else if (instance.type === 'midiCCOutput') {
+            if (!instance.midiCCOutputState) return;
+            const visualData = this.nodeById.get(nodeId)?.data as MidiCCOutputNodeData | undefined;
+            if (!visualData) return;
+
+            const valueInput = this.getControlInputValue(nodeId, 'value');
+            const nextValue = typeof valueInput === 'number' ? valueInput : visualData.value;
+            const signature = `${visualData.outputId ?? 'default'}:${visualData.channel}:${visualData.cc}:${visualData.valueFormat}:${nextValue}`;
+            if (signature === instance.midiCCOutputState.signature || !Number.isFinite(nextValue)) return;
+
+            instance.midiCCOutputState.signature = signature;
+            playgroundMidiRuntime.sendCC({
+                outputId: visualData.outputId ?? null,
+                channel: visualData.channel,
+                cc: visualData.cc,
+                value: nextValue,
+                valueFormat: visualData.valueFormat,
+            });
         } else if (instance.type === 'sampler' && instance.samplerData) {
             if ('src' in data && typeof data.src === 'string') instance.samplerData.src = data.src;
             if ('loop' in data && typeof data.loop === 'boolean') instance.samplerData.loop = data.loop;

@@ -37,6 +37,7 @@ export function sanitizeGraphForStorage(graph: GraphDocument): GraphDocument {
                 ...sampler,
                 loaded: Boolean(sampler.sampleId),
                 src: sampler.sampleId ? '' : sampler.src,
+                assetPath: sampler.assetPath,
             } as SamplerNodeData;
         }
 
@@ -45,6 +46,7 @@ export function sanitizeGraphForStorage(graph: GraphDocument): GraphDocument {
             data = {
                 ...convolver,
                 impulseSrc: convolver.impulseId ? '' : convolver.impulseSrc,
+                assetPath: convolver.assetPath,
             } as ConvolverNodeData;
         }
 

@@ -125,6 +125,54 @@ describe('playground store and code generation', () => {
         refreshConnections.mockRestore();
     });
 
+    it('adds MIDI nodes with friendly defaults and keeps sync singleton', async () => {
+        vi.resetModules();
+        const { audioEngine } = await import('../../src/playground/AudioEngine');
+        const refreshConnections = vi.spyOn(audioEngine, 'refreshConnections').mockImplementation(() => {});
+        const { useAudioGraphStore } = await import('../../src/playground/store');
+
+        useAudioGraphStore.getState().addNode('midiNote');
+        useAudioGraphStore.getState().addNode('midiCC');
+        useAudioGraphStore.getState().addNode('midiNoteOutput');
+        useAudioGraphStore.getState().addNode('midiCCOutput');
+        useAudioGraphStore.getState().addNode('midiSync');
+        useAudioGraphStore.getState().addNode('midiSync');
+
+        const state = useAudioGraphStore.getState();
+
+        expect(state.nodes.find((node) => node.data.type === 'midiNote')?.data).toMatchObject({
+            type: 'midiNote',
+            label: 'Midi In',
+            inputId: 'default',
+            mappingEnabled: false,
+            mappings: [],
+            activeMappingId: null,
+        });
+        expect(state.nodes.find((node) => node.data.type === 'midiCC')?.data).toMatchObject({
+            type: 'midiCC',
+            label: 'Knob / CC In',
+            cc: 1,
+        });
+        expect(state.nodes.find((node) => node.data.type === 'midiNoteOutput')?.data).toMatchObject({
+            type: 'midiNoteOutput',
+            label: 'Note Out',
+            channel: 1,
+        });
+        expect(state.nodes.find((node) => node.data.type === 'midiCCOutput')?.data).toMatchObject({
+            type: 'midiCCOutput',
+            label: 'CC Out',
+            valueFormat: 'normalized',
+        });
+        expect(state.nodes.filter((node) => node.data.type === 'midiSync')).toHaveLength(1);
+        expect(state.nodes.find((node) => node.data.type === 'midiSync')?.data).toMatchObject({
+            type: 'midiSync',
+            label: 'Sync',
+            mode: 'transport-master',
+        });
+
+        refreshConnections.mockRestore();
+    });
+
     it('sanitizes persisted graphs and emits component names for generated code', async () => {
         vi.resetModules();
         const { generateCode } = await import('../../src/playground/CodeGenerator');
@@ -154,6 +202,94 @@ describe('playground store and code generation', () => {
         const code = generateCode(state.nodes, state.edges, true, 'Bass Lab');
         expect(code).toContain('export const BassLabRoot');
         expect(code).toContain('<AudioProvider>');
+    });
+
+    it('generates MIDI hooks, providers, outputs, and sync wrappers from MIDI graphs', async () => {
+        vi.resetModules();
+        const { generateCode } = await import('../../src/playground/CodeGenerator');
+
+        const nodes = [
+            {
+                id: 'transport-1',
+                type: 'transportNode',
+                position: { x: 0, y: 0 },
+                data: { type: 'transport', bpm: 121, playing: false, beatsPerBar: 4, beatUnit: 4, stepsPerBeat: 4, barsPerPhrase: 4, swing: 0, label: 'Transport' },
+            },
+            {
+                id: 'midi-note-1',
+                type: 'midiNoteNode',
+                position: { x: 0, y: 0 },
+                data: { type: 'midiNote', inputId: 'keys-in', channel: 2, noteMode: 'range', note: 60, noteMin: 48, noteMax: 72, mappingEnabled: false, mappings: [], activeMappingId: null, label: 'Midi In' },
+            },
+            {
+                id: 'midi-cc-1',
+                type: 'midiCCNode',
+                position: { x: 0, y: 0 },
+                data: { type: 'midiCC', inputId: 'knobs-in', channel: 3, cc: 74, label: 'Knob / CC In' },
+            },
+            {
+                id: 'midi-note-out-1',
+                type: 'midiNoteOutputNode',
+                position: { x: 0, y: 0 },
+                data: { type: 'midiNoteOutput', outputId: 'synth-out', channel: 5, gate: 0, note: 60, frequency: 261.63, velocity: 0.9, label: 'Note Out' },
+            },
+            {
+                id: 'midi-cc-out-1',
+                type: 'midiCCOutputNode',
+                position: { x: 0, y: 0 },
+                data: { type: 'midiCCOutput', outputId: 'fx-out', channel: 6, cc: 71, value: 96, valueFormat: 'raw', label: 'CC Out' },
+            },
+            {
+                id: 'midi-sync-1',
+                type: 'midiSyncNode',
+                position: { x: 0, y: 0 },
+                data: { type: 'midiSync', mode: 'midi-master', inputId: 'clock-in', outputId: 'clock-out', sendStartStop: false, sendClock: false, label: 'Sync' },
+            },
+            {
+                id: 'osc-1',
+                type: 'oscNode',
+                position: { x: 0, y: 0 },
+                data: { type: 'osc', frequency: 440, detune: 0, waveform: 'sawtooth', label: 'Oscillator' },
+            },
+            {
+                id: 'filter-1',
+                type: 'filterNode',
+                position: { x: 0, y: 0 },
+                data: { type: 'filter', filterType: 'lowpass', frequency: 1200, detune: 0, q: 1, gain: 0, label: 'Filter' },
+            },
+            {
+                id: 'output-1',
+                type: 'outputNode',
+                position: { x: 0, y: 0 },
+                data: { type: 'output', playing: false, masterGain: 0.5, label: 'Output' },
+            },
+        ];
+
+        const edges = [
+            { id: 'mn-osc', source: 'midi-note-1', sourceHandle: 'frequency', target: 'osc-1', targetHandle: 'frequency' },
+            { id: 'mc-filter', source: 'midi-cc-1', sourceHandle: 'normalized', target: 'filter-1', targetHandle: 'frequency' },
+            { id: 'osc-filter', source: 'osc-1', sourceHandle: 'out', target: 'filter-1', targetHandle: 'in' },
+            { id: 'filter-out', source: 'filter-1', sourceHandle: 'out', target: 'output-1', targetHandle: 'in' },
+            { id: 'mn-note-out-note', source: 'midi-note-1', sourceHandle: 'note', target: 'midi-note-out-1', targetHandle: 'note' },
+            { id: 'mn-note-out-gate', source: 'midi-note-1', sourceHandle: 'gate', target: 'midi-note-out-1', targetHandle: 'gate' },
+            { id: 'mn-note-out-trigger', source: 'midi-note-1', sourceHandle: 'trigger', target: 'midi-note-out-1', targetHandle: 'trigger' },
+            { id: 'mc-cc-out', source: 'midi-cc-1', sourceHandle: 'raw', target: 'midi-cc-out-1', targetHandle: 'value' },
+        ];
+
+        const code = generateCode(nodes as any, edges as any, true, 'Midi Playground');
+
+        expect(code).toContain('<MidiProvider>');
+        expect(code).toContain('useMidiNote({ inputId: "keys-in", channel: 2, note: [48, 72] })');
+        expect(code).toContain('useMidiCC({ cc: 74, inputId: "knobs-in", channel: 3 })');
+        expect(code).toContain('<MidiNoteOutput');
+        expect(code).toContain('outputId="synth-out"');
+        expect(code).toContain('triggerToken={midiIn.triggerToken}');
+        expect(code).toContain('<MidiCCOutput');
+        expect(code).toContain('value={knobCCIn.raw}');
+        expect(code).toContain('valueFormat="raw"');
+        expect(code).toContain('<MidiTransportSync mode="midi-master" inputId="clock-in" outputId="clock-out" sendStartStop={false} sendClock={false} />');
+        expect(code).toContain('<TransportProvider');
+        expect(code).toContain('mode="manual"');
     });
 
     it('sanitizes convolver asset URLs and exports file-based sampler/convolver paths', async () => {
@@ -208,6 +344,183 @@ describe('playground store and code generation', () => {
         expect(code).toContain('src="/samples/kick.wav"');
         expect(code).toContain('impulse="/impulses/plate.wav"');
         expect(code).not.toContain('blob:');
+    });
+
+    it('exports versioned patch interfaces and round-trips MIDI and asset metadata', async () => {
+        vi.resetModules();
+        const { PATCH_DOCUMENT_VERSION, graphDocumentToPatch, patchToGraphDocument } = await import('../../../src/patch');
+
+        const nodes = [
+            {
+                id: 'input-1',
+                type: 'inputNode',
+                position: { x: 20, y: 10 },
+                data: {
+                    type: 'input',
+                    label: 'Params',
+                    params: [{ id: 'cutoff', name: 'cutoff', label: 'Cutoff', type: 'float', value: 72, defaultValue: 64, min: 0, max: 127 }],
+                },
+            },
+            {
+                id: 'event-1',
+                type: 'eventTriggerNode',
+                position: { x: 40, y: 30 },
+                data: { type: 'eventTrigger', label: 'Bang', token: 0, mode: 'change', cooldownMs: 0, velocity: 1, duration: 0.1, note: 60, trackId: 'event' },
+            },
+            {
+                id: 'midi-note-1',
+                type: 'midiNoteNode',
+                position: { x: 80, y: 50 },
+                data: {
+                    type: 'midiNote',
+                    label: 'Keys',
+                    inputId: 'keys-in',
+                    channel: 2,
+                    noteMode: 'range',
+                    note: 60,
+                    noteMin: 48,
+                    noteMax: 72,
+                    mappingEnabled: false,
+                    mappings: [],
+                    activeMappingId: null,
+                },
+            },
+            {
+                id: 'midi-cc-1',
+                type: 'midiCCNode',
+                position: { x: 100, y: 70 },
+                data: { type: 'midiCC', label: 'Knob', inputId: 'knobs-in', channel: 3, cc: 74 },
+            },
+            {
+                id: 'midi-note-out-1',
+                type: 'midiNoteOutputNode',
+                position: { x: 120, y: 90 },
+                data: { type: 'midiNoteOutput', label: 'Note Out', outputId: 'synth-out', channel: 4, gate: 0, note: 60, frequency: 261.63, velocity: 0.8 },
+            },
+            {
+                id: 'midi-cc-out-1',
+                type: 'midiCCOutputNode',
+                position: { x: 140, y: 110 },
+                data: { type: 'midiCCOutput', label: 'CC Out', outputId: 'fx-out', channel: 5, cc: 71, value: 96, valueFormat: 'raw' },
+            },
+            {
+                id: 'midi-sync-1',
+                type: 'midiSyncNode',
+                position: { x: 160, y: 130 },
+                data: { type: 'midiSync', label: 'Sync', mode: 'midi-master', inputId: 'clock-in', outputId: 'clock-out', sendStartStop: false, sendClock: false },
+            },
+            {
+                id: 'sampler-1',
+                type: 'samplerNode',
+                position: { x: 180, y: 150 },
+                data: {
+                    type: 'sampler',
+                    label: 'Sampler',
+                    src: '',
+                    assetPath: '/samples/kick.wav',
+                    sampleId: 'sample-1',
+                    fileName: 'kick.wav',
+                    loop: false,
+                    playbackRate: 1,
+                    detune: 0,
+                    loaded: false,
+                },
+            },
+            {
+                id: 'convolver-1',
+                type: 'convolverNode',
+                position: { x: 200, y: 170 },
+                data: {
+                    type: 'convolver',
+                    label: 'Convolver',
+                    impulseSrc: '',
+                    assetPath: '/impulses/plate.wav',
+                    impulseId: 'impulse-1',
+                    impulseFileName: 'plate.wav',
+                    normalize: true,
+                },
+            },
+        ];
+
+        const edges = [
+            { id: 'input-cc', source: 'input-1', sourceHandle: 'param:cutoff', target: 'midi-cc-out-1', targetHandle: 'value' },
+            { id: 'event-note', source: 'event-1', sourceHandle: 'trigger', target: 'midi-note-out-1', targetHandle: 'trigger' },
+            { id: 'note-note', source: 'midi-note-1', sourceHandle: 'note', target: 'midi-note-out-1', targetHandle: 'note' },
+            { id: 'note-gate', source: 'midi-note-1', sourceHandle: 'gate', target: 'midi-note-out-1', targetHandle: 'gate' },
+        ];
+
+        const patch = graphDocumentToPatch({
+            name: 'Patch Round Trip',
+            nodes: nodes as any,
+            edges: edges as any,
+        });
+
+        expect(patch.version).toBe(PATCH_DOCUMENT_VERSION);
+        expect(patch.interface.inputs).toMatchObject([
+            { label: 'Cutoff', key: 'cutoff', kind: 'input', nodeId: 'input-1', paramId: 'cutoff', min: 0, max: 127 },
+        ]);
+        expect(patch.interface.events).toMatchObject([
+            { label: 'Bang', key: 'bang', kind: 'event', nodeId: 'event-1' },
+        ]);
+        expect(patch.interface.midiInputs).toMatchObject([
+            { label: 'Keys', key: 'keys', kind: 'midi-note-input', nodeId: 'midi-note-1', inputId: 'keys-in', channel: 2, noteMode: 'range', noteMin: 48, noteMax: 72 },
+            { label: 'Knob', key: 'knob', kind: 'midi-cc-input', nodeId: 'midi-cc-1', inputId: 'knobs-in', channel: 3, cc: 74 },
+        ]);
+        expect(patch.interface.midiOutputs).toMatchObject([
+            { label: 'Note Out', key: 'noteOut', kind: 'midi-note-output', nodeId: 'midi-note-out-1', outputId: 'synth-out', channel: 4 },
+            { label: 'CC Out', key: 'ccOut', kind: 'midi-cc-output', nodeId: 'midi-cc-out-1', outputId: 'fx-out', channel: 5, cc: 71, valueFormat: 'raw' },
+            { label: 'Sync', key: 'sync', kind: 'midi-sync-output', nodeId: 'midi-sync-1', mode: 'midi-master', inputId: 'clock-in', outputId: 'clock-out', sendStartStop: false, sendClock: false },
+        ]);
+        expect(patch.nodes.find((node) => node.id === 'sampler-1')?.data).toMatchObject({
+            type: 'sampler',
+            assetPath: '/samples/kick.wav',
+            src: '',
+        });
+        expect(patch.nodes.find((node) => node.id === 'convolver-1')?.data).toMatchObject({
+            type: 'convolver',
+            assetPath: '/impulses/plate.wav',
+            impulseSrc: '',
+        });
+
+        const roundTripGraph = patchToGraphDocument(patch, {
+            graphId: 'graph-imported',
+            createdAt: 123,
+            updatedAt: 456,
+            order: 7,
+        });
+
+        expect(roundTripGraph).toMatchObject({
+            id: 'graph-imported',
+            name: 'Patch Round Trip',
+            createdAt: 123,
+            updatedAt: 456,
+            order: 7,
+        });
+        expect(roundTripGraph.nodes.find((node) => node.id === 'midi-note-1')).toMatchObject({
+            type: 'midiNoteNode',
+            position: { x: 80, y: 50 },
+            data: { type: 'midiNote', inputId: 'keys-in', channel: 2, noteMode: 'range', noteMin: 48, noteMax: 72, label: 'Keys' },
+        });
+        expect(roundTripGraph.nodes.find((node) => node.id === 'midi-sync-1')).toMatchObject({
+            type: 'midiSyncNode',
+            data: { type: 'midiSync', mode: 'midi-master', inputId: 'clock-in', outputId: 'clock-out', sendStartStop: false, sendClock: false },
+        });
+        expect(roundTripGraph.nodes.find((node) => node.id === 'sampler-1')).toMatchObject({
+            type: 'samplerNode',
+            position: { x: 180, y: 150 },
+            data: { type: 'sampler', assetPath: '/samples/kick.wav', src: '', sampleId: '', loaded: false, fileName: 'kick.wav' },
+        });
+        expect(roundTripGraph.nodes.find((node) => node.id === 'convolver-1')).toMatchObject({
+            type: 'convolverNode',
+            position: { x: 200, y: 170 },
+            data: { type: 'convolver', assetPath: '/impulses/plate.wav', impulseSrc: '', impulseId: '', impulseFileName: 'plate.wav' },
+        });
+        expect(roundTripGraph.edges).toEqual(
+            expect.arrayContaining([
+                expect.objectContaining({ id: 'input-cc', sourceHandle: 'param:cutoff', targetHandle: 'value' }),
+                expect.objectContaining({ id: 'event-note', sourceHandle: 'trigger', targetHandle: 'trigger' }),
+            ])
+        );
     });
 
     it('migrates legacy handles, rejects removed note triggers, and keeps singleton transport/output nodes', async () => {

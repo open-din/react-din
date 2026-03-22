@@ -15,6 +15,7 @@ export const SamplerNode: React.FC<NodeProps<Node<SamplerNodeData>>> = memo(({ i
     const [libraryAssets, setLibraryAssets] = useState<AudioLibraryAsset[]>([]);
     const [libraryQuery, setLibraryQuery] = useState('');
     const [libraryError, setLibraryError] = useState<string | null>(null);
+    const externalAssetPath = typeof data.assetPath === 'string' ? data.assetPath.trim() : '';
 
     const selectedSampleId = typeof data.sampleId === 'string' ? data.sampleId : '';
 
@@ -39,6 +40,7 @@ export const SamplerNode: React.FC<NodeProps<Node<SamplerNodeData>>> = memo(({ i
         if (!assetId) {
             updateNodeData(id, {
                 src: '',
+                assetPath: '',
                 sampleId: '',
                 fileName: '',
                 loaded: false,
@@ -57,6 +59,7 @@ export const SamplerNode: React.FC<NodeProps<Node<SamplerNodeData>>> = memo(({ i
         const asset = libraryAssets.find((entry) => entry.id === assetId);
         updateNodeData(id, {
             src: objectUrl,
+            assetPath: externalAssetPath || (asset?.name ? `/samples/${asset.name}` : undefined),
             sampleId: assetId,
             fileName: asset?.name || fallbackName || data.fileName || 'Cached sample',
             loaded: true,
@@ -197,6 +200,12 @@ export const SamplerNode: React.FC<NodeProps<Node<SamplerNodeData>>> = memo(({ i
                 <div className="node-control" style={{ fontSize: '10px', color: data.src ? '#44cc44' : '#888' }}>
                     {data.src ? `✅ ${fileLabel}` : '⚪ No file selected'}
                 </div>
+
+                {!data.src && externalAssetPath && (
+                    <div className="node-control" style={{ fontSize: '10px', color: '#ffcc66' }}>
+                        External patch asset: {externalAssetPath}
+                    </div>
+                )}
 
                 {libraryError && (
                     <div className="node-control" style={{ fontSize: '10px', color: '#ff6b6b' }}>
