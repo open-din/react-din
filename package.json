@@ -1,9 +1,12 @@
 {
-  "name": "react-din",
+  "name": "@din/react",
   "version": "0.1.0",
   "description": "A React-first declarative WebAudio library for building audio graphs",
   "author": "Valentin Dubois - veacks.net",
   "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
   "type": "module",
   "workspaces": [
     "example",
@@ -119,7 +122,8 @@
     "dist",
     "schemas",
     "README.md",
-    "LICENSE"
+    "LICENSE",
+    "example"
   ],
   "sideEffects": false,
   "scripts": {
@@ -127,19 +131,21 @@
     "dev": "tsup --watch",
     "lint": "eslint src --ext .ts,.tsx",
     "typecheck": "tsc --noEmit",
-    "test": "npm run test:library && npm run test:playground",
+    "test": "npm run test:library && npm run test:editor",
     "test:library": "vitest --config vitest.config.ts --run",
     "test:library:watch": "vitest --config vitest.config.ts",
-    "test:playground": "npm -w playground run test:run",
+    "test:editor": "npm -w @din/editor run test:run",
+    "test:playground": "npm run test:editor",
     "test:e2e": "playwright test",
     "validate:docs": "node ./scripts/validate-docs.mjs",
     "validate:patch-schema": "node ./scripts/validate-patch-schema.mjs",
     "validate:coverage": "node ./scripts/validate-coverage.mjs",
     "validate:changes": "node ./scripts/validate-changes.mjs",
-    "ci:check": "npm run validate:docs && npm run validate:patch-schema && npm run validate:coverage && npm run test:library && npm run test:playground",
+    "ci:check": "npm run validate:docs && npm run validate:patch-schema && npm run validate:coverage && npm run test:library && npm run test:editor",
     "prepublishOnly": "npm run build",
     "example:dev": "npm -w example run dev",
-    "playground:dev": "npm -w playground run dev"
+    "editor:dev": "npm -w @din/editor run dev",
+    "playground:dev": "npm run editor:dev"
   },
   "peerDependencies": {
     "react": ">=18.0.0",

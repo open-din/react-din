@@ -61,7 +61,7 @@ export const AudioProvider: FC<AudioProviderProps> = ({
 
     const log = useCallback((...args: unknown[]) => {
         if (!debug) return;
-        console.info('[react-din]', ...args);
+        console.info('[@din/react]', ...args);
     }, [debug]);
 
     const createContext = useCallback((): AudioContextRef => {

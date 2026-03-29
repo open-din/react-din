@@ -14,7 +14,7 @@ import {
     StereoPanner,
     WaveShaper,
     useLFO,
-} from 'react-din';
+} from '@din/react';
 
 const FilterHarness = () => {
     const lfo = useLFO({ rate: 0.5, depth: 24, waveform: 'sine' });

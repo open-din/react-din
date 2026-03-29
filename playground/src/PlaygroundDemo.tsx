@@ -746,7 +746,7 @@ const getClientPosition = (event: MouseEvent | TouchEvent): XYPosition | null =>
 
 const getInitialTheme = (): 'light' | 'dark' => {
     if (typeof window === 'undefined') return 'dark';
-    const stored = window.localStorage.getItem('playground-theme');
+    const stored = window.localStorage.getItem('din-editor-theme');
     if (stored === 'light' || stored === 'dark') return stored;
     return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 };
@@ -1181,7 +1181,7 @@ const PlaygroundDemoContent: FC = () => {
         const root = document.documentElement;
         root.classList.toggle('dark', isDark);
         root.classList.toggle('light', !isDark);
-        window.localStorage.setItem('playground-theme', theme);
+        window.localStorage.setItem('din-editor-theme', theme);
     }, [isDark, theme]);
 
     useEffect(() => {
@@ -1248,7 +1248,7 @@ const PlaygroundDemoContent: FC = () => {
                     }
                 }
             } catch (error) {
-                console.warn('[Playground] Failed to hydrate graphs', error);
+                console.warn('[DIN Editor] Failed to hydrate graphs', error);
             } finally {
                 if (!cancelled) {
                     setHydrated(true);
@@ -1279,11 +1279,11 @@ const PlaygroundDemoContent: FC = () => {
             };
 
             saveGraph(sanitizeGraphForStorage(updatedGraph)).catch((error) => {
-                console.warn('[Playground] Failed to save graph', error);
+                console.warn('[DIN Editor] Failed to save graph', error);
             });
 
             saveActiveGraphId(activeGraphId).catch((error) => {
-                console.warn('[Playground] Failed to save active graph id', error);
+                console.warn('[DIN Editor] Failed to save active graph id', error);
             });
         }, 300);
 
@@ -1512,7 +1512,7 @@ const PlaygroundDemoContent: FC = () => {
         try {
             await navigator.clipboard.writeText(JSON.stringify(patch, null, 2));
         } catch (error) {
-            console.warn('[Playground] Failed to copy patch', error);
+            console.warn('[DIN Editor] Failed to copy patch', error);
         }
     }, [buildActivePatch]);
 
@@ -1545,7 +1545,7 @@ const PlaygroundDemoContent: FC = () => {
             setGraphs([...graphs, importedGraph], importedGraph.id);
             setNameDraft(importedGraph.name);
         } catch (error) {
-            console.warn('[Playground] Failed to import patch', error);
+            console.warn('[DIN Editor] Failed to import patch', error);
             window.alert('Invalid patch file.');
         } finally {
             event.target.value = '';
@@ -1568,12 +1568,12 @@ const PlaygroundDemoContent: FC = () => {
         if (!removedGraph) return;
 
         deleteStoredGraph(graphId).catch((error) => {
-            console.warn('[Playground] Failed to delete graph', error);
+            console.warn('[DIN Editor] Failed to delete graph', error);
         });
 
         const nextActiveId = useAudioGraphStore.getState().activeGraphId ?? null;
         saveActiveGraphId(nextActiveId).catch((error) => {
-            console.warn('[Playground] Failed to save active graph id', error);
+            console.warn('[DIN Editor] Failed to save active graph id', error);
         });
     }, [graphs, removeGraph]);
 

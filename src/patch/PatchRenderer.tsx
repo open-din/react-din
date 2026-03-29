@@ -1261,7 +1261,7 @@ function PatchFeedbackDelay({
 }
 
 /**
- * Render a patch document as a live `react-din` graph.
+ * Render a patch document as a live `@din/react` graph.
  */
 export function PatchRenderer<const TPatch extends PatchDocument>({
     patch,

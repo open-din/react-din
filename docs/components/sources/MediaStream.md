@@ -1,7 +1,7 @@
 # MediaStream
 
 ## Purpose
-Route microphone or external `MediaStream` audio into a `react-din` graph.
+Route microphone or external `MediaStream` audio into a `@din/react` graph.
 
 ## Props / Handles
 - Key props: `stream`, `requestMic`, `constraints`, `onStream`, `onError`, `nodeRef`.

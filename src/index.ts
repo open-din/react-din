@@ -1,5 +1,5 @@
 // =============================================================================
-// react-din - Declarative WebAudio for React
+// @din/react - Declarative WebAudio for React
 // =============================================================================
 // A React-first library for building audio graphs declaratively.
 // =============================================================================

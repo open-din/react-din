@@ -11,7 +11,7 @@ Emit note-derived control data such as pitch frequency from a note selector.
 - Added from the store with `note "C"`, `octave 4`, `frequency 261.6`, `language "en"`, and label `Note`.
 
 ## Integration Notes
-- Keep note conversion behavior aligned with `react-din` note utilities and the node UI.
+- Keep note conversion behavior aligned with `@din/react` note utilities and the node UI.
 - Use with `OscNode` or `VoiceNode` frequency inputs.
 
 ## Failure Modes

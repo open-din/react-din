@@ -1,5 +1,5 @@
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { AudioProvider, Osc, Filter, Gain, useAudio, useAnalyzer } from 'react-din';
+import { AudioProvider, Osc, Filter, Gain, useAudio, useAnalyzer } from '@din/react';
 import { Suspense, useRef, useEffect, useState, useMemo } from 'react';
 import * as THREE from 'three';
 import { InstancedBufferAttribute } from 'three';

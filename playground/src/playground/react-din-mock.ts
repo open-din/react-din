@@ -1,4 +1,4 @@
-// Lightweight react-din mock for Sandpack playground
+// Lightweight @din/react mock for Sandpack editor
 // This provides basic audio components using Web Audio API directly
 
 export const reactDinMock = `

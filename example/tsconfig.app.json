@@ -17,8 +17,8 @@
     "jsx": "react-jsx",
     "baseUrl": ".",
     "paths": {
-      "react-din": ["../src/index.ts"],
-      "react-din/*": ["../src/*"]
+      "@din/react": ["../src/index.ts"],
+      "@din/react/*": ["../src/*"]
     },
 
     /* Linting */

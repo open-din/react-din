@@ -1,4 +1,4 @@
-# react-din
+# @din/react
 
 A React-first declarative WebAudio library for building audio graphs, focused for interactive sound design.
 
@@ -6,7 +6,7 @@ Build complex audio graphs using React's declarative paradigm. Audio nodes are r
 
 > [!WARNING]  
 > This is a work in progress. The API is not stable and may change in the future.
-> It as been published to reserve npm package name `react-din`.
+> It has been published under the npm package name `@din/react`.
 
 ## Features
 
@@ -24,17 +24,17 @@ Build complex audio graphs using React's declarative paradigm. Audio nodes are r
 ## Installation
 
 ```bash
-npm install react-din
+npm install @din/react
 # or
-yarn add react-din
+yarn add @din/react
 # or
-pnpm add react-din
+pnpm add @din/react
 ```
 
 ## Quick Start
 
 ```tsx
-import { AudioProvider, Gain, Filter, Osc } from 'react-din';
+import { AudioProvider, Gain, Filter, Osc } from '@din/react';
 
 function App() {
   return (
@@ -70,7 +70,7 @@ Components automatically connect to their parent's output. The tree structure de
 Create step sequences with pattern-based triggering:
 
 ```tsx
-import { Sequencer, Track, useTrigger, Sampler } from 'react-din';
+import { Sequencer, Track, useTrigger, Sampler } from '@din/react';
 
 function DrumMachine() {
   return (
@@ -91,7 +91,7 @@ function DrumMachine() {
 Use musical timing with the transport system:
 
 ```tsx
-import { TransportProvider, useTransport, useBeat } from 'react-din';
+import { TransportProvider, useTransport, useBeat } from '@din/react';
 
 function PlayButton() {
   const { isPlaying, play, stop, bpm } = useTransport();
@@ -121,7 +121,7 @@ import {
   MidiCCOutput,
   MidiTransportSync,
   TransportProvider,
-} from 'react-din';
+} from '@din/react';
 
 function MidiPatch() {
   return (
@@ -146,7 +146,7 @@ function MidiPatch() {
 Analyze audio with FFT and metering:
 
 ```tsx
-import { useFFT, useMeter, Analyzer } from 'react-din';
+import { useFFT, useMeter, Analyzer } from '@din/react';
 
 function Visualizer() {
   const { bass, mid, high, spectrum } = useFFT({ fftSize: 512 });
@@ -165,7 +165,7 @@ function Visualizer() {
 Apply effects to audio:
 
 ```tsx
-import { Reverb, Chorus, Distortion } from 'react-din/effects';
+import { Reverb, Chorus, Distortion } from '@din/react/effects';
 
 function EffectsChain() {
   return (
@@ -185,7 +185,7 @@ function EffectsChain() {
 Use note strings (English or French) instead of raw MIDI numbers:
 
 ```tsx
-import { noteToMidi, midiToNote, noteToFreq, parseNote } from 'react-din';
+import { noteToMidi, midiToNote, noteToFreq, parseNote } from '@din/react';
 
 // English note names
 noteToMidi('C4');      // 60
@@ -210,7 +210,7 @@ parseNote('Eb4');      // { note: 'D#', octave: 4, midi: 63, frequency: 311.13 }
 Built-in synthesizer components inspired by Tone.js:
 
 ```tsx
-import { Synth, MonoSynth, FMSynth, AMSynth, NoiseSynth, Envelope } from 'react-din';
+import { Synth, MonoSynth, FMSynth, AMSynth, NoiseSynth, Envelope } from '@din/react';
 
 // Basic synth with ADSR envelope
 <Track id="lead" pattern={pattern}>
@@ -276,7 +276,7 @@ import { Synth, MonoSynth, FMSynth, AMSynth, NoiseSynth, Envelope } from 'react-
 Use the Panner component for 3D positional audio:
 
 ```tsx
-import { AudioProvider, Panner, Sampler } from 'react-din';
+import { AudioProvider, Panner, Sampler } from '@din/react';
 
 function SpatialAudio() {
   const [position, setPosition] = useState({ x: 0, y: 0, z: -5 });
@@ -384,6 +384,10 @@ function SpatialAudio() {
 - Coverage contract: [`project/COVERAGE_MANIFEST.json`](./project/COVERAGE_MANIFEST.json)
 - Test planning matrix: [`project/TEST_MATRIX.md`](./project/TEST_MATRIX.md)
 
+## Examples
+
+The published `@din/react` package now includes the [`example`](./example) workspace so the demo source stays bundled with the library release.
+
 ## Quality Gates
 
 ```bash
@@ -392,11 +396,11 @@ npm run validate:patch-schema
 npm run validate:coverage
 npm run validate:changes
 npm run test:library
-npm run test:playground
+npm run test:editor
 npm run test:e2e
 ```
 
-Every component and playground node in scope is mapped to a dedicated documentation page and at least one required automated test file in [`project/COVERAGE_MANIFEST.json`](./project/COVERAGE_MANIFEST.json). Any source change must update the mapped docs and tests in the same change set. The public patch JSON contract is versioned and tracked separately in [`schemas/patch.schema.json`](./schemas/patch.schema.json).
+Every component and DIN Editor node in scope is mapped to a dedicated documentation page and at least one required automated test file in [`project/COVERAGE_MANIFEST.json`](./project/COVERAGE_MANIFEST.json). Any source change must update the mapped docs and tests in the same change set. The public patch JSON contract is versioned and tracked separately in [`schemas/patch.schema.json`](./schemas/patch.schema.json).
 
 ## Spatial Audio with @react-three/drei
 

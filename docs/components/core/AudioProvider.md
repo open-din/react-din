@@ -1,7 +1,7 @@
 # AudioProvider
 
 ## Purpose
-Own the shared `AudioContext`, master bus, unlock flow, and audio state for the `react-din` tree.
+Own the shared `AudioContext`, master bus, unlock flow, and audio state for the `@din/react` tree.
 
 ## Props / Handles
 - Key props: `masterGain`, `manualUnlock`, `createOnUserGesture`, `contextOptions`, `debug`, `onUnlock`, `onStateChange`, `onError`.

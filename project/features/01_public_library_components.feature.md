@@ -2,7 +2,7 @@
 
 ## Feature
 
-Keep the public `react-din` component surface documented, testable, and safe to evolve.
+Keep the public `@din/react` component surface documented, testable, and safe to evolve.
 
 ### F01-S01 Core provider change stays documented and tested
 

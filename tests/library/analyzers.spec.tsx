@@ -1,6 +1,6 @@
 import { render } from '@testing-library/react';
 import React from 'react';
-import { Analyzer, AudioProvider, Gain, Osc } from 'react-din';
+import { Analyzer, AudioProvider, Gain, Osc } from '@din/react';
 
 describe('Analyzer', () => {
     it('mounts an analyzer graph without crashing', () => {

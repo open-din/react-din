@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import React, { useState } from 'react';
-import { AudioProvider, EventTrigger, Sequencer, Track, TransportProvider, useOnTrigger, useTrigger, useTransport } from 'react-din';
+import { AudioProvider, EventTrigger, Sequencer, Track, TransportProvider, useOnTrigger, useTrigger, useTransport } from '@din/react';
 
 function TransportProbe() {
     const transport = useTransport();

@@ -9,7 +9,7 @@ import {
     PatchRenderer,
     type PatchDocument,
     type PatchNode,
-} from 'react-din';
+} from '@din/react';
 
 afterEach(() => {
     cleanup();

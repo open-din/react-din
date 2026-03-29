@@ -11,7 +11,7 @@ import './App.css';
 function Home() {
   return (
     <div className="home">
-      <h1>🎛️ react-din demos</h1>
+      <h1>🎛️ @din/react demos</h1>
       <p>Declarative WebAudio for React</p>
       <nav className="demo-list">
         <Link href="/core" className="demo-link">

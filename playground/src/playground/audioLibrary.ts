@@ -1,6 +1,6 @@
-const AUDIO_CACHE_NAME = 'react-din-playground-audio';
+const AUDIO_CACHE_NAME = 'din-editor-audio';
 const AUDIO_CACHE_PREFIX = '/__playground_audio__/';
-const AUDIO_LIBRARY_DB_NAME = 'react-din-playground-audio-library';
+const AUDIO_LIBRARY_DB_NAME = 'din-editor-audio-library';
 const AUDIO_LIBRARY_DB_VERSION = 1;
 const AUDIO_LIBRARY_STORE = 'audioAssets';
 
@@ -34,7 +34,7 @@ function hasCacheApi(): boolean {
 }
 
 function getCacheKey(assetId: string): string {
-    const origin = typeof location !== 'undefined' ? location.origin : 'https://react-din.local';
+    const origin = typeof location !== 'undefined' ? location.origin : 'https://din-editor.local';
     return `${origin}${AUDIO_CACHE_PREFIX}${assetId}`;
 }
 

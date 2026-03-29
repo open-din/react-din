@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "urn:react-din:patch-document:v1",
-  "title": "react-din PatchDocument v1",
-  "description": "Public exchange format for react-din playground patches.",
+  "$id": "urn:@din/react:patch-document:v1",
+  "title": "@din/react PatchDocument v1",
+  "description": "Public exchange format for @din/react DIN Editor patches.",
   "type": "object",
   "additionalProperties": false,
   "required": [

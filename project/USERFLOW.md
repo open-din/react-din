@@ -1,6 +1,6 @@
 # Contributor Flow
 
-1. Pick the public component or playground node that needs to change.
+1. Pick the public component or DIN Editor node that needs to change.
 2. Update its source behavior and any required integration touch points.
 3. Update the mapped documentation page under `docs/components/**` or `docs/playground-nodes/**`.
 4. Update at least one mapped automated test file and keep the relevant BDD scenario IDs current.

@@ -7,7 +7,7 @@ import {
     Osc,
     Gain,
     Filter,
-} from 'react-din';
+} from '@din/react';
 
 /**
  * Transport Demo - Musical Timing and Playback Control

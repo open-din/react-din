@@ -1,12 +1,12 @@
-# 02 Playground Nodes
+# 02 DIN Editor Nodes
 
 ## Feature
 
-Keep every playground node registered, documented, and testable across UI, store, engine, and code generation touch points.
+Keep every DIN Editor node registered, documented, and testable across UI, store, engine, and code generation touch points.
 
 ### F02-S01 Source, effect, and routing nodes stay aligned
 
-**Given** a contributor changes a playground source, effect, or routing node
+**Given** a contributor changes a DIN Editor source, effect, or routing node
 **When** the change lands
 **Then** registry, defaults, docs, and mapped tests remain aligned
 

@@ -19,7 +19,7 @@ import {
     Sampler,
     Tremolo,
     TriggeredSampler,
-} from 'react-din';
+} from '@din/react';
 
 describe('sources and effects', () => {
     it('mounts representative source and effect chains without crashing', () => {

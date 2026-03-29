@@ -1,6 +1,6 @@
 import type { GraphDocument } from './store';
 
-const DB_NAME = 'react-din-playground';
+const DB_NAME = 'din-editor';
 const DB_VERSION = 1;
 const GRAPH_STORE = 'graphs';
 const META_STORE = 'meta';

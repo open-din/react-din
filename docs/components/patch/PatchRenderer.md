@@ -1,7 +1,7 @@
 # PatchRenderer
 
 ## Purpose
-Render a versioned `PatchDocument` as a live `react-din` graph, or derive a reusable component with `importPatch(...)` for application code.
+Render a versioned `PatchDocument` as a live `@din/react` graph, or derive a reusable component with `importPatch(...)` for application code.
 
 ## Props / Handles
 - `patch`: a validated `PatchDocument` v1 payload.
@@ -20,7 +20,7 @@ Render a versioned `PatchDocument` as a live `react-din` graph, or derive a reus
 
 ## Integration Notes
 - Use `importPatch(patch, options?)` when you want a reusable typed component instead of passing `patch` on every render.
-- The public patch JSON contract is described by [`schemas/patch.schema.json`](../../../schemas/patch.schema.json) and published with the package at `react-din/patch/schema.json`.
+- The public patch JSON contract is described by [`schemas/patch.schema.json`](../../../schemas/patch.schema.json) and published with the package at `@din/react/patch/schema.json`.
 - Patch public props come only from playground `Input` and `EventTrigger` nodes.
 - Patch MIDI bindings stay explicit in host code so the app keeps ownership of permissions, selected ports, and `MidiProvider`.
 - When a patch contains a transport node or a bound MIDI sync output, `includeProvider` wraps the content in `TransportProvider`; `midi-master` sync forces transport `mode="manual"`.
@@ -34,7 +34,7 @@ Render a versioned `PatchDocument` as a live `react-din` graph, or derive a reus
 
 ## Example
 ```tsx
-import { importPatch, MidiProvider, type PatchDocument } from 'react-din';
+import { importPatch, MidiProvider, type PatchDocument } from '@din/react';
 
 const patch = {
   version: 1,

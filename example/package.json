@@ -17,7 +17,7 @@
     "@xyflow/react": "^12.10.0",
     "postprocessing": "^6.38.2",
     "react": "^19.2.0",
-    "react-din": "*",
+    "@din/react": "*",
     "react-dom": "^19.2.0",
     "three": "^0.182.0",
     "wouter": "^3.9.0",

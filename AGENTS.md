@@ -27,7 +27,7 @@
 
 - `schemas/patch.schema.json` is the source of truth for the public JSON shape of `PatchDocument`.
 - Any change to the patch document structure, public patch interface entries, or serialized patch metadata is incomplete until `schemas/patch.schema.json` is updated in the same branch.
-- The published package must keep exporting the schema at `react-din/patch/schema.json`.
+- The published package must keep exporting the schema at `@din/react/patch/schema.json`.
 
 ## Component And Node Rules
 
@@ -54,5 +54,5 @@
 - Run `npm run validate:patch-schema`.
 - Run `npm run validate:coverage`.
 - Run `npm run test:library`.
-- Run `npm run test:playground`.
+- Run `npm run test:editor`.
 - Run `npm run validate:changes` before merging source changes that touch mapped components or nodes.

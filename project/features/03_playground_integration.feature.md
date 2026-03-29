@@ -1,19 +1,19 @@
-# 03 Playground Integration
+# 03 DIN Editor Integration
 
 ## Feature
 
-Exercise the visual playground as an integrated audio-graph editor instead of a collection of isolated controls.
+Exercise the DIN Editor as an integrated audio-graph editor instead of a collection of isolated controls.
 
 ### F03-S01 Voice synth graphs run across transport, sequencing, voice, envelope, and output
 
-**Given** a contributor builds a synth graph in the playground
+**Given** a contributor builds a synth graph in the DIN Editor
 **When** they connect `Transport -> StepSequencer -> Voice -> Osc -> ADSR -> Gain -> Output`
 **Then** the store, engine, UI, and generated code remain coherent
 
 ### F03-S02 Saved graphs reload safely
 
 **Given** a contributor saves a graph that includes sampler or output state
-**When** the playground reloads
+**When** the DIN Editor reloads
 **Then** the graph is restored and transient playback state is sanitized
 
 ### F03-S03 Generated React code matches mixed audio and data graphs
@@ -48,6 +48,6 @@ Exercise the visual playground as an integrated audio-graph editor instead of a 
 
 ### F03-S08 Patch export and round-trip import stay coherent
 
-**Given** a contributor exports the active playground graph as patch JSON
-**When** they import that patch back into the playground or render it through `importPatch`
+**Given** a contributor exports the active DIN Editor graph as patch JSON
+**When** they import that patch back into the DIN Editor or render it through `importPatch`
 **Then** the interface contract, MIDI metadata, positions, and external asset references stay coherent

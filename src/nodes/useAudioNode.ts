@@ -85,7 +85,7 @@ export function useAudioNode<T extends AudioNode>({
 
     const log = (...args: unknown[]) => {
         if (!debug) return;
-        console.info('[react-din]', ...args);
+        console.info('[@din/react]', ...args);
     };
 
     const getNodeName = (node: AudioNode | null) =>
@@ -189,7 +189,7 @@ export function useAudioParam(
             try {
                 lfoOutput.node.connect(param);
             } catch (e) {
-                console.warn('[react-din] Failed to connect LFO to AudioParam:', e);
+                console.warn('[@din/react] Failed to connect LFO to AudioParam:', e);
             }
 
             return () => {

@@ -6,7 +6,7 @@ import {
     ADSR,
     noteToFreq,
     parseNote,
-} from 'react-din';
+} from '@din/react';
 
 /**
  * Notes Demo - Interactive Piano Keyboard

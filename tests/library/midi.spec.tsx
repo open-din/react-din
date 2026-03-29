@@ -13,7 +13,7 @@ import {
     useMidiCC,
     useMidiNote,
     useTransport,
-} from 'react-din';
+} from '@din/react';
 
 afterEach(() => {
     cleanup();
