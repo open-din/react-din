@@ -8,6 +8,7 @@ The active package layout is:
 - `@din/vanilla`: web/WASM-facing runtime and shared audio graph builders
 - `@din/react`: React bindings for the vanilla runtime
 - `@din/editor`: visual editor and playground
+- `@din/examples`: runnable reference examples for the public DIN packages
 - `react-din`: compatibility shim that re-exports `@din/react`
 
 > [!WARNING]  

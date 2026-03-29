@@ -11,7 +11,7 @@ Apply numeric transformations and functions to control values in the graph.
 - Added from the store with `operation "add"`, `a 0`, `b 0`, `c 0`, and label `Math`.
 
 ## Integration Notes
-- Keep supported operations aligned with `src/data/values.ts`, UI labels, and generated code.
+- Keep supported operations aligned with `@din/vanilla/core`, UI labels, and generated code.
 - Route outputs into audio parameter targets or other data nodes.
 
 ## Failure Modes

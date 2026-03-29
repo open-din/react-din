@@ -3,9 +3,8 @@ import { AudioProvider, Osc, Filter, Gain, useAudio, useAnalyzer } from '@din/re
 import { Suspense, useRef, useEffect, useState, useMemo } from 'react';
 import * as THREE from 'three';
 import { InstancedBufferAttribute } from 'three';
-import { MeshBasicNodeMaterial, WebGPURenderer, SpriteNodeMaterial } from 'three/webgpu';
+import { WebGPURenderer, SpriteNodeMaterial } from 'three/webgpu';
 import {
-    time,
     uv,
     vec3,
     vec4,
@@ -15,7 +14,6 @@ import {
     uniform,
     storage,
     instanceIndex,
-    vertexIndex,
     Fn
 } from 'three/tsl';
 import { PerspectiveCamera } from '@react-three/drei';
@@ -193,7 +191,7 @@ const DebugOverlay = ({ setAudioLevel }: { setAudioLevel: (v: number) => void })
 
 // --- Particle System ---
 const ParticleSystem = ({ isRendererReady }: { isRendererReady: boolean }) => {
-    const { gl, scene } = useThree();
+    const { scene } = useThree();
     const count = 20000;
     const { frequencyData } = useAnalyzer({ fftSize: 2048 }); // Higher FFT size for better resolution
 
@@ -324,7 +322,7 @@ const ParticleSystem = ({ isRendererReady }: { isRendererReady: boolean }) => {
         // 4. Geometry (Instanced Plane)
         const geo = new THREE.InstancedBufferGeometry();
         const base = new THREE.PlaneGeometry(1, 1);
-        geo.copy(base);
+        geo.copy(base as unknown as THREE.InstancedBufferGeometry);
         geo.instanceCount = count;
 
         return { computeNode: compute, material: m, geometry: geo };
@@ -344,14 +342,13 @@ const ParticleSystem = ({ isRendererReady }: { isRendererReady: boolean }) => {
         const n = mx_noise_vec3(uv().mul(noiseScale).add(0, 0, uTime.mul(timeScale)));
 
         // Enhance contrast of the noise pattern itself
-        let factor = n.r.add(1.0).mul(0.3);
-        factor = factor.pow(1.5).clamp(0, 1);
+        const factor = n.r.add(1.0).mul(0.3).pow(1.5).clamp(0, 1);
 
         const bg = mix(color1, color2, factor);
 
-        scene.backgroundNode = bg;
+        (scene as THREE.Scene & { backgroundNode: unknown }).backgroundNode = bg;
 
-        return () => { scene.backgroundNode = null; };
+        return () => { (scene as THREE.Scene & { backgroundNode: unknown }).backgroundNode = null; };
     }, [scene]);
 
     useFrame((state, delta) => {
@@ -431,7 +428,7 @@ export const VisualizerDemo = () => {
                     style={{ filter: 'invert(1) drop-shadow(0 0 10px rgba(200,220,255,0.6)) brightness(1.2) contrast(1.2)' }}
                     gl={({ canvas }) => {
                         const renderer = new WebGPURenderer({
-                            canvas,
+                            canvas: canvas as HTMLCanvasElement,
                             antialias: false,
                             alpha: false,
                             trackTimestamp: false

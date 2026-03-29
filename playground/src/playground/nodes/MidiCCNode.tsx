@@ -1,6 +1,6 @@
 import { memo, useEffect, useMemo, useState } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
-import { useMidi, useMidiCC } from '../../../../src/midi';
+import { useMidi, useMidiCC } from '@din/react/midi';
 import { audioEngine } from '../AudioEngine';
 import { useAudioGraphStore, type MidiCCNodeData } from '../store';
 import { buildInputOptions, getChannelFilterValue, getStatusBadge } from './midiNodeUtils';

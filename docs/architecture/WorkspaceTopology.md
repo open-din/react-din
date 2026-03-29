@@ -10,6 +10,7 @@ The repository is organized as a layered workspace so audio behavior can be shar
 - `@din/vanilla`: browser runtime and shared graph builders
 - `@din/react`: React bindings over the vanilla runtime
 - `@din/editor`: graph editor and playground
+- `@din/examples`: runnable examples built against the public package surfaces
 - `react-din`: compatibility shim that re-exports `@din/react`
 
 ## Integration Notes

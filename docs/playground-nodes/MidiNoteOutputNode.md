@@ -12,7 +12,7 @@
 - Local velocity: `1`
 
 ## Integration Notes
-Use `gate` for held notes and `trigger` for one-shot note pulses. Connected values replace local controls in the UI.
+Use `gate` for held notes and `trigger` for one-shot note pulses. Connected values replace local controls in the UI. Outbound messages are now driven through the same `@din/react/midi` contract used by exported React graphs.
 
 ## Failure Modes
 With no output port, the node remains silent.

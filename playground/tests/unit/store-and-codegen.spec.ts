@@ -348,7 +348,7 @@ describe('playground store and code generation', () => {
 
     it('exports versioned patch interfaces and round-trips MIDI and asset metadata', async () => {
         vi.resetModules();
-        const { PATCH_DOCUMENT_VERSION, graphDocumentToPatch, patchToGraphDocument } = await import('../../../src/patch');
+        const { PATCH_DOCUMENT_VERSION, graphDocumentToPatch, patchToGraphDocument } = await import('@din/vanilla/core');
 
         const nodes = [
             {

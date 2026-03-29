@@ -11,7 +11,7 @@ import {
     type GraphDocumentLike,
     type GraphNodeLike,
     type PatchToGraphOptions,
-} from '../internal/dinCore';
+} from '@din/vanilla/core';
 import type { PatchConnection, PatchDocument, PatchNode } from './types';
 
 export type {

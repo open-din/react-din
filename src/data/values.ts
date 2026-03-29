@@ -7,7 +7,7 @@ import {
     type ClampMode,
     type CompareOperation,
     type MathOperation,
-} from '../internal/dinCore';
+} from '@din/vanilla/core';
 
 export type { MathOperation, CompareOperation, ClampMode };
 

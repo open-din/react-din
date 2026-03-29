@@ -11,7 +11,7 @@
 - Controller: `1`
 
 ## Integration Notes
-Use it for knobs, faders, and pedals. Learn mode captures the next CC message and fills the controller selection.
+Use it for knobs, faders, and pedals. Learn mode captures the next CC message and fills the controller selection. The editor reads controller state through the shared `@din/react/midi` bindings so the playground matches the public React runtime.
 
 ## Failure Modes
 If the selected controller never arrives, outputs stay at zero.

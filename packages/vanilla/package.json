@@ -1,7 +1,7 @@
 {
   "name": "@din/vanilla",
   "version": "0.1.0",
-  "description": "Vanilla Web Audio bindings and shared graph builders for DIN",
+  "description": "Vanilla Web Audio and WASM wrapper bindings for din-core",
   "author": "Valentin Dubois - veacks.net",
   "license": "MIT",
   "type": "module",
@@ -17,6 +17,16 @@
       "require": {
         "types": "./dist/index.d.cts",
         "default": "./dist/index.cjs"
+      }
+    },
+    "./core": {
+      "import": {
+        "types": "./dist/core/index.d.ts",
+        "default": "./dist/core/index.js"
+      },
+      "require": {
+        "types": "./dist/core/index.d.cts",
+        "default": "./dist/core/index.cjs"
       }
     }
   },

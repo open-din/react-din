@@ -2309,7 +2309,7 @@ const PreviewRenderer: React.FC<{ graph: PreviewGraphData; sequencerBpm?: number
         if (eventSource) {
             const eventData = eventSource.data as EventTriggerNodeData;
             const tokenValue = getEventTriggerTokenValue(eventSource.id, eventData.token);
-            const eventProps: Record<string, any> = { token: tokenValue };
+            const eventProps: React.ComponentProps<typeof EventTrigger> = { token: tokenValue, children: element };
             if (eventData.mode !== 'change') eventProps.mode = eventData.mode;
             if (eventData.cooldownMs > 0) eventProps.cooldownMs = eventData.cooldownMs;
             if (eventData.velocity !== 1) eventProps.velocity = eventData.velocity;
@@ -2317,7 +2317,7 @@ const PreviewRenderer: React.FC<{ graph: PreviewGraphData; sequencerBpm?: number
             if (eventData.note !== 60) eventProps.note = eventData.note;
             if (eventData.trackId && eventData.trackId !== 'event') eventProps.trackId = eventData.trackId;
 
-            element = React.createElement(EventTrigger, eventProps, element);
+            element = React.createElement(EventTrigger, eventProps);
         }
 
         return element;

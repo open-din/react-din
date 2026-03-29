@@ -143,7 +143,7 @@
     "validate:changes": "node ./scripts/validate-changes.mjs",
     "ci:check": "npm run validate:core && npm run validate:docs && npm run validate:patch-schema && npm run validate:coverage && npm run test:library && npm run test:playground",
     "prepublishOnly": "npm run build",
-    "example:dev": "npm -w @din/react-example run dev",
+    "example:dev": "npm -w @din/examples run dev",
     "playground:dev": "npm -w @din/editor run dev"
   },
   "dependencies": {

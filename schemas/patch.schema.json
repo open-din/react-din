@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "urn:react-din:patch-document:v1",
   "title": "react-din PatchDocument v1",
-  "description": "Public exchange format for react-din playground patches, including unresolved external assetPath references for sampler and convolver nodes.",
+  "description": "Public exchange format for react-din playground patches, shared by the din-core bridge and the browser-facing @din/vanilla runtime, including unresolved external assetPath references for sampler and convolver nodes.",
   "type": "object",
   "additionalProperties": false,
   "required": [

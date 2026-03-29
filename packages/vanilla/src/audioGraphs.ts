@@ -3,7 +3,7 @@ import {
     dinCoreCreateReverbImpulseFrames,
     dinCoreCreateWaveShaperCurve,
     dinCoreFillNoiseSamples,
-} from '../../../src/internal/dinCore';
+} from './core';
 
 export type NoiseGeneratorType = 'white' | 'pink' | 'brown' | 'blue' | 'violet';
 export type DistortionCurveType = 'soft' | 'hard' | 'fuzz' | 'bitcrush' | 'saturate';

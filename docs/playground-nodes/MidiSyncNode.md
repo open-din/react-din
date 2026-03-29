@@ -11,7 +11,7 @@
 - Clock send: enabled
 
 ## Integration Notes
-This node is singleton because MIDI sync is global to the transport context. In `midi-master`, the transport follows incoming clock; in `transport-master`, the graph emits outgoing clock.
+This node is singleton because MIDI sync is global to the transport context. In `midi-master`, the transport follows incoming clock; in `transport-master`, the graph emits outgoing clock. The editor now wires this node through the same `@din/react/midi` sync surface used by exported React code.
 
 ## Failure Modes
 Without a transport node or MIDI access, sync stays inactive.

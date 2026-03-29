@@ -48,7 +48,7 @@ import type {
     ClampNodeData,
     SwitchNodeData,
 } from './store';
-import { math, compare, mix, clamp, switchValue } from '../../../src/data/values';
+import { math, compare, mix, clamp, switchValue } from '@din/vanilla/core';
 import {
     clampPhaserStageCount,
     createChorusGraph,
@@ -208,8 +208,8 @@ function createReverbImpulse(ctx: AudioContext, decay: number): AudioBuffer {
     return createReverbImpulseBuffer(ctx, decay);
 }
 
-function createWaveShaperCurve(amount: number, preset: 'softClip' | 'hardClip' | 'saturate'): Float32Array {
-    return createSharedWaveShaperCurve(amount, preset);
+function createWaveShaperCurve(amount: number, preset: 'softClip' | 'hardClip' | 'saturate'): Float32Array<ArrayBuffer> {
+    return createSharedWaveShaperCurve(amount, preset) as Float32Array<ArrayBuffer>;
 }
 
 const MIN_EQ3_GAP_HZ = 50;
@@ -2871,7 +2871,7 @@ export class AudioEngine {
             ) {
                 const visualData = this.nodeById.get(nodeId)?.data as DistortionNodeData | undefined;
                 const distortionType = ('distortionType' in data && typeof data.distortionType === 'string')
-                    ? data.distortionType
+                    ? data.distortionType as DistortionNodeData['distortionType']
                     : (visualData?.distortionType ?? 'soft');
                 updateDistortionGraph(
                     {

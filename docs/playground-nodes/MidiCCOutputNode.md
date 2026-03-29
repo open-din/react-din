@@ -12,7 +12,7 @@
 - Value mode: `normalized`
 
 ## Integration Notes
-Use it to forward graph modulation to hardware synths, mixers, or lighting controllers.
+Use it to forward graph modulation to hardware synths, mixers, or lighting controllers. The node now shares the public `@din/react/midi` runtime contract with generated code, which keeps preview and export behavior aligned.
 
 ## Failure Modes
 If the chosen output disappears, the node shows the missing port and sends nothing.

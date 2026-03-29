@@ -11,7 +11,7 @@ import {
     dinCoreNoteToFreq,
     dinCoreNoteToMidi,
     dinCoreParseNote,
-} from '../internal/dinCore';
+} from '@din/vanilla/core';
 
 // =============================================================================
 // Core Functions

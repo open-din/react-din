@@ -29,7 +29,7 @@ import {
     createPlaygroundNode,
 } from './graphBuilders';
 import { normalizeUiTokensNodeData } from './uiTokens';
-import type { MidiTransportSyncMode, MidiValueFormat } from '../../../src/midi';
+import type { MidiTransportSyncMode, MidiValueFormat } from '@din/react/midi';
 
 // ============================================================================
 // Audio Node Data Types

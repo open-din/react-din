@@ -12,7 +12,7 @@
 - Map: `Off`
 
 ## Integration Notes
-Use it as the visual entrypoint for hardware keyboards and virtual MIDI inputs. When `Map` is enabled, the node learns note activity per `device + channel`, keeps a mapped-source list, and makes the last touched source active automatically without changing the note filter mode.
+Use it as the visual entrypoint for hardware keyboards and virtual MIDI inputs. When `Map` is enabled, the node learns note activity per `device + channel`, keeps a mapped-source list, and makes the last touched source active automatically without changing the note filter mode. The node now consumes the same `@din/react/midi` runtime surface used by generated React code, so editor previews and exported graphs stay aligned.
 
 ## Failure Modes
 Without MIDI access or a matching device, the node stays idle and shows `No device` or `Idle`. Learned mappings remain visible even if a saved input disappears, so users can see which source is disconnected.

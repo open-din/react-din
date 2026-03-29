@@ -17,10 +17,10 @@ import '@xyflow/react/dist/style.css';
 import './playground/playground.css';
 import Inspector from './playground/Inspector';
 import ConnectionAssistMenu from './playground/ConnectionAssistMenu';
-import { MidiProvider, useMidi } from '../../src/midi';
-import { graphDocumentToPatch, migratePatchDocument, patchToGraphDocument, type PatchDocument } from '../../src/patch';
+import { MidiProvider, useMidi } from '@din/react/midi';
+import { graphDocumentToPatch, migratePatchDocument, patchToGraphDocument, type PatchDocument } from '@din/vanilla/core';
 
-import { useAudioGraphStore, type AudioNodeData, type ConvolverNodeData, type SamplerNodeData } from './playground/store';
+import { useAudioGraphStore, type AudioNodeData, type ConvolverNodeData, type GraphDocument, type SamplerNodeData } from './playground/store';
 import {
     OscNode,
     GainNode,
@@ -1541,7 +1541,7 @@ const PlaygroundDemoContent: FC = () => {
             const parsed = JSON.parse(payload) as PatchDocument;
             const patch = migratePatchDocument(parsed);
             const nextOrder = graphs.reduce((max, graph) => Math.max(max, graph.order ?? 0), -1) + 1;
-            const importedGraph = patchToGraphDocument(patch, { order: nextOrder });
+            const importedGraph = patchToGraphDocument(patch, { order: nextOrder }) as unknown as GraphDocument;
             setGraphs([...graphs, importedGraph], importedGraph.id);
             setNameDraft(importedGraph.name);
         } catch (error) {

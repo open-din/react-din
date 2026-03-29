@@ -1,6 +1,6 @@
 import { memo, useEffect, useMemo, useRef } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
-import { useMidi, useMidiNote } from '../../../../src/midi';
+import { useMidi, useMidiNote } from '@din/react/midi';
 import { audioEngine } from '../AudioEngine';
 import { normalizeMidiNoteNodeData } from '../nodeHelpers';
 import { useAudioGraphStore, type MidiInMapping, type MidiNoteNodeData } from '../store';
