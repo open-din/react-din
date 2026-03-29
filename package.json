@@ -8,11 +8,6 @@
     "access": "public"
   },
   "type": "module",
-  "workspaces": [
-    "example",
-    "editor",
-    "editor/mcp-server"
-  ],
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -135,7 +130,7 @@
     "test": "npm run test:library && npm run test:editor",
     "test:library": "vitest --config vitest.config.ts --run",
     "test:library:watch": "vitest --config vitest.config.ts",
-    "test:editor": "npm -w editor run test:run && npm --prefix editor/mcp-server run test:run",
+    "test:editor": "vitest --config editor/vitest.config.ts --run && node ./node_modules/vitest/vitest.mjs --config editor/targets/mcp/vitest.config.ts --run",
     "test:e2e": "playwright test",
     "validate:docs": "node ./scripts/validate-docs.mjs",
     "validate:patch-schema": "node ./scripts/validate-patch-schema.mjs",
@@ -143,32 +138,53 @@
     "validate:changes": "node ./scripts/validate-changes.mjs",
     "ci:check": "npm run validate:docs && npm run validate:patch-schema && npm run validate:coverage && npm run test:library && npm run test:editor",
     "prepublishOnly": "npm run build",
-    "example:dev": "npm -w example run dev",
-    "editor:dev": "npm -w editor run dev",
-    "editor:mcp:build": "npm --prefix editor/mcp-server run build",
-    "editor:mcp:start": "npm --prefix editor/mcp-server run start"
+    "example:dev": "npm --prefix example run dev",
+    "editor:dev": "npm run editor:dev:web",
+    "editor:dev:web": "vite --config editor/targets/web/vite.config.ts",
+    "editor:dev:mcp": "node ./scripts/editor-run-mcp.mjs dev",
+    "editor:dev:stack": "node ./scripts/editor-dev-stack.mjs",
+    "editor:build:web": "vite build --config editor/targets/web/vite.config.ts",
+    "editor:build:app": "node ./scripts/editor-build-app.mjs",
+    "editor:build:mcp": "node --enable-source-maps ./node_modules/tsup/dist/cli-default.js --config editor/targets/mcp/tsup.config.ts",
+    "editor:mcp:start": "node ./scripts/editor-run-mcp.mjs start"
   },
   "peerDependencies": {
     "react": ">=18.0.0",
     "react-dom": ">=18.0.0"
   },
   "devDependencies": {
+    "@eslint/js": "^9.39.1",
     "@playwright/test": "^1.58.2",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^14.6.1",
+    "@types/node": "^24.10.1",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^5.1.1",
+    "@xyflow/react": "^12.10.0",
     "@typescript-eslint/eslint-plugin": "^6.0.0",
     "@typescript-eslint/parser": "^6.0.0",
+    "autoprefixer": "^10.4.20",
     "eslint": "^8.56.0",
+    "eslint-plugin-react-hooks": "^7.0.1",
+    "eslint-plugin-react-refresh": "^0.4.24",
+    "globals": "^16.5.0",
     "jsdom": "^29.0.1",
+    "postcss": "^8.4.41",
     "prettier": "^3.2.5",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
+    "tailwindcss": "^3.4.17",
     "tsup": "^8.0.0",
     "typescript": "^5.3.0",
+    "typescript-eslint": "^8.46.4",
+    "vite": "^7.2.4",
     "vitest": "^1.0.0"
+  },
+  "dependencies": {
+    "ws": "^8.18.3",
+    "zustand": "^5.0.10"
   },
   "keywords": [
     "react",

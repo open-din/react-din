@@ -33,11 +33,11 @@
 
 - A new public component is incomplete until it updates exports, docs, tests, and `project/COVERAGE_MANIFEST.json`.
 - A new editor node is incomplete until it updates:
-  - `editor/src/editor/nodes/index.ts`
-  - `editor/src/EditorDemo.tsx`
-  - `editor/src/editor/store.ts`
-  - `editor/src/editor/AudioEngine.ts`
-  - `editor/src/editor/CodeGenerator.tsx`
+  - `editor/ui/editor/nodes/index.ts`
+  - `editor/ui/EditorDemo.tsx`
+  - `editor/ui/editor/store.ts`
+  - `editor/ui/editor/AudioEngine.ts`
+  - `editor/ui/editor/CodeGenerator.tsx`
   - docs, tests, and `project/COVERAGE_MANIFEST.json`
 - Every modulate-able numeric node parameter must expose a dedicated target handle (pin) with a stable handle id.
 - When a target handle is connected for a slider-backed parameter, the UI must hide or disable the slider and show the connected value instead.

@@ -44,6 +44,22 @@ test('loads atmospheric sidechain template and emits expected codegen building b
     await expect(page.locator('textarea')).toContainText('sidechainBusId');
 });
 
+test('loads atmospheric breakbeat arc template and emits the transport-driven arrangement', async ({ page }) => {
+    await page.goto('/');
+
+    await page.getByRole('button', { name: 'Atmospheric Breakbeat Arc' }).click();
+
+    await expect(page.getByText('Transport').first()).toBeVisible();
+    await expect(page.getByText('Step Sequencer').first()).toBeVisible();
+    await expect(page.getByText('Piano Roll').first()).toBeVisible();
+    await expect(page.getByText('Compressor').first()).toBeVisible();
+    await expect(page.getByText('Delay').first()).toBeVisible();
+
+    await expect(page.locator('textarea')).toContainText('Track id="seq-kick"');
+    await expect(page.locator('textarea')).toContainText('Track id="piano-pad"');
+    await expect(page.locator('textarea')).toContainText('sidechainBusId="sc-gain-kick-compressor-pad"');
+});
+
 test('shows compatible handles during a drag and adds a connected node from the floating menu', async ({ page }) => {
     await page.goto('/');
 

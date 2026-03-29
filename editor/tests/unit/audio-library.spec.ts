@@ -10,7 +10,7 @@ describe('audio library storage', () => {
             revokeObjectURL: vi.fn(),
         } as unknown as typeof URL);
 
-        const { addAssetFromBlob, deleteAsset, getAssetObjectUrl, listAssets, subscribeAssets } = await import('../../src/editor/audioLibrary');
+        const { addAssetFromBlob, deleteAsset, getAssetObjectUrl, listAssets, subscribeAssets } = await import('../../ui/editor/audioLibrary');
         const events = vi.fn();
         const unsubscribe = subscribeAssets(events);
 

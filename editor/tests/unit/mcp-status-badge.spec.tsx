@@ -1,8 +1,8 @@
 import { act, cleanup, render, screen } from '@testing-library/react';
 import React from 'react';
 import { afterEach, describe, expect, it } from 'vitest';
-import { McpStatusBadge } from '../../src/editor/agent-bridge/McpStatusBadge';
-import { resetMcpBridgeStatus, setMcpBridgeStatus } from '../../src/editor/agent-bridge/status';
+import { McpStatusBadge } from '../../bridge/McpStatusBadge';
+import { resetMcpBridgeStatus, setMcpBridgeStatus } from '../../bridge/status';
 
 describe('MCP status badge', () => {
     afterEach(() => {

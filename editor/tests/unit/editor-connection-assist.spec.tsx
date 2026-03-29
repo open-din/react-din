@@ -74,7 +74,7 @@ vi.mock('@xyflow/react', async () => {
     };
 });
 
-vi.mock('../../src/editor/graphStorage', () => ({
+vi.mock('../../ui/editor/graphStorage', () => ({
     deleteGraph: vi.fn().mockResolvedValue(undefined),
     loadActiveGraphId: vi.fn().mockResolvedValue(null),
     loadGraphs: vi.fn().mockResolvedValue([]),
@@ -82,7 +82,7 @@ vi.mock('../../src/editor/graphStorage', () => ({
     saveGraph: vi.fn().mockResolvedValue(undefined),
 }));
 
-vi.mock('../../src/editor/audioLibrary', () => ({
+vi.mock('../../ui/editor/audioLibrary', () => ({
     addAssetFromBlob: vi.fn().mockResolvedValue({
         id: 'asset-blob',
         name: 'imported.wav',
@@ -105,7 +105,7 @@ vi.mock('../../src/editor/audioLibrary', () => ({
     subscribeAssets: vi.fn(() => () => {}),
 }));
 
-vi.mock('../../src/editor/AudioEngine', () => ({
+vi.mock('../../ui/editor/AudioEngine', () => ({
     audioEngine: {
         loadSamplerBuffer: vi.fn(),
         onSamplerEnd: () => () => {},
@@ -167,8 +167,8 @@ describe('Editor connection assist', () => {
         const reactFlowModule = await import('@xyflow/react') as typeof import('@xyflow/react') & {
             __getLatestReactFlowProps: () => any;
         };
-        const { useAudioGraphStore } = await import('../../src/editor/store');
-        const { EditorDemo } = await import('../../src/EditorDemo');
+        const { useAudioGraphStore } = await import('../../ui/editor/store');
+        const { EditorDemo } = await import('../../ui/EditorDemo');
 
         render(<EditorDemo />);
 
@@ -212,10 +212,10 @@ describe('Editor connection assist', () => {
     });
 
     it('keeps the audio library panel collapsed by default and expands it on demand', async () => {
-        const audioLibrary = await import('../../src/editor/audioLibrary');
+        const audioLibrary = await import('../../ui/editor/audioLibrary');
         vi.mocked(audioLibrary.listAssets).mockResolvedValue([]);
 
-        const { EditorDemo } = await import('../../src/EditorDemo');
+        const { EditorDemo } = await import('../../ui/EditorDemo');
         render(<EditorDemo />);
 
         expect(screen.queryByLabelText('Search library files')).not.toBeInTheDocument();
@@ -229,7 +229,7 @@ describe('Editor connection assist', () => {
     });
 
     it('deletes an audio-library asset and clears sampler references across graphs', async () => {
-        const audioLibrary = await import('../../src/editor/audioLibrary');
+        const audioLibrary = await import('../../ui/editor/audioLibrary');
         vi.mocked(audioLibrary.listAssets).mockResolvedValue([
             {
                 id: 'asset-kick',
@@ -241,8 +241,8 @@ describe('Editor connection assist', () => {
             },
         ]);
 
-        const { useAudioGraphStore } = await import('../../src/editor/store');
-        const { EditorDemo } = await import('../../src/EditorDemo');
+        const { useAudioGraphStore } = await import('../../ui/editor/store');
+        const { EditorDemo } = await import('../../ui/EditorDemo');
         render(<EditorDemo />);
 
         act(() => {
@@ -293,11 +293,11 @@ describe('Editor connection assist', () => {
     });
 
     it('supports drag-and-drop upload for audio files in the library panel', async () => {
-        const audioLibrary = await import('../../src/editor/audioLibrary');
+        const audioLibrary = await import('../../ui/editor/audioLibrary');
         vi.mocked(audioLibrary.listAssets).mockResolvedValue([]);
         vi.spyOn(HTMLMediaElement.prototype, 'canPlayType').mockReturnValue('probably');
 
-        const { EditorDemo } = await import('../../src/EditorDemo');
+        const { EditorDemo } = await import('../../ui/EditorDemo');
         render(<EditorDemo />);
 
         fireEvent.click(screen.getByTitle('Expand audio library'));
@@ -314,11 +314,11 @@ describe('Editor connection assist', () => {
     });
 
     it('rejects non-audio drag-and-drop uploads in the library panel', async () => {
-        const audioLibrary = await import('../../src/editor/audioLibrary');
+        const audioLibrary = await import('../../ui/editor/audioLibrary');
         vi.mocked(audioLibrary.listAssets).mockResolvedValue([]);
         vi.mocked(audioLibrary.addAssetFromFile).mockClear();
 
-        const { EditorDemo } = await import('../../src/EditorDemo');
+        const { EditorDemo } = await import('../../ui/EditorDemo');
         render(<EditorDemo />);
 
         fireEvent.click(screen.getByTitle('Expand audio library'));

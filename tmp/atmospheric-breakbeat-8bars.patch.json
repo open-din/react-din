@@ -1,0 +1,1259 @@
+{
+  "version": 1,
+  "name": "Atmospheric Breakbeat Arc 8 Bars",
+  "nodes": [
+    {
+      "id": "transport-1",
+      "type": "transport",
+      "position": {
+        "x": -180,
+        "y": 120
+      },
+      "data": {
+        "type": "transport",
+        "bpm": 86,
+        "playing": false,
+        "beatsPerBar": 4,
+        "beatUnit": 4,
+        "stepsPerBeat": 2,
+        "barsPerPhrase": 8,
+        "swing": 0.1,
+        "label": "Transport 8 Bars"
+      }
+    },
+    {
+      "id": "seq-kick",
+      "type": "stepSequencer",
+      "position": {
+        "x": 70,
+        "y": -180
+      },
+      "data": {
+        "type": "stepSequencer",
+        "steps": 64,
+        "pattern": [
+          1,
+          0,
+          0,
+          0,
+          0.78,
+          0,
+          0,
+          0,
+          0.52,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0.82,
+          0,
+          0,
+          0.42,
+          0,
+          0.6,
+          0,
+          0.72,
+          1,
+          0,
+          0.74,
+          0,
+          0.92,
+          0,
+          0.68,
+          0.86,
+          0.48,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0.76,
+          0,
+          0,
+          0.45,
+          0,
+          0.58,
+          0.64,
+          0.72,
+          1,
+          0,
+          0.78,
+          0.52,
+          0.94,
+          0,
+          0.72,
+          0.88,
+          0.66,
+          0,
+          0,
+          0,
+          0.42,
+          0,
+          0,
+          0
+        ],
+        "activeSteps": [
+          true,
+          false,
+          false,
+          false,
+          true,
+          false,
+          false,
+          false,
+          true,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          true,
+          false,
+          false,
+          true,
+          false,
+          true,
+          false,
+          true,
+          true,
+          false,
+          true,
+          false,
+          true,
+          false,
+          true,
+          true,
+          true,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          false,
+          true,
+          false,
+          false,
+          true,
+          false,
+          true,
+          true,
+          true,
+          true,
+          false,
+          true,
+          true,
+          true,
+          false,
+          true,
+          true,
+          true,
+          false,
+          false,
+          false,
+          true,
+          false,
+          false,
+          false
+        ],
+        "label": "Kick Arc"
+      }
+    },
+    {
+      "id": "seq-snare",
+      "type": "stepSequencer",
+      "position": {
+        "x": 70,
+        "y": 0
+      },
+      "data": {
+        "type": "stepSequencer",
+        "steps": 64,
+        "pattern": [
+          0,
+          0,
+          0.72,
+          0,
+          0,
+          0,
+          0.78,
+          0,
+          0,
+          0,
+          0.48,
+          0,
+          0,
+          0.22,
+          0.62,
+          0,
+          0,
+          0,
+          0.68,
+          0,
+          0.22,
+          0.34,
+          0.74,
+          0.42,
+          0,
+          0,
+          0.86,
+          0,
+          0.18,
+          0.42,
+          0.92,
+          0,
+          0,
+          0,
+          0.5,
+          0,
+          0,
+          0.18,
+          0.58,
+          0,
+          0,
+          0,
+          0.72,
+          0.28,
+          0.34,
+          0.48,
+          0.82,
+          0.6,
+          0,
+          0,
+          0.88,
+          0,
+          0.26,
+          0.46,
+          1,
+          0.18,
+          0,
+          0,
+          0.44,
+          0,
+          0,
+          0,
+          0.5,
+          0
+        ],
+        "activeSteps": [
+          false,
+          false,
+          true,
+          false,
+          false,
+          false,
+          true,
+          false,
+          false,
+          false,
+          true,
+          false,
+          false,
+          true,
+          true,
+          false,
+          false,
+          false,
+          true,
+          false,
+          true,
+          true,
+          true,
+          true,
+          false,
+          false,
+          true,
+          false,
+          true,
+          true,
+          true,
+          false,
+          false,
+          false,
+          true,
+          false,
+          false,
+          true,
+          true,
+          false,
+          false,
+          false,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          false,
+          false,
+          true,
+          false,
+          true,
+          true,
+          true,
+          true,
+          false,
+          false,
+          true,
+          false,
+          false,
+          false,
+          true,
+          false
+        ],
+        "label": "Snare Arc"
+      }
+    },
+    {
+      "id": "seq-hat",
+      "type": "stepSequencer",
+      "position": {
+        "x": 70,
+        "y": 180
+      },
+      "data": {
+        "type": "stepSequencer",
+        "steps": 64,
+        "pattern": [
+          0.22,
+          0,
+          0.28,
+          0,
+          0.24,
+          0,
+          0.32,
+          0,
+          0,
+          0.18,
+          0,
+          0.22,
+          0,
+          0.18,
+          0,
+          0.26,
+          0.28,
+          0.16,
+          0.34,
+          0.18,
+          0.32,
+          0.22,
+          0.42,
+          0.2,
+          0.4,
+          0.22,
+          0.46,
+          0.24,
+          0.42,
+          0.26,
+          0.5,
+          0.28,
+          0.18,
+          0,
+          0.24,
+          0,
+          0.18,
+          0,
+          0.28,
+          0,
+          0.3,
+          0.2,
+          0.36,
+          0.22,
+          0.34,
+          0.24,
+          0.42,
+          0.28,
+          0.42,
+          0.24,
+          0.48,
+          0.26,
+          0.44,
+          0.28,
+          0.54,
+          0.32,
+          0.18,
+          0,
+          0.22,
+          0,
+          0.18,
+          0,
+          0.24,
+          0
+        ],
+        "activeSteps": [
+          true,
+          false,
+          true,
+          false,
+          true,
+          false,
+          true,
+          false,
+          false,
+          true,
+          false,
+          true,
+          false,
+          true,
+          false,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          false,
+          true,
+          false,
+          true,
+          false,
+          true,
+          false,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          true,
+          false,
+          true,
+          false,
+          true,
+          false,
+          true,
+          false
+        ],
+        "label": "Hat Arc"
+      }
+    },
+    {
+      "id": "piano-pad",
+      "type": "pianoRoll",
+      "position": {
+        "x": 70,
+        "y": 400
+      },
+      "data": {
+        "type": "pianoRoll",
+        "steps": 64,
+        "octaves": 3,
+        "baseNote": 36,
+        "notes": [
+          {
+            "pitch": 50,
+            "step": 0,
+            "duration": 6,
+            "velocity": 0.34
+          },
+          {
+            "pitch": 53,
+            "step": 8,
+            "duration": 4,
+            "velocity": 0.26
+          },
+          {
+            "pitch": 57,
+            "step": 12,
+            "duration": 3,
+            "velocity": 0.22
+          },
+          {
+            "pitch": 50,
+            "step": 16,
+            "duration": 4,
+            "velocity": 0.38
+          },
+          {
+            "pitch": 53,
+            "step": 20,
+            "duration": 4,
+            "velocity": 0.44
+          },
+          {
+            "pitch": 57,
+            "step": 24,
+            "duration": 4,
+            "velocity": 0.54
+          },
+          {
+            "pitch": 60,
+            "step": 28,
+            "duration": 4,
+            "velocity": 0.6
+          },
+          {
+            "pitch": 48,
+            "step": 32,
+            "duration": 6,
+            "velocity": 0.3
+          },
+          {
+            "pitch": 50,
+            "step": 40,
+            "duration": 2,
+            "velocity": 0.38
+          },
+          {
+            "pitch": 53,
+            "step": 42,
+            "duration": 2,
+            "velocity": 0.44
+          },
+          {
+            "pitch": 57,
+            "step": 44,
+            "duration": 2,
+            "velocity": 0.5
+          },
+          {
+            "pitch": 60,
+            "step": 46,
+            "duration": 2,
+            "velocity": 0.56
+          },
+          {
+            "pitch": 50,
+            "step": 48,
+            "duration": 4,
+            "velocity": 0.62
+          },
+          {
+            "pitch": 57,
+            "step": 52,
+            "duration": 2,
+            "velocity": 0.68
+          },
+          {
+            "pitch": 60,
+            "step": 54,
+            "duration": 2,
+            "velocity": 0.72
+          },
+          {
+            "pitch": 50,
+            "step": 56,
+            "duration": 5,
+            "velocity": 0.3
+          },
+          {
+            "pitch": 45,
+            "step": 61,
+            "duration": 3,
+            "velocity": 0.22
+          }
+        ],
+        "label": "Pad Arc"
+      }
+    },
+    {
+      "id": "voice-kick",
+      "type": "voice",
+      "position": {
+        "x": 360,
+        "y": -180
+      },
+      "data": {
+        "type": "voice",
+        "portamento": 0,
+        "label": "Kick Voice"
+      }
+    },
+    {
+      "id": "note-kick",
+      "type": "note",
+      "position": {
+        "x": 360,
+        "y": -10
+      },
+      "data": {
+        "type": "note",
+        "note": "A",
+        "octave": 1,
+        "frequency": 55,
+        "language": "en",
+        "label": "Kick Pitch"
+      }
+    },
+    {
+      "id": "osc-kick",
+      "type": "osc",
+      "position": {
+        "x": 620,
+        "y": -180
+      },
+      "data": {
+        "type": "osc",
+        "frequency": 55,
+        "detune": 0,
+        "waveform": "sine",
+        "label": "Kick Osc"
+      }
+    },
+    {
+      "id": "adsr-kick",
+      "type": "adsr",
+      "position": {
+        "x": 620,
+        "y": -20
+      },
+      "data": {
+        "type": "adsr",
+        "attack": 0.001,
+        "decay": 0.09,
+        "sustain": 0,
+        "release": 0.12,
+        "label": "Kick Env"
+      }
+    },
+    {
+      "id": "gain-kick",
+      "type": "gain",
+      "position": {
+        "x": 880,
+        "y": -180
+      },
+      "data": {
+        "type": "gain",
+        "gain": 0,
+        "label": "Kick Amp"
+      }
+    },
+    {
+      "id": "noise-snare",
+      "type": "noiseBurst",
+      "position": {
+        "x": 360,
+        "y": 0
+      },
+      "data": {
+        "type": "noiseBurst",
+        "noiseType": "pink",
+        "duration": 0.16,
+        "gain": 0.78,
+        "attack": 0.001,
+        "release": 0.14,
+        "label": "Snare Noise"
+      }
+    },
+    {
+      "id": "filter-snare",
+      "type": "filter",
+      "position": {
+        "x": 620,
+        "y": 0
+      },
+      "data": {
+        "type": "filter",
+        "filterType": "bandpass",
+        "frequency": 2100,
+        "detune": 0,
+        "q": 0.8,
+        "gain": 0,
+        "label": "Snare Tone"
+      }
+    },
+    {
+      "id": "noise-hat",
+      "type": "noiseBurst",
+      "position": {
+        "x": 360,
+        "y": 180
+      },
+      "data": {
+        "type": "noiseBurst",
+        "noiseType": "white",
+        "duration": 0.045,
+        "gain": 0.34,
+        "attack": 0.001,
+        "release": 0.04,
+        "label": "Hat Noise"
+      }
+    },
+    {
+      "id": "filter-hat",
+      "type": "filter",
+      "position": {
+        "x": 620,
+        "y": 180
+      },
+      "data": {
+        "type": "filter",
+        "filterType": "highpass",
+        "frequency": 7600,
+        "detune": 0,
+        "q": 0.7,
+        "gain": 0,
+        "label": "Hat Air"
+      }
+    },
+    {
+      "id": "voice-pad",
+      "type": "voice",
+      "position": {
+        "x": 360,
+        "y": 400
+      },
+      "data": {
+        "type": "voice",
+        "portamento": 0.04,
+        "label": "Pad Voice"
+      }
+    },
+    {
+      "id": "adsr-pad",
+      "type": "adsr",
+      "position": {
+        "x": 360,
+        "y": 560
+      },
+      "data": {
+        "type": "adsr",
+        "attack": 0.6,
+        "decay": 1.2,
+        "sustain": 0.72,
+        "release": 1.8,
+        "label": "Pad Env"
+      }
+    },
+    {
+      "id": "osc-pad-root",
+      "type": "osc",
+      "position": {
+        "x": 620,
+        "y": 340
+      },
+      "data": {
+        "type": "osc",
+        "frequency": 220,
+        "detune": -3,
+        "waveform": "sawtooth",
+        "label": "Root Osc"
+      }
+    },
+    {
+      "id": "osc-pad-third",
+      "type": "osc",
+      "position": {
+        "x": 900,
+        "y": 470
+      },
+      "data": {
+        "type": "osc",
+        "frequency": 261.63,
+        "detune": 304,
+        "waveform": "triangle",
+        "label": "Third Osc"
+      }
+    },
+    {
+      "id": "osc-pad-fifth",
+      "type": "osc",
+      "position": {
+        "x": 900,
+        "y": 600
+      },
+      "data": {
+        "type": "osc",
+        "frequency": 329.63,
+        "detune": 702,
+        "waveform": "sine",
+        "label": "Fifth Osc"
+      }
+    },
+    {
+      "id": "gain-pad-root",
+      "type": "gain",
+      "position": {
+        "x": 1160,
+        "y": 340
+      },
+      "data": {
+        "type": "gain",
+        "gain": 0.16,
+        "label": "Root Level"
+      }
+    },
+    {
+      "id": "gain-pad-third",
+      "type": "gain",
+      "position": {
+        "x": 1160,
+        "y": 470
+      },
+      "data": {
+        "type": "gain",
+        "gain": 0.11,
+        "label": "Third Level"
+      }
+    },
+    {
+      "id": "gain-pad-fifth",
+      "type": "gain",
+      "position": {
+        "x": 1160,
+        "y": 600
+      },
+      "data": {
+        "type": "gain",
+        "gain": 0.09,
+        "label": "Fifth Level"
+      }
+    },
+    {
+      "id": "filter-pad",
+      "type": "filter",
+      "position": {
+        "x": 1420,
+        "y": 470
+      },
+      "data": {
+        "type": "filter",
+        "filterType": "lowpass",
+        "frequency": 950,
+        "detune": 0,
+        "q": 2.2,
+        "gain": 0,
+        "label": "Pad Filter"
+      }
+    },
+    {
+      "id": "lfo-pad",
+      "type": "lfo",
+      "position": {
+        "x": 1420,
+        "y": 650
+      },
+      "data": {
+        "type": "lfo",
+        "rate": 0.06,
+        "depth": 420,
+        "waveform": "sine",
+        "label": "Slow Sweep"
+      }
+    },
+    {
+      "id": "constant-pad-cutoff",
+      "type": "constantSource",
+      "position": {
+        "x": 1420,
+        "y": 800
+      },
+      "data": {
+        "type": "constantSource",
+        "offset": 1100,
+        "label": "Cutoff Base"
+      }
+    },
+    {
+      "id": "math-pad-cutoff",
+      "type": "math",
+      "position": {
+        "x": 1670,
+        "y": 800
+      },
+      "data": {
+        "type": "math",
+        "operation": "add",
+        "a": 1100,
+        "b": 0,
+        "c": 0,
+        "label": "Cutoff Sum"
+      }
+    },
+    {
+      "id": "chorus-pad",
+      "type": "chorus",
+      "position": {
+        "x": 1670,
+        "y": 470
+      },
+      "data": {
+        "type": "chorus",
+        "rate": 0.18,
+        "depth": 4.5,
+        "feedback": 0.14,
+        "delay": 18,
+        "mix": 0.38,
+        "stereo": true,
+        "label": "Chorus Mist"
+      }
+    },
+    {
+      "id": "delay-pad",
+      "type": "delay",
+      "position": {
+        "x": 1910,
+        "y": 470
+      },
+      "data": {
+        "type": "delay",
+        "delayTime": 0.42,
+        "feedback": 0.3,
+        "label": "Echo Tail"
+      }
+    },
+    {
+      "id": "reverb-pad",
+      "type": "reverb",
+      "position": {
+        "x": 2140,
+        "y": 470
+      },
+      "data": {
+        "type": "reverb",
+        "decay": 6.5,
+        "mix": 0.42,
+        "label": "Sky Reverb"
+      }
+    },
+    {
+      "id": "gain-pad-master",
+      "type": "gain",
+      "position": {
+        "x": 2380,
+        "y": 470
+      },
+      "data": {
+        "type": "gain",
+        "gain": 0,
+        "label": "Pad Amp"
+      }
+    },
+    {
+      "id": "compressor-pad",
+      "type": "compressor",
+      "position": {
+        "x": 2620,
+        "y": 470
+      },
+      "data": {
+        "type": "compressor",
+        "threshold": -26,
+        "knee": 18,
+        "ratio": 5,
+        "attack": 0.004,
+        "release": 0.22,
+        "sidechainStrength": 0.78,
+        "label": "Pad Duck"
+      }
+    },
+    {
+      "id": "output-1",
+      "type": "output",
+      "position": {
+        "x": 2890,
+        "y": 280
+      },
+      "data": {
+        "type": "output",
+        "playing": false,
+        "masterGain": 0.78,
+        "label": "Output"
+      }
+    }
+  ],
+  "connections": [
+    {
+      "id": "transport-kick",
+      "source": "transport-1",
+      "sourceHandle": "out",
+      "target": "seq-kick",
+      "targetHandle": "transport"
+    },
+    {
+      "id": "transport-snare",
+      "source": "transport-1",
+      "sourceHandle": "out",
+      "target": "seq-snare",
+      "targetHandle": "transport"
+    },
+    {
+      "id": "transport-hat",
+      "source": "transport-1",
+      "sourceHandle": "out",
+      "target": "seq-hat",
+      "targetHandle": "transport"
+    },
+    {
+      "id": "transport-pad",
+      "source": "transport-1",
+      "sourceHandle": "out",
+      "target": "piano-pad",
+      "targetHandle": "transport"
+    },
+    {
+      "id": "kick-trigger",
+      "source": "seq-kick",
+      "sourceHandle": "trigger",
+      "target": "voice-kick",
+      "targetHandle": "trigger"
+    },
+    {
+      "id": "kick-gate-env",
+      "source": "voice-kick",
+      "sourceHandle": "gate",
+      "target": "adsr-kick",
+      "targetHandle": "gate"
+    },
+    {
+      "id": "kick-note",
+      "source": "note-kick",
+      "sourceHandle": "freq",
+      "target": "osc-kick",
+      "targetHandle": "frequency"
+    },
+    {
+      "id": "kick-env-amp",
+      "source": "adsr-kick",
+      "sourceHandle": "envelope",
+      "target": "gain-kick",
+      "targetHandle": "gain"
+    },
+    {
+      "id": "kick-osc-amp",
+      "source": "osc-kick",
+      "sourceHandle": "out",
+      "target": "gain-kick",
+      "targetHandle": "in"
+    },
+    {
+      "id": "kick-out-main",
+      "source": "gain-kick",
+      "sourceHandle": "out",
+      "target": "output-1",
+      "targetHandle": "in"
+    },
+    {
+      "id": "kick-sidechain",
+      "source": "gain-kick",
+      "sourceHandle": "out",
+      "target": "compressor-pad",
+      "targetHandle": "sidechainIn"
+    },
+    {
+      "id": "snare-trigger",
+      "source": "seq-snare",
+      "sourceHandle": "trigger",
+      "target": "noise-snare",
+      "targetHandle": "trigger"
+    },
+    {
+      "id": "snare-noise-filter",
+      "source": "noise-snare",
+      "sourceHandle": "out",
+      "target": "filter-snare",
+      "targetHandle": "in"
+    },
+    {
+      "id": "snare-main",
+      "source": "filter-snare",
+      "sourceHandle": "out",
+      "target": "output-1",
+      "targetHandle": "in"
+    },
+    {
+      "id": "hat-trigger",
+      "source": "seq-hat",
+      "sourceHandle": "trigger",
+      "target": "noise-hat",
+      "targetHandle": "trigger"
+    },
+    {
+      "id": "hat-noise-filter",
+      "source": "noise-hat",
+      "sourceHandle": "out",
+      "target": "filter-hat",
+      "targetHandle": "in"
+    },
+    {
+      "id": "hat-main",
+      "source": "filter-hat",
+      "sourceHandle": "out",
+      "target": "output-1",
+      "targetHandle": "in"
+    },
+    {
+      "id": "pad-trigger",
+      "source": "piano-pad",
+      "sourceHandle": "trigger",
+      "target": "voice-pad",
+      "targetHandle": "trigger"
+    },
+    {
+      "id": "pad-gate-env",
+      "source": "voice-pad",
+      "sourceHandle": "gate",
+      "target": "adsr-pad",
+      "targetHandle": "gate"
+    },
+    {
+      "id": "pad-root-note",
+      "source": "voice-pad",
+      "sourceHandle": "note",
+      "target": "osc-pad-root",
+      "targetHandle": "frequency"
+    },
+    {
+      "id": "pad-third-note",
+      "source": "voice-pad",
+      "sourceHandle": "note",
+      "target": "osc-pad-third",
+      "targetHandle": "frequency"
+    },
+    {
+      "id": "pad-fifth-note",
+      "source": "voice-pad",
+      "sourceHandle": "note",
+      "target": "osc-pad-fifth",
+      "targetHandle": "frequency"
+    },
+    {
+      "id": "pad-root-level",
+      "source": "osc-pad-root",
+      "sourceHandle": "out",
+      "target": "gain-pad-root",
+      "targetHandle": "in"
+    },
+    {
+      "id": "pad-third-level",
+      "source": "osc-pad-third",
+      "sourceHandle": "out",
+      "target": "gain-pad-third",
+      "targetHandle": "in"
+    },
+    {
+      "id": "pad-fifth-level",
+      "source": "osc-pad-fifth",
+      "sourceHandle": "out",
+      "target": "gain-pad-fifth",
+      "targetHandle": "in"
+    },
+    {
+      "id": "pad-root-filter",
+      "source": "gain-pad-root",
+      "sourceHandle": "out",
+      "target": "filter-pad",
+      "targetHandle": "in"
+    },
+    {
+      "id": "pad-third-filter",
+      "source": "gain-pad-third",
+      "sourceHandle": "out",
+      "target": "filter-pad",
+      "targetHandle": "in"
+    },
+    {
+      "id": "pad-fifth-filter",
+      "source": "gain-pad-fifth",
+      "sourceHandle": "out",
+      "target": "filter-pad",
+      "targetHandle": "in"
+    },
+    {
+      "id": "pad-cutoff-base",
+      "source": "constant-pad-cutoff",
+      "sourceHandle": "out",
+      "target": "math-pad-cutoff",
+      "targetHandle": "a"
+    },
+    {
+      "id": "pad-cutoff-lfo",
+      "source": "lfo-pad",
+      "sourceHandle": "out",
+      "target": "math-pad-cutoff",
+      "targetHandle": "b"
+    },
+    {
+      "id": "pad-cutoff-filter",
+      "source": "math-pad-cutoff",
+      "sourceHandle": "out",
+      "target": "filter-pad",
+      "targetHandle": "frequency"
+    },
+    {
+      "id": "pad-filter-chorus",
+      "source": "filter-pad",
+      "sourceHandle": "out",
+      "target": "chorus-pad",
+      "targetHandle": "in"
+    },
+    {
+      "id": "pad-chorus-delay",
+      "source": "chorus-pad",
+      "sourceHandle": "out",
+      "target": "delay-pad",
+      "targetHandle": "in"
+    },
+    {
+      "id": "pad-delay-reverb",
+      "source": "delay-pad",
+      "sourceHandle": "out",
+      "target": "reverb-pad",
+      "targetHandle": "in"
+    },
+    {
+      "id": "pad-reverb-amp",
+      "source": "reverb-pad",
+      "sourceHandle": "out",
+      "target": "gain-pad-master",
+      "targetHandle": "in"
+    },
+    {
+      "id": "pad-env-amp",
+      "source": "adsr-pad",
+      "sourceHandle": "envelope",
+      "target": "gain-pad-master",
+      "targetHandle": "gain"
+    },
+    {
+      "id": "pad-amp-duck",
+      "source": "gain-pad-master",
+      "sourceHandle": "out",
+      "target": "compressor-pad",
+      "targetHandle": "in"
+    },
+    {
+      "id": "pad-duck-main",
+      "source": "compressor-pad",
+      "sourceHandle": "out",
+      "target": "output-1",
+      "targetHandle": "in"
+    }
+  ],
+  "interface": {
+    "inputs": [],
+    "events": [],
+    "midiInputs": [],
+    "midiOutputs": []
+  }
+}

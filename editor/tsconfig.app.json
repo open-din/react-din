@@ -29,5 +29,16 @@
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true
   },
-  "include": ["src"]
+  "include": [
+    "bridge/**/*.ts",
+    "bridge/**/*.tsx",
+    "core/**/*.ts",
+    "core/**/*.tsx",
+    "targets/web/**/*.ts",
+    "targets/web/**/*.tsx",
+    "targets/web/**/*.d.ts",
+    "ui/**/*.ts",
+    "ui/**/*.tsx",
+    "vitest.setup.ts"
+  ]
 }

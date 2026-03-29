@@ -44,9 +44,9 @@ const expectedPublicSources = [
 ];
 
 const expectedNodeSources = fs
-    .readdirSync(path.join(root, 'editor/src/editor/nodes'))
+    .readdirSync(path.join(root, 'editor/ui/editor/nodes'))
     .filter((file) => file.endsWith('.tsx'))
-    .map((file) => `editor/src/editor/nodes/${file}`)
+    .map((file) => `editor/ui/editor/nodes/${file}`)
     .sort();
 
 const contents = fs.readFileSync(manifestPath, 'utf8');

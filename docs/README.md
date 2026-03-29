@@ -22,7 +22,7 @@
 
 ## DIN Editor Automation
 
-- [Local MCP Server](../editor/mcp-server/README.md)
+- [Local MCP Server](../editor/targets/mcp/README.md)
 
 ## Governance
 

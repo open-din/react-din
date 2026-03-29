@@ -3,11 +3,11 @@ import { vi } from 'vitest';
 describe('editor store and code generation', () => {
     it('adds nodes and updates node data through the zustand store', async () => {
         vi.resetModules();
-        const { audioEngine } = await import('../../src/editor/AudioEngine');
+        const { audioEngine } = await import('../../ui/editor/AudioEngine');
         const refreshConnections = vi.spyOn(audioEngine, 'refreshConnections').mockImplementation(() => {});
         const refreshDataValues = vi.spyOn(audioEngine, 'refreshDataValues').mockImplementation(() => {});
         const updateNode = vi.spyOn(audioEngine, 'updateNode').mockImplementation(() => {});
-        const { useAudioGraphStore } = await import('../../src/editor/store');
+        const { useAudioGraphStore } = await import('../../ui/editor/store');
         const initialLength = useAudioGraphStore.getState().nodes.length;
 
         useAudioGraphStore.getState().addNode('mix');
@@ -43,9 +43,9 @@ describe('editor store and code generation', () => {
 
     it('auto-adds and connects nodes using the same defaults and edge styling', async () => {
         vi.resetModules();
-        const { audioEngine } = await import('../../src/editor/AudioEngine');
+        const { audioEngine } = await import('../../ui/editor/AudioEngine');
         const refreshConnections = vi.spyOn(audioEngine, 'refreshConnections').mockImplementation(() => {});
-        const { useAudioGraphStore } = await import('../../src/editor/store');
+        const { useAudioGraphStore } = await import('../../ui/editor/store');
 
         useAudioGraphStore.getState().loadGraph(
             [
@@ -86,9 +86,9 @@ describe('editor store and code generation', () => {
 
     it('auto-connects correctly when the dragged handle started from a target', async () => {
         vi.resetModules();
-        const { audioEngine } = await import('../../src/editor/AudioEngine');
+        const { audioEngine } = await import('../../ui/editor/AudioEngine');
         const refreshConnections = vi.spyOn(audioEngine, 'refreshConnections').mockImplementation(() => {});
-        const { useAudioGraphStore } = await import('../../src/editor/store');
+        const { useAudioGraphStore } = await import('../../ui/editor/store');
 
         useAudioGraphStore.getState().loadGraph(
             [
@@ -127,9 +127,9 @@ describe('editor store and code generation', () => {
 
     it('adds MIDI nodes with friendly defaults and keeps sync singleton', async () => {
         vi.resetModules();
-        const { audioEngine } = await import('../../src/editor/AudioEngine');
+        const { audioEngine } = await import('../../ui/editor/AudioEngine');
         const refreshConnections = vi.spyOn(audioEngine, 'refreshConnections').mockImplementation(() => {});
-        const { useAudioGraphStore } = await import('../../src/editor/store');
+        const { useAudioGraphStore } = await import('../../ui/editor/store');
 
         useAudioGraphStore.getState().addNode('midiNote');
         useAudioGraphStore.getState().addNode('midiCC');
@@ -175,9 +175,9 @@ describe('editor store and code generation', () => {
 
     it('sanitizes persisted graphs and emits component names for generated code', async () => {
         vi.resetModules();
-        const { generateCode } = await import('../../src/editor/CodeGenerator');
-        const { sanitizeGraphForStorage, toPascalCase } = await import('../../src/editor/graphUtils');
-        const { useAudioGraphStore } = await import('../../src/editor/store');
+        const { generateCode } = await import('../../ui/editor/CodeGenerator');
+        const { sanitizeGraphForStorage, toPascalCase } = await import('../../ui/editor/graphUtils');
+        const { useAudioGraphStore } = await import('../../ui/editor/store');
         const state = useAudioGraphStore.getState();
 
         const graph = sanitizeGraphForStorage({
@@ -206,7 +206,7 @@ describe('editor store and code generation', () => {
 
     it('generates MIDI hooks, providers, outputs, and sync wrappers from MIDI graphs', async () => {
         vi.resetModules();
-        const { generateCode } = await import('../../src/editor/CodeGenerator');
+        const { generateCode } = await import('../../ui/editor/CodeGenerator');
 
         const nodes = [
             {
@@ -294,8 +294,8 @@ describe('editor store and code generation', () => {
 
     it('sanitizes convolver asset URLs and exports file-based sampler/convolver paths', async () => {
         vi.resetModules();
-        const { generateCode } = await import('../../src/editor/CodeGenerator');
-        const { sanitizeGraphForStorage } = await import('../../src/editor/graphUtils');
+        const { generateCode } = await import('../../ui/editor/CodeGenerator');
+        const { sanitizeGraphForStorage } = await import('../../ui/editor/graphUtils');
 
         const graph = sanitizeGraphForStorage({
             id: 'graph-assets',
@@ -525,7 +525,7 @@ describe('editor store and code generation', () => {
 
     it('migrates legacy handles, rejects removed note triggers, and keeps singleton transport/output nodes', async () => {
         vi.resetModules();
-        const { useAudioGraphStore } = await import('../../src/editor/store');
+        const { useAudioGraphStore } = await import('../../ui/editor/store');
 
         useAudioGraphStore.getState().loadGraph(
             [
@@ -618,7 +618,7 @@ describe('editor store and code generation', () => {
 
     it('gates generated sequencing on transport links and emits helper components for delay feedback and sampler triggers', async () => {
         vi.resetModules();
-        const { generateCode } = await import('../../src/editor/CodeGenerator');
+        const { generateCode } = await import('../../ui/editor/CodeGenerator');
 
         const nodes = [
             {
@@ -700,7 +700,7 @@ describe('editor store and code generation', () => {
 
     it('generates extended MVP nodes and wraps event-driven chains with EventTrigger', async () => {
         vi.resetModules();
-        const { generateCode } = await import('../../src/editor/CodeGenerator');
+        const { generateCode } = await import('../../ui/editor/CodeGenerator');
 
         const nodes = [
             {
@@ -803,7 +803,7 @@ describe('editor store and code generation', () => {
 
     it('generates new effects and advanced routing nodes including sidechain bus wiring', async () => {
         vi.resetModules();
-        const { generateCode } = await import('../../src/editor/CodeGenerator');
+        const { generateCode } = await import('../../ui/editor/CodeGenerator');
 
         const nodes = [
             { id: 'osc-main', type: 'oscNode', position: { x: 0, y: 0 }, data: { type: 'osc', frequency: 220, detune: 0, waveform: 'sawtooth', label: 'Main Osc' } },
@@ -847,7 +847,7 @@ describe('editor store and code generation', () => {
 
     it('generates atmospheric piano-roll sidechain graph with matrix routing and event trigger wrappers', async () => {
         vi.resetModules();
-        const { generateCode } = await import('../../src/editor/CodeGenerator');
+        const { generateCode } = await import('../../ui/editor/CodeGenerator');
 
         const notes = [
             { pitch: 60, step: 0, duration: 4, velocity: 0.62 },
@@ -918,5 +918,20 @@ describe('editor store and code generation', () => {
         expect(code).toContain('EventTrigger');
         expect(code).toContain('MatrixMixer');
         expect(code).toContain('sidechainBusId="sc-noise-pump-compressor"');
+    });
+
+    it('generates atmospheric breakbeat arc code from the integrated patch template', async () => {
+        const { generateCode } = await import('../../ui/editor/CodeGenerator');
+        const { createAtmosphericBreakbeatArcTemplate } = await import('../../ui/editor/templates/atmosphericBreakbeatArcTemplate');
+
+        const { nodes, edges } = createAtmosphericBreakbeatArcTemplate();
+        const code = generateCode(nodes as any, edges as any, true, 'Atmospheric Breakbeat Arc');
+
+        expect(nodes).toHaveLength(32);
+        expect(edges).toHaveLength(38);
+        expect(code).toContain('Track id="seq-kick"');
+        expect(code).toContain('Track id="piano-pad"');
+        expect(code).toContain('sidechainBusId="sc-gain-kick-compressor-pad"');
+        expect(code).toContain('math("add"');
     });
 });

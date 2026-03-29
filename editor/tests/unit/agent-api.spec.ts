@@ -5,11 +5,11 @@ import { vi } from 'vitest';
 describe('editor agent API', () => {
     it('applies guarded graph operations with deterministic playback cleanup', async () => {
         vi.resetModules();
-        const { useAudioGraphStore } = await import('../../src/editor/store');
+        const { useAudioGraphStore } = await import('../../ui/editor/store');
         const {
             applyEditorOperations,
             buildEditorSessionState,
-        } = await import('../../src/editor/agent-api');
+        } = await import('../../core');
 
         const store = useAudioGraphStore.getState();
         const initialGraphId = store.activeGraphId;
@@ -64,11 +64,11 @@ describe('editor agent API', () => {
 
     it('normalizes offline patches and generates provider-wrapped code', async () => {
         vi.resetModules();
-        const { useAudioGraphStore } = await import('../../src/editor/store');
+        const { useAudioGraphStore } = await import('../../ui/editor/store');
         const {
             generateCodeFromOfflinePatch,
             validateOfflinePatchText,
-        } = await import('../../src/editor/agent-api');
+        } = await import('../../core');
 
         const graph = useAudioGraphStore.getState().graphs[0];
         if (!graph) {

@@ -390,14 +390,32 @@ The published `@din/react` package now includes the [`example`](./example) works
 
 ## DIN Editor MCP
 
-The local MCP server for DIN Editor lives in [`editor/mcp-server`](./editor/mcp-server).
+The local MCP server for DIN Editor lives in [`editor/targets/mcp`](./editor/targets/mcp).
 
 ```bash
-npm run editor:mcp:build
+npm run editor:build:web
+npm run editor:build:app
+npm run editor:build:mcp
 npm run editor:mcp:start
 ```
 
-It exposes a local stdio MCP server plus a loopback-only WebSocket bridge so an AI agent can inspect, preview, and apply graph operations against a live DIN Editor tab or work offline from patch JSON files.
+The editor now has one root build surface with three targets:
+
+- `editor:build:web` for the stateless web shell
+- `editor:build:app` for the Electron app shell
+- `editor:build:mcp` for the local MCP runtime
+
+The MCP target stays local-only. It exposes a stdio MCP server plus a loopback bridge so an AI agent can inspect, preview, and apply graph operations against a live DIN Editor instance or work offline from patch JSON files.
+
+For local development, run the dev MCP server over plain HTTP on `localhost`:
+
+```bash
+npm run editor:dev:mcp
+```
+
+By default, the dev bridge uses `http://localhost:17374` so it does not collide with the secure standalone MCP server on `17373`.
+
+Use `npm run editor:mcp:start` only for the secure standalone MCP server. If you want the browser editor to connect to that secure server, you must trust the generated local CA and set `VITE_DIN_EDITOR_MCP_PROTOCOL=https`.
 
 ## Quality Gates
 

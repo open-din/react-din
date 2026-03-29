@@ -2,46 +2,46 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import React from 'react';
 import { afterEach, vi } from 'vitest';
 
-import OscNode from '../../src/editor/nodes/OscNode';
-import GainNode from '../../src/editor/nodes/GainNode';
-import OutputNode from '../../src/editor/nodes/OutputNode';
-import InputNode from '../../src/editor/nodes/InputNode';
-import UiTokensNode from '../../src/editor/nodes/UiTokensNode';
-import NoteNode from '../../src/editor/nodes/NoteNode';
-import { StepSequencerNode } from '../../src/editor/nodes/StepSequencerNode';
-import { PianoRollNode } from '../../src/editor/nodes/PianoRollNode';
-import MathNode from '../../src/editor/nodes/MathNode';
-import SwitchNode from '../../src/editor/nodes/SwitchNode';
-import DelayNode from '../../src/editor/nodes/DelayNode';
-import ReverbNode from '../../src/editor/nodes/ReverbNode';
-import StereoPannerNode from '../../src/editor/nodes/StereoPannerNode';
-import DistortionNode from '../../src/editor/nodes/DistortionNode';
-import ChorusNode from '../../src/editor/nodes/ChorusNode';
-import PhaserNode from '../../src/editor/nodes/PhaserNode';
-import FlangerNode from '../../src/editor/nodes/FlangerNode';
-import TremoloNode from '../../src/editor/nodes/TremoloNode';
-import EQ3Node from '../../src/editor/nodes/EQ3Node';
-import NoiseBurstNode from '../../src/editor/nodes/NoiseBurstNode';
-import WaveShaperNode from '../../src/editor/nodes/WaveShaperNode';
-import ConvolverNode from '../../src/editor/nodes/ConvolverNode';
-import AnalyzerNode from '../../src/editor/nodes/AnalyzerNode';
-import Panner3DNode from '../../src/editor/nodes/Panner3DNode';
-import AuxSendNode from '../../src/editor/nodes/AuxSendNode';
-import AuxReturnNode from '../../src/editor/nodes/AuxReturnNode';
-import MatrixMixerNode from '../../src/editor/nodes/MatrixMixerNode';
-import ConstantSourceNode from '../../src/editor/nodes/ConstantSourceNode';
-import MediaStreamNode from '../../src/editor/nodes/MediaStreamNode';
-import EventTriggerNode from '../../src/editor/nodes/EventTriggerNode';
-import CompressorNode from '../../src/editor/nodes/CompressorNode';
-import SamplerNode from '../../src/editor/nodes/SamplerNode';
-import MidiNoteNode from '../../src/editor/nodes/MidiNoteNode';
-import MidiCCNode from '../../src/editor/nodes/MidiCCNode';
-import MidiNoteOutputNode from '../../src/editor/nodes/MidiNoteOutputNode';
-import MidiCCOutputNode from '../../src/editor/nodes/MidiCCOutputNode';
-import MidiSyncNode from '../../src/editor/nodes/MidiSyncNode';
-import Inspector from '../../src/editor/Inspector';
-import { getInputParamHandleId } from '../../src/editor/handleIds';
-import { audioEngine } from '../../src/editor/AudioEngine';
+import OscNode from '../../ui/editor/nodes/OscNode';
+import GainNode from '../../ui/editor/nodes/GainNode';
+import OutputNode from '../../ui/editor/nodes/OutputNode';
+import InputNode from '../../ui/editor/nodes/InputNode';
+import UiTokensNode from '../../ui/editor/nodes/UiTokensNode';
+import NoteNode from '../../ui/editor/nodes/NoteNode';
+import { StepSequencerNode } from '../../ui/editor/nodes/StepSequencerNode';
+import { PianoRollNode } from '../../ui/editor/nodes/PianoRollNode';
+import MathNode from '../../ui/editor/nodes/MathNode';
+import SwitchNode from '../../ui/editor/nodes/SwitchNode';
+import DelayNode from '../../ui/editor/nodes/DelayNode';
+import ReverbNode from '../../ui/editor/nodes/ReverbNode';
+import StereoPannerNode from '../../ui/editor/nodes/StereoPannerNode';
+import DistortionNode from '../../ui/editor/nodes/DistortionNode';
+import ChorusNode from '../../ui/editor/nodes/ChorusNode';
+import PhaserNode from '../../ui/editor/nodes/PhaserNode';
+import FlangerNode from '../../ui/editor/nodes/FlangerNode';
+import TremoloNode from '../../ui/editor/nodes/TremoloNode';
+import EQ3Node from '../../ui/editor/nodes/EQ3Node';
+import NoiseBurstNode from '../../ui/editor/nodes/NoiseBurstNode';
+import WaveShaperNode from '../../ui/editor/nodes/WaveShaperNode';
+import ConvolverNode from '../../ui/editor/nodes/ConvolverNode';
+import AnalyzerNode from '../../ui/editor/nodes/AnalyzerNode';
+import Panner3DNode from '../../ui/editor/nodes/Panner3DNode';
+import AuxSendNode from '../../ui/editor/nodes/AuxSendNode';
+import AuxReturnNode from '../../ui/editor/nodes/AuxReturnNode';
+import MatrixMixerNode from '../../ui/editor/nodes/MatrixMixerNode';
+import ConstantSourceNode from '../../ui/editor/nodes/ConstantSourceNode';
+import MediaStreamNode from '../../ui/editor/nodes/MediaStreamNode';
+import EventTriggerNode from '../../ui/editor/nodes/EventTriggerNode';
+import CompressorNode from '../../ui/editor/nodes/CompressorNode';
+import SamplerNode from '../../ui/editor/nodes/SamplerNode';
+import MidiNoteNode from '../../ui/editor/nodes/MidiNoteNode';
+import MidiCCNode from '../../ui/editor/nodes/MidiCCNode';
+import MidiNoteOutputNode from '../../ui/editor/nodes/MidiNoteOutputNode';
+import MidiCCOutputNode from '../../ui/editor/nodes/MidiCCOutputNode';
+import MidiSyncNode from '../../ui/editor/nodes/MidiSyncNode';
+import Inspector from '../../ui/editor/Inspector';
+import { getInputParamHandleId } from '../../ui/editor/handleIds';
+import { audioEngine } from '../../ui/editor/AudioEngine';
 
 const updateNodeData = vi.fn();
 const storeState = {
@@ -132,11 +132,11 @@ vi.mock('@xyflow/react', () => ({
     useNodesData: () => null,
 }));
 
-vi.mock('../../src/editor/store', () => ({
+vi.mock('../../ui/editor/store', () => ({
     useAudioGraphStore: (selector: (state: Record<string, unknown>) => unknown) => selector(storeState),
 }));
 
-vi.mock('../../src/editor/AudioEngine', () => ({
+vi.mock('../../ui/editor/AudioEngine', () => ({
     audioEngine: {
         start: vi.fn(),
         stop: vi.fn(),
@@ -152,7 +152,7 @@ vi.mock('../../src/editor/AudioEngine', () => ({
     },
 }));
 
-vi.mock('../../src/editor/audioLibrary', () => audioLibraryMock);
+vi.mock('../../ui/editor/audioLibrary', () => audioLibraryMock);
 
 vi.mock('../../../src/midi', () => ({
     useMidi: () => midiHookState.midi,

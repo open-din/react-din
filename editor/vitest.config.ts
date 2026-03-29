@@ -2,6 +2,7 @@ import { defineConfig } from 'vitest/config';
 import { resolve } from 'node:path';
 
 export default defineConfig({
+    root: __dirname,
     resolve: {
         alias: {
             '@din/react': resolve(__dirname, '../src/index.ts'),
@@ -11,6 +12,6 @@ export default defineConfig({
         environment: 'jsdom',
         globals: true,
         include: ['tests/unit/**/*.spec.ts', 'tests/unit/**/*.spec.tsx'],
-        setupFiles: ['./vitest.setup.ts'],
+        setupFiles: [resolve(__dirname, './vitest.setup.ts')],
     },
 });

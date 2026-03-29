@@ -2,14 +2,14 @@ import { describe, expect, it } from 'vitest';
 
 import type { Node } from '@xyflow/react';
 
-import type { AudioNodeData } from '../../src/editor/store';
+import type { AudioNodeData } from '../../ui/editor/store';
 import {
     getCompatibleExistingHandleMatches,
     getCompatibleNodeSuggestions,
     canConnect,
     normalizeTransportNodeData,
     normalizeConnectionFromStart,
-} from '../../src/editor/nodeHelpers';
+} from '../../ui/editor/nodeHelpers';
 
 const createNode = (node: Node<AudioNodeData>) => node;
 

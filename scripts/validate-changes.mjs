@@ -107,7 +107,7 @@ for (const entry of diffEntries) {
         continue;
     }
 
-    if (entry.path?.startsWith('editor/src/editor/nodes/') && entry.path.endsWith('.tsx')) {
+    if (entry.path?.startsWith('editor/ui/editor/nodes/') && entry.path.endsWith('.tsx')) {
         errors.push(
             `${entry.path}: editor node changes must be added to project/COVERAGE_MANIFEST.json and update docs/tests`
         );
@@ -116,11 +116,11 @@ for (const entry of diffEntries) {
             const baseName = path.basename(entry.path, '.tsx');
             const expectedDocs = `docs/editor-nodes/${baseName}.md`;
             const requiredFiles = [
-                'editor/src/editor/nodes/index.ts',
-                'editor/src/EditorDemo.tsx',
-                'editor/src/editor/store.ts',
-                'editor/src/editor/AudioEngine.ts',
-                'editor/src/editor/CodeGenerator.tsx',
+                'editor/ui/editor/nodes/index.ts',
+                'editor/ui/EditorDemo.tsx',
+                'editor/ui/editor/store.ts',
+                'editor/ui/editor/AudioEngine.ts',
+                'editor/ui/editor/CodeGenerator.tsx',
                 'project/COVERAGE_MANIFEST.json',
                 expectedDocs,
             ];
