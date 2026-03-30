@@ -934,4 +934,186 @@ describe('editor store and code generation', () => {
         expect(code).toContain('sidechainBusId="sc-gain-kick-compressor-pad"');
         expect(code).toContain('math("add"');
     });
+
+    it('undos and redoes node edits while clearing redo after a new change', async () => {
+        vi.resetModules();
+        const { audioEngine } = await import('../../ui/editor/AudioEngine');
+        const refreshConnections = vi.spyOn(audioEngine, 'refreshConnections').mockImplementation(() => {});
+        const { useAudioGraphStore } = await import('../../ui/editor/store');
+
+        const initialNodeIds = useAudioGraphStore.getState().nodes.map((node) => node.id);
+
+        useAudioGraphStore.getState().addNode('mix');
+        const addedNodeId = useAudioGraphStore.getState().nodes.at(-1)?.id;
+
+        expect(useAudioGraphStore.getState().canUndo).toBe(true);
+        expect(useAudioGraphStore.getState().canRedo).toBe(false);
+
+        useAudioGraphStore.getState().undo();
+        expect(useAudioGraphStore.getState().nodes.map((node) => node.id)).toEqual(initialNodeIds);
+        expect(useAudioGraphStore.getState().canRedo).toBe(true);
+
+        useAudioGraphStore.getState().redo();
+        expect(useAudioGraphStore.getState().nodes.some((node) => node.id === addedNodeId)).toBe(true);
+
+        useAudioGraphStore.getState().undo();
+        useAudioGraphStore.getState().addNode('gain');
+
+        expect(useAudioGraphStore.getState().canRedo).toBe(false);
+        refreshConnections.mockRestore();
+    });
+
+    it('undos and redoes graph connections and disconnections', async () => {
+        vi.resetModules();
+        const { audioEngine } = await import('../../ui/editor/AudioEngine');
+        const refreshConnections = vi.spyOn(audioEngine, 'refreshConnections').mockImplementation(() => {});
+        const { useAudioGraphStore } = await import('../../ui/editor/store');
+
+        useAudioGraphStore.getState().loadGraph(
+            [
+                {
+                    id: 'osc-1',
+                    type: 'oscNode',
+                    position: { x: 0, y: 0 },
+                    data: { type: 'osc', frequency: 440, detune: 0, waveform: 'sine', label: 'Oscillator' },
+                },
+                {
+                    id: 'output-1',
+                    type: 'outputNode',
+                    position: { x: 200, y: 0 },
+                    data: { type: 'output', masterGain: 0.5, playing: false, label: 'Output' },
+                },
+            ],
+            []
+        );
+
+        useAudioGraphStore.getState().onConnect({
+            source: 'osc-1',
+            sourceHandle: 'out',
+            target: 'output-1',
+            targetHandle: 'in',
+        } as any);
+
+        const edgeId = useAudioGraphStore.getState().edges[0]?.id;
+        expect(edgeId).toBeTruthy();
+
+        useAudioGraphStore.getState().onEdgesChange([{ id: edgeId, type: 'remove' }] as any);
+        expect(useAudioGraphStore.getState().edges).toHaveLength(0);
+
+        useAudioGraphStore.getState().undo();
+        expect(useAudioGraphStore.getState().edges).toHaveLength(1);
+
+        useAudioGraphStore.getState().redo();
+        expect(useAudioGraphStore.getState().edges).toHaveLength(0);
+
+        refreshConnections.mockRestore();
+    });
+
+    it('undos and redoes active graph renames', async () => {
+        vi.resetModules();
+        const { useAudioGraphStore } = await import('../../ui/editor/store');
+
+        const activeGraphId = useAudioGraphStore.getState().activeGraphId;
+        if (!activeGraphId) {
+            throw new Error('Expected an active graph.');
+        }
+
+        useAudioGraphStore.getState().renameGraph(activeGraphId, 'Bass Lab');
+        expect(useAudioGraphStore.getState().graphs.find((graph) => graph.id === activeGraphId)?.name).toBe('Bass Lab');
+
+        useAudioGraphStore.getState().undo();
+        expect(useAudioGraphStore.getState().graphs.find((graph) => graph.id === activeGraphId)?.name).toBe('Graph 1');
+
+        useAudioGraphStore.getState().redo();
+        expect(useAudioGraphStore.getState().graphs.find((graph) => graph.id === activeGraphId)?.name).toBe('Bass Lab');
+    });
+
+    it('keeps history isolated per graph', async () => {
+        vi.resetModules();
+        const { audioEngine } = await import('../../ui/editor/AudioEngine');
+        const refreshConnections = vi.spyOn(audioEngine, 'refreshConnections').mockImplementation(() => {});
+        const { useAudioGraphStore } = await import('../../ui/editor/store');
+
+        const firstGraphId = useAudioGraphStore.getState().activeGraphId;
+        if (!firstGraphId) {
+            throw new Error('Expected an initial graph.');
+        }
+
+        const secondGraph = useAudioGraphStore.getState().createGraph('Second Graph');
+        useAudioGraphStore.getState().addNode('mix');
+        const secondGraphNodeCount = useAudioGraphStore.getState().nodes.length;
+
+        useAudioGraphStore.getState().setActiveGraph(firstGraphId);
+        expect(useAudioGraphStore.getState().canUndo).toBe(false);
+
+        useAudioGraphStore.getState().addNode('gain');
+        const firstGraphNodeCount = useAudioGraphStore.getState().nodes.length;
+        expect(useAudioGraphStore.getState().canUndo).toBe(true);
+
+        useAudioGraphStore.getState().setActiveGraph(secondGraph.id);
+        expect(useAudioGraphStore.getState().canUndo).toBe(true);
+
+        useAudioGraphStore.getState().undo();
+        expect(useAudioGraphStore.getState().nodes).toHaveLength(secondGraphNodeCount - 1);
+
+        useAudioGraphStore.getState().setActiveGraph(firstGraphId);
+        expect(useAudioGraphStore.getState().nodes).toHaveLength(firstGraphNodeCount);
+
+        refreshConnections.mockRestore();
+    });
+
+    it('clears history on loadGraph and setGraphs replacements', async () => {
+        vi.resetModules();
+        const { audioEngine } = await import('../../ui/editor/AudioEngine');
+        const refreshConnections = vi.spyOn(audioEngine, 'refreshConnections').mockImplementation(() => {});
+        const { useAudioGraphStore } = await import('../../ui/editor/store');
+
+        useAudioGraphStore.getState().addNode('mix');
+        expect(useAudioGraphStore.getState().canUndo).toBe(true);
+
+        useAudioGraphStore.getState().loadGraph(
+            [
+                {
+                    id: 'osc-1',
+                    type: 'oscNode',
+                    position: { x: 0, y: 0 },
+                    data: { type: 'osc', frequency: 440, detune: 0, waveform: 'sine', label: 'Oscillator' },
+                },
+            ],
+            []
+        );
+        expect(useAudioGraphStore.getState().canUndo).toBe(false);
+
+        useAudioGraphStore.getState().addNode('gain');
+        expect(useAudioGraphStore.getState().canUndo).toBe(true);
+
+        const state = useAudioGraphStore.getState();
+        useAudioGraphStore.getState().setGraphs(state.graphs, state.activeGraphId);
+        expect(useAudioGraphStore.getState().canUndo).toBe(false);
+
+        refreshConnections.mockRestore();
+    });
+
+    it('does not create history entries for selection changes or output playback toggles', async () => {
+        vi.resetModules();
+        const { audioEngine } = await import('../../ui/editor/AudioEngine');
+        const refreshDataValues = vi.spyOn(audioEngine, 'refreshDataValues').mockImplementation(() => {});
+        const updateNode = vi.spyOn(audioEngine, 'updateNode').mockImplementation(() => {});
+        const { useAudioGraphStore } = await import('../../ui/editor/store');
+
+        useAudioGraphStore.getState().setSelectedNode('osc_1');
+        expect(useAudioGraphStore.getState().canUndo).toBe(false);
+
+        const outputNode = useAudioGraphStore.getState().nodes.find((node) => node.data.type === 'output');
+        if (!outputNode) {
+            throw new Error('Expected an output node.');
+        }
+
+        useAudioGraphStore.getState().updateNodeData(outputNode.id, { playing: true });
+        expect(useAudioGraphStore.getState().canUndo).toBe(false);
+        expect((useAudioGraphStore.getState().nodes.find((node) => node.id === outputNode.id)?.data as any).playing).toBe(true);
+
+        refreshDataValues.mockRestore();
+        updateNode.mockRestore();
+    });
 });

@@ -12,7 +12,7 @@
 - Map: `Off`
 
 ## Integration Notes
-Use it as the visual entrypoint for hardware keyboards and virtual MIDI inputs. When `Map` is enabled, the node learns note activity per `device + channel`, keeps a mapped-source list, and makes the last touched source active automatically without changing the note filter mode.
+Use it as the visual entrypoint for hardware keyboards and virtual MIDI inputs. When `Map` is enabled, the node learns note activity per `device + channel`, keeps a mapped-source list, and makes the last touched source active automatically without changing the note filter mode. Live-learned mapping updates stay outside the editor undo/redo history so keyboard shortcuts only rewind manual graph edits.
 
 ## Failure Modes
 Without MIDI access or a matching device, the node stays idle and shows `No device` or `Idle`. Learned mappings remain visible even if a saved input disappears, so users can see which source is disconnected.

@@ -1,7 +1,6 @@
 import { memo, useEffect, useMemo, useRef } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
 import { useMidi, useMidiNote } from '../../../../src/midi';
-import { audioEngine } from '../AudioEngine';
 import { normalizeMidiNoteNodeData } from '../nodeHelpers';
 import { useAudioGraphStore, type MidiInMapping, type MidiNoteNodeData } from '../store';
 import { buildInputOptions, getChannelFilterValue, getStatusBadge } from './midiNodeUtils';
@@ -75,7 +74,7 @@ const MidiNoteNode = memo(({ id, data, selected }: NodeProps) => {
 
     const commitPatch = (
         patch: Partial<MidiNoteNodeData>,
-        options?: { syncActiveMappingFromSelection?: boolean }
+        options?: { syncActiveMappingFromSelection?: boolean; history?: 'auto' | 'skip'; mergeKey?: string }
     ) => {
         const merged = {
             ...midiData,
@@ -91,8 +90,15 @@ const MidiNoteNode = memo(({ id, data, selected }: NodeProps) => {
         }
 
         const nextData = normalizeMidiNoteNodeData(merged);
+        if (options?.history || options?.mergeKey) {
+            updateNodeData(id, nextData, {
+                history: options.history,
+                mergeKey: options.mergeKey,
+            });
+            return;
+        }
+
         updateNodeData(id, nextData);
-        audioEngine.updateNode(id, nextData);
     };
 
     useEffect(() => {
@@ -132,6 +138,8 @@ const MidiNoteNode = memo(({ id, data, selected }: NodeProps) => {
             activeMappingId: mappingId,
             inputId: event.inputId,
             channel: event.channel,
+        }, {
+            history: 'skip',
         });
     }, [id, midi.inputs, midi.lastInputEvent, midiData.mappingEnabled, midiData.mappings]);
 

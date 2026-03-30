@@ -163,6 +163,13 @@ describe('Editor connection assist', () => {
         boundingRectSpy.mockRestore();
     });
 
+    const setNavigatorPlatform = (platform: string) => {
+        Object.defineProperty(window.navigator, 'platform', {
+            configurable: true,
+            value: platform,
+        });
+    };
+
     it('highlights compatible handles, opens the menu on invalid drop, and adds a connected node', async () => {
         const reactFlowModule = await import('@xyflow/react') as typeof import('@xyflow/react') & {
             __getLatestReactFlowProps: () => any;
@@ -332,5 +339,73 @@ describe('Editor connection assist', () => {
             expect(screen.getByText(/Only audio files are accepted\./i)).toBeInTheDocument();
         });
         expect(audioLibrary.addAssetFromFile).not.toHaveBeenCalled();
+    });
+
+    it('handles ctrl+z and ctrl+y shortcuts on non-mac platforms', async () => {
+        setNavigatorPlatform('Linux x86_64');
+
+        const { useAudioGraphStore } = await import('../../ui/editor/store');
+        const { EditorDemo } = await import('../../ui/EditorDemo');
+        render(<EditorDemo />);
+
+        act(() => {
+            useAudioGraphStore.getState().addNode('mix');
+        });
+
+        const nodeCountAfterAdd = useAudioGraphStore.getState().nodes.length;
+        act(() => {
+            fireEvent.keyDown(window, { key: 'z', ctrlKey: true });
+        });
+        expect(useAudioGraphStore.getState().nodes).toHaveLength(nodeCountAfterAdd - 1);
+
+        act(() => {
+            fireEvent.keyDown(window, { key: 'y', ctrlKey: true });
+        });
+        expect(useAudioGraphStore.getState().nodes).toHaveLength(nodeCountAfterAdd);
+    });
+
+    it('handles command+z and command+y shortcuts on macOS', async () => {
+        setNavigatorPlatform('MacIntel');
+
+        const { useAudioGraphStore } = await import('../../ui/editor/store');
+        const { EditorDemo } = await import('../../ui/EditorDemo');
+        render(<EditorDemo />);
+
+        act(() => {
+            useAudioGraphStore.getState().addNode('mix');
+        });
+
+        const nodeCountAfterAdd = useAudioGraphStore.getState().nodes.length;
+        act(() => {
+            fireEvent.keyDown(window, { key: 'z', metaKey: true });
+        });
+        expect(useAudioGraphStore.getState().nodes).toHaveLength(nodeCountAfterAdd - 1);
+
+        act(() => {
+            fireEvent.keyDown(window, { key: 'y', metaKey: true });
+        });
+        expect(useAudioGraphStore.getState().nodes).toHaveLength(nodeCountAfterAdd);
+    });
+
+    it('ignores undo shortcuts while focus is inside an editable field', async () => {
+        setNavigatorPlatform('Linux x86_64');
+
+        const { useAudioGraphStore } = await import('../../ui/editor/store');
+        const { EditorDemo } = await import('../../ui/EditorDemo');
+        render(<EditorDemo />);
+
+        act(() => {
+            useAudioGraphStore.getState().addNode('mix');
+        });
+
+        const nodeCountAfterAdd = useAudioGraphStore.getState().nodes.length;
+        const graphNameInput = screen.getByPlaceholderText('Graph name');
+        act(() => {
+            graphNameInput.focus();
+            fireEvent.keyDown(graphNameInput, { key: 'z', ctrlKey: true });
+        });
+
+        expect(useAudioGraphStore.getState().nodes).toHaveLength(nodeCountAfterAdd);
+        expect(useAudioGraphStore.getState().canUndo).toBe(true);
     });
 });

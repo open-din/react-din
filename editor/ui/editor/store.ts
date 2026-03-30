@@ -632,6 +632,36 @@ export interface GraphDocument {
     order: number;
 }
 
+interface GraphHistorySnapshot {
+    name: string;
+    nodes: Node<AudioNodeData>[];
+    edges: Edge[];
+}
+
+interface GraphHistoryEntry {
+    before: GraphHistorySnapshot;
+    after: GraphHistorySnapshot;
+    mergeKey?: string;
+}
+
+interface GraphHistoryPendingGroup extends GraphHistoryEntry {
+    mergeKey: string;
+}
+
+interface GraphHistoryState {
+    undoStack: GraphHistoryEntry[];
+    redoStack: GraphHistoryEntry[];
+    pendingGroup: GraphHistoryPendingGroup | null;
+}
+
+type GraphHistoryMap = Record<string, GraphHistoryState>;
+type UpdateNodeDataHistoryMode = 'auto' | 'skip';
+
+interface UpdateNodeDataOptions {
+    history?: UpdateNodeDataHistoryMode;
+    mergeKey?: string;
+}
+
 // ============================================================================
 // Store State
 // ============================================================================
@@ -644,6 +674,9 @@ interface AudioGraphState {
     isHydrated: boolean;
     audioContext: AudioContext | null;
     selectedNodeId: string | null;
+    historyByGraph: GraphHistoryMap;
+    canUndo: boolean;
+    canRedo: boolean;
 
     // React Flow handlers
     onNodesChange: OnNodesChange<Node<AudioNodeData>>;
@@ -657,11 +690,16 @@ interface AudioGraphState {
     renameGraph: (graphId: string, name: string) => void;
     removeGraph: (graphId: string) => GraphDocument | null;
     setHydrated: (isHydrated: boolean) => void;
+    undo: () => void;
+    redo: () => void;
+    clearHistoryForGraph: (graphId: string) => void;
+    clearAllHistory: () => void;
+    finalizeHistoryGroup: (graphId: string, mergeKey?: string) => void;
 
     // Custom actions
     addNode: (type: EditorNodeType, position?: { x: number; y: number }) => void;
     addNodeAndConnect: (type: EditorNodeType, connection: NormalizedConnectionDescriptor, position?: { x: number; y: number }) => string | null;
-    updateNodeData: (nodeId: string, data: Partial<AudioNodeData>) => void;
+    updateNodeData: (nodeId: string, data: Partial<AudioNodeData>, options?: UpdateNodeDataOptions) => void;
     removeNode: (nodeId: string) => void;
     loadGraph: (nodes: Node<AudioNodeData>[], edges: Edge[]) => void;
     setPlaying: (playing: boolean) => void;
@@ -713,6 +751,299 @@ const syncNodeIdCounter = (nodes: Node<AudioNodeData>[]) => {
     if (maxId > nodeIdCounter) {
         nodeIdCounter = maxId;
     }
+};
+
+const HISTORY_GROUP_DELAY_MS = 250;
+const historyGroupTimers = new Map<string, ReturnType<typeof setTimeout>>();
+const NODE_CHANGE_STRUCTURAL_TYPES = new Set(['add', 'remove', 'replace']);
+const EDGE_CHANGE_STRUCTURAL_TYPES = new Set(['add', 'remove', 'replace']);
+
+const createEmptyGraphHistoryState = (): GraphHistoryState => ({
+    undoStack: [],
+    redoStack: [],
+    pendingGroup: null,
+});
+
+const getGraphHistoryState = (historyByGraph: GraphHistoryMap, graphId: string): GraphHistoryState =>
+    historyByGraph[graphId] ?? createEmptyGraphHistoryState();
+
+const clearHistoryGroupTimer = (graphId: string) => {
+    const timer = historyGroupTimers.get(graphId);
+    if (!timer) return;
+    clearTimeout(timer);
+    historyGroupTimers.delete(graphId);
+};
+
+const clearAllHistoryGroupTimers = () => {
+    historyGroupTimers.forEach((timer) => clearTimeout(timer));
+    historyGroupTimers.clear();
+};
+
+const stripSelectionFromNodes = (nodes: Node<AudioNodeData>[]) =>
+    nodes.map((node) => ({
+        ...node,
+        selected: false,
+    }));
+
+const stripSelectionFromEdges = (edges: Edge[]) =>
+    edges.map((edge) => ({
+        ...edge,
+        selected: false,
+    }));
+
+const createHistorySnapshot = (graph: Pick<GraphDocument, 'name' | 'nodes' | 'edges'>): GraphHistorySnapshot => ({
+    name: normalizeGraphName(graph.name),
+    nodes: deepClone(stripSelectionFromNodes(graph.nodes)),
+    edges: deepClone(stripSelectionFromEdges(graph.edges)),
+});
+
+const cloneHistorySnapshot = (snapshot: GraphHistorySnapshot): GraphHistorySnapshot => ({
+    name: snapshot.name,
+    nodes: deepClone(snapshot.nodes),
+    edges: deepClone(snapshot.edges),
+});
+
+const historySnapshotEquals = (left: GraphHistorySnapshot, right: GraphHistorySnapshot) =>
+    left.name === right.name
+    && JSON.stringify(left.nodes) === JSON.stringify(right.nodes)
+    && JSON.stringify(left.edges) === JSON.stringify(right.edges);
+
+const getHistoryAvailability = (historyByGraph: GraphHistoryMap, activeGraphId: string | null) => {
+    if (!activeGraphId) {
+        return { canUndo: false, canRedo: false };
+    }
+    const history = historyByGraph[activeGraphId];
+    return {
+        canUndo: Boolean(history?.pendingGroup || history?.undoStack.length),
+        canRedo: Boolean(history?.redoStack.length),
+    };
+};
+
+const finalizePendingHistoryGroup = (
+    historyByGraph: GraphHistoryMap,
+    graphId: string,
+    mergeKey?: string
+): GraphHistoryMap => {
+    const history = historyByGraph[graphId];
+    if (!history?.pendingGroup) return historyByGraph;
+    if (mergeKey && history.pendingGroup.mergeKey !== mergeKey) return historyByGraph;
+
+    clearHistoryGroupTimer(graphId);
+
+    const pendingGroup = history.pendingGroup;
+    if (historySnapshotEquals(pendingGroup.before, pendingGroup.after)) {
+        return {
+            ...historyByGraph,
+            [graphId]: {
+                ...history,
+                pendingGroup: null,
+            },
+        };
+    }
+
+    return {
+        ...historyByGraph,
+        [graphId]: {
+            undoStack: [...history.undoStack, {
+                before: pendingGroup.before,
+                after: pendingGroup.after,
+                mergeKey: pendingGroup.mergeKey,
+            }],
+            redoStack: history.redoStack,
+            pendingGroup: null,
+        },
+    };
+};
+
+const appendHistoryEntry = (
+    historyByGraph: GraphHistoryMap,
+    graphId: string,
+    before: GraphHistorySnapshot,
+    after: GraphHistorySnapshot
+): GraphHistoryMap => {
+    const finalizedHistory = finalizePendingHistoryGroup(historyByGraph, graphId);
+    if (historySnapshotEquals(before, after)) {
+        return finalizedHistory;
+    }
+
+    const history = getGraphHistoryState(finalizedHistory, graphId);
+    return {
+        ...finalizedHistory,
+        [graphId]: {
+            undoStack: [...history.undoStack, { before, after }],
+            redoStack: [],
+            pendingGroup: null,
+        },
+    };
+};
+
+const updatePendingHistoryGroup = (
+    historyByGraph: GraphHistoryMap,
+    graphId: string,
+    mergeKey: string,
+    before: GraphHistorySnapshot,
+    after: GraphHistorySnapshot
+): GraphHistoryMap => {
+    const existingHistory = historyByGraph[graphId];
+    if (existingHistory?.pendingGroup && existingHistory.pendingGroup.mergeKey !== mergeKey) {
+        historyByGraph = finalizePendingHistoryGroup(historyByGraph, graphId);
+    }
+
+    const history = getGraphHistoryState(historyByGraph, graphId);
+    const pendingGroup = history.pendingGroup?.mergeKey === mergeKey
+        ? {
+            ...history.pendingGroup,
+            after,
+        }
+        : {
+            before,
+            after,
+            mergeKey,
+        };
+
+    return {
+        ...historyByGraph,
+        [graphId]: {
+            undoStack: history.undoStack,
+            redoStack: [],
+            pendingGroup,
+        },
+    };
+};
+
+const clearHistoryForGraphState = (
+    historyByGraph: GraphHistoryMap,
+    graphId: string
+): GraphHistoryMap => {
+    clearHistoryGroupTimer(graphId);
+    if (!(graphId in historyByGraph)) return historyByGraph;
+    const nextHistory = { ...historyByGraph };
+    delete nextHistory[graphId];
+    return nextHistory;
+};
+
+const removeGraphHistoryState = (
+    historyByGraph: GraphHistoryMap,
+    graphId: string
+): GraphHistoryMap => clearHistoryForGraphState(historyByGraph, graphId);
+
+const createNodeUpdateMergeKey = (nodeId: string, data: Partial<AudioNodeData>, options?: UpdateNodeDataOptions) => {
+    if (options?.mergeKey) return options.mergeKey;
+    const keys = Object.keys(data).sort();
+    return keys.length > 0 ? `node:${nodeId}:${keys.join(',')}` : `node:${nodeId}`;
+};
+
+const shouldSkipNodeHistory = (
+    node: Node<AudioNodeData> | undefined,
+    data: Partial<AudioNodeData>,
+    options?: UpdateNodeDataOptions
+) => {
+    if (!node) return true;
+    if (options?.history === 'skip') return true;
+
+    const keys = Object.keys(data);
+    if (keys.length === 1 && keys[0] === 'playing' && (node.data.type === 'output' || node.data.type === 'transport')) {
+        return true;
+    }
+
+    return false;
+};
+
+const applyNodeDataPatch = (
+    node: Node<AudioNodeData>,
+    data: Partial<AudioNodeData>
+): Node<AudioNodeData> => {
+    const nextData = { ...node.data, ...data } as AudioNodeData;
+
+    if (nextData.type === 'input') {
+        return {
+            ...node,
+            data: normalizeInputNodeData(node.id, nextData as InputNodeData),
+        };
+    }
+
+    if (nextData.type === 'uiTokens') {
+        return {
+            ...node,
+            data: normalizeUiTokensNodeData(nextData as UiTokensNodeData),
+        };
+    }
+
+    if (nextData.type === 'transport') {
+        return {
+            ...node,
+            data: normalizeTransportNodeData(nextData as TransportNodeData),
+        };
+    }
+
+    if (nextData.type === 'midiNote') {
+        return {
+            ...node,
+            data: normalizeMidiNoteNodeData(nextData as MidiNoteNodeData),
+        };
+    }
+
+    return {
+        ...node,
+        data: nextData,
+    };
+};
+
+const patchNodeDataInSnapshot = (
+    snapshot: GraphHistorySnapshot,
+    nodeId: string,
+    data: Partial<AudioNodeData>
+): GraphHistorySnapshot => {
+    const currentNode = snapshot.nodes.find((node) => node.id === nodeId);
+    if (!currentNode) return snapshot;
+
+    const nextNodes = snapshot.nodes.map((node) =>
+        node.id === nodeId
+            ? applyNodeDataPatch(node, data)
+            : node
+    );
+    const nextEdges = requiresConnectionRefresh(currentNode, data)
+        ? migrateGraphEdges(nextNodes, snapshot.edges)
+        : snapshot.edges;
+
+    return {
+        ...snapshot,
+        nodes: nextNodes,
+        edges: nextEdges,
+    };
+};
+
+const syncNodePatchIntoHistory = (
+    historyByGraph: GraphHistoryMap,
+    graphId: string,
+    nodeId: string,
+    data: Partial<AudioNodeData>
+): GraphHistoryMap => {
+    const history = historyByGraph[graphId];
+    if (!history) return historyByGraph;
+
+    return {
+        ...historyByGraph,
+        [graphId]: {
+            undoStack: history.undoStack.map((entry) => ({
+                ...entry,
+                before: patchNodeDataInSnapshot(entry.before, nodeId, data),
+                after: patchNodeDataInSnapshot(entry.after, nodeId, data),
+            })),
+            redoStack: history.redoStack.map((entry) => ({
+                ...entry,
+                before: patchNodeDataInSnapshot(entry.before, nodeId, data),
+                after: patchNodeDataInSnapshot(entry.after, nodeId, data),
+            })),
+            pendingGroup: history.pendingGroup
+                ? {
+                    ...history.pendingGroup,
+                    before: patchNodeDataInSnapshot(history.pendingGroup.before, nodeId, data),
+                    after: patchNodeDataInSnapshot(history.pendingGroup.after, nodeId, data),
+                }
+                : null,
+        },
+    };
 };
 
 // Initial nodes - Horizontal layout
@@ -812,6 +1143,35 @@ const replaceVirtualConnectionNode = (
     targetHandle: connection.targetHandle ?? null,
 });
 
+const buildGraphsWithActiveSnapshot = (
+    graphs: GraphDocument[],
+    activeGraphId: string | null,
+    snapshot: GraphHistorySnapshot
+) => graphs.map((graph) => {
+    if (graph.id !== activeGraphId) return graph;
+    const restored = cloneHistorySnapshot(snapshot);
+    return {
+        ...graph,
+        name: restored.name,
+        nodes: restored.nodes,
+        edges: restored.edges,
+        updatedAt: Date.now(),
+    };
+});
+
+const buildActiveGraphSnapshot = (
+    state: Pick<AudioGraphState, 'graphs' | 'activeGraphId' | 'nodes' | 'edges'>
+): GraphHistorySnapshot | null => {
+    const activeGraph = state.graphs.find((graph) => graph.id === state.activeGraphId);
+    if (!activeGraph) return null;
+
+    return createHistorySnapshot({
+        name: activeGraph.name,
+        nodes: state.nodes,
+        edges: state.edges,
+    });
+};
+
 export const useAudioGraphStore = create<AudioGraphState>((set, get) => ({
     nodes: initialGraph.nodes,
     edges: initialGraph.edges,
@@ -820,8 +1180,121 @@ export const useAudioGraphStore = create<AudioGraphState>((set, get) => ({
     isHydrated: false,
     audioContext: null,
     selectedNodeId: null,
+    historyByGraph: {},
+    canUndo: false,
+    canRedo: false,
 
     setHydrated: (isHydrated) => set({ isHydrated }),
+
+    clearHistoryForGraph: (graphId) => {
+        set((state) => {
+            const historyByGraph = clearHistoryForGraphState(state.historyByGraph, graphId);
+            return {
+                historyByGraph,
+                ...getHistoryAvailability(historyByGraph, state.activeGraphId),
+            };
+        });
+    },
+
+    clearAllHistory: () => {
+        clearAllHistoryGroupTimers();
+        set((state) => ({
+            historyByGraph: {},
+            ...getHistoryAvailability({}, state.activeGraphId),
+        }));
+    },
+
+    finalizeHistoryGroup: (graphId, mergeKey) => {
+        set((state) => {
+            const historyByGraph = finalizePendingHistoryGroup(state.historyByGraph, graphId, mergeKey);
+            return {
+                historyByGraph,
+                ...getHistoryAvailability(historyByGraph, state.activeGraphId),
+            };
+        });
+    },
+
+    undo: () => {
+        const state = get();
+        const graphId = state.activeGraphId;
+        if (!graphId) return;
+
+        const historyByGraph = finalizePendingHistoryGroup(state.historyByGraph, graphId);
+        const history = historyByGraph[graphId];
+        if (!history || history.undoStack.length === 0) {
+            if (historyByGraph !== state.historyByGraph) {
+                set({
+                    historyByGraph,
+                    ...getHistoryAvailability(historyByGraph, graphId),
+                });
+            }
+            return;
+        }
+
+        const entry = history.undoStack[history.undoStack.length - 1];
+        const restored = cloneHistorySnapshot(entry.before);
+        const nextHistoryByGraph: GraphHistoryMap = {
+            ...historyByGraph,
+            [graphId]: {
+                undoStack: history.undoStack.slice(0, -1),
+                redoStack: [...history.redoStack, entry],
+                pendingGroup: null,
+            },
+        };
+
+        syncNodeIdCounter(restored.nodes);
+        set((currentState) => ({
+            historyByGraph: nextHistoryByGraph,
+            graphs: buildGraphsWithActiveSnapshot(currentState.graphs, graphId, restored),
+            nodes: restored.nodes,
+            edges: restored.edges,
+            selectedNodeId: null,
+            ...getHistoryAvailability(nextHistoryByGraph, graphId),
+        }));
+
+        audioEngine.refreshConnections(restored.nodes, restored.edges);
+    },
+
+    redo: () => {
+        const state = get();
+        const graphId = state.activeGraphId;
+        if (!graphId) return;
+
+        const historyByGraph = finalizePendingHistoryGroup(state.historyByGraph, graphId);
+        const history = historyByGraph[graphId];
+        if (!history || history.redoStack.length === 0) {
+            if (historyByGraph !== state.historyByGraph) {
+                set({
+                    historyByGraph,
+                    ...getHistoryAvailability(historyByGraph, graphId),
+                });
+            }
+            return;
+        }
+
+        const entry = history.redoStack[history.redoStack.length - 1];
+        const restored = cloneHistorySnapshot(entry.after);
+        const nextHistoryByGraph: GraphHistoryMap = {
+            ...historyByGraph,
+            [graphId]: {
+                undoStack: [...history.undoStack, entry],
+                redoStack: history.redoStack.slice(0, -1),
+                pendingGroup: null,
+            },
+        };
+
+        syncNodeIdCounter(restored.nodes);
+        set((currentState) => ({
+            historyByGraph: nextHistoryByGraph,
+            graphs: buildGraphsWithActiveSnapshot(currentState.graphs, graphId, restored),
+            nodes: restored.nodes,
+            edges: restored.edges,
+            selectedNodeId: null,
+            ...getHistoryAvailability(nextHistoryByGraph, graphId),
+        }));
+
+        audioEngine.refreshConnections(restored.nodes, restored.edges);
+    },
 
     setGraphs: (graphs, activeGraphId) => {
         const now = Date.now();
@@ -837,6 +1310,7 @@ export const useAudioGraphStore = create<AudioGraphState>((set, get) => ({
             : fallbackGraph.id;
         const activeGraph = orderedGraphs.find((graph) => graph.id === resolvedActiveId) ?? fallbackGraph;
 
+        clearAllHistoryGroupTimers();
         audioEngine.stop();
         syncNodeIdCounter(activeGraph.nodes);
 
@@ -846,6 +1320,9 @@ export const useAudioGraphStore = create<AudioGraphState>((set, get) => ({
             nodes: activeGraph.nodes,
             edges: activeGraph.edges,
             selectedNodeId: null,
+            historyByGraph: {},
+            canUndo: false,
+            canRedo: false,
         });
 
         audioEngine.refreshConnections(activeGraph.nodes, activeGraph.edges);
@@ -858,6 +1335,9 @@ export const useAudioGraphStore = create<AudioGraphState>((set, get) => ({
         const targetGraph = state.graphs.find((graph) => graph.id === graphId);
         if (!targetGraph) return;
 
+        const historyByGraph = state.activeGraphId
+            ? finalizePendingHistoryGroup(state.historyByGraph, state.activeGraphId)
+            : state.historyByGraph;
         const stoppedNodes = stopOutputNodes(state.nodes);
         const updatedGraphs = state.graphs.map((graph) => {
             if (graph.id !== state.activeGraphId) return graph;
@@ -867,20 +1347,24 @@ export const useAudioGraphStore = create<AudioGraphState>((set, get) => ({
                 updatedAt: Date.now(),
             };
         });
+        const nextGraph = updatedGraphs.find((graph) => graph.id === graphId) ?? targetGraph;
 
         audioEngine.stop();
-        syncNodeIdCounter(targetGraph.nodes);
+        syncNodeIdCounter(nextGraph.nodes);
 
         set({
             graphs: updatedGraphs,
             activeGraphId: graphId,
-            nodes: targetGraph.nodes,
-            edges: targetGraph.edges,
+            nodes: nextGraph.nodes,
+            edges: nextGraph.edges,
             selectedNodeId: null,
+            historyByGraph,
+            ...getHistoryAvailability(historyByGraph, graphId),
         });
 
-        audioEngine.refreshConnections(targetGraph.nodes, targetGraph.edges);
+        audioEngine.refreshConnections(nextGraph.nodes, nextGraph.edges);
     },
+
     createGraph: (name) => {
         const state = get();
         const nextIndex = state.graphs.length + 1;
@@ -898,7 +1382,9 @@ export const useAudioGraphStore = create<AudioGraphState>((set, get) => ({
             order,
         };
         const normalizedGraph = normalizeGraphDocument(graph, order, now);
-
+        const historyByGraph = state.activeGraphId
+            ? finalizePendingHistoryGroup(state.historyByGraph, state.activeGraphId)
+            : state.historyByGraph;
         const stoppedNodes = stopOutputNodes(state.nodes);
         const updatedGraphs = state.graphs.map((existing) =>
             existing.id === state.activeGraphId
@@ -915,6 +1401,8 @@ export const useAudioGraphStore = create<AudioGraphState>((set, get) => ({
             nodes: normalizedGraph.nodes,
             edges: normalizedGraph.edges,
             selectedNodeId: null,
+            historyByGraph,
+            ...getHistoryAvailability(historyByGraph, normalizedGraph.id),
         });
 
         audioEngine.refreshConnections(normalizedGraph.nodes, normalizedGraph.edges);
@@ -922,14 +1410,41 @@ export const useAudioGraphStore = create<AudioGraphState>((set, get) => ({
     },
 
     renameGraph: (graphId, name) => {
+        const state = get();
         const nextName = normalizeGraphName(name);
-        set((state) => ({
+        const currentGraph = state.graphs.find((graph) => graph.id === graphId);
+        if (!currentGraph || currentGraph.name === nextName) return;
+
+        if (graphId !== state.activeGraphId) {
+            set({
+                graphs: state.graphs.map((graph) =>
+                    graph.id === graphId
+                        ? { ...graph, name: nextName, updatedAt: Date.now() }
+                        : graph
+                ),
+            });
+            return;
+        }
+
+        const before = buildActiveGraphSnapshot(state);
+        if (!before) return;
+
+        const after = createHistorySnapshot({
+            name: nextName,
+            nodes: state.nodes,
+            edges: state.edges,
+        });
+        const historyByGraph = appendHistoryEntry(state.historyByGraph, graphId, before, after);
+
+        set({
             graphs: state.graphs.map((graph) =>
                 graph.id === graphId
                     ? { ...graph, name: nextName, updatedAt: Date.now() }
                     : graph
             ),
-        }));
+            historyByGraph,
+            ...getHistoryAvailability(historyByGraph, state.activeGraphId),
+        });
     },
 
     removeGraph: (graphId) => {
@@ -937,6 +1452,7 @@ export const useAudioGraphStore = create<AudioGraphState>((set, get) => ({
         const targetGraph = state.graphs.find((graph) => graph.id === graphId);
         if (!targetGraph) return null;
 
+        const historyByGraph = removeGraphHistoryState(state.historyByGraph, graphId);
         const remaining = state.graphs.filter((graph) => graph.id !== graphId);
 
         if (remaining.length === 0) {
@@ -961,6 +1477,8 @@ export const useAudioGraphStore = create<AudioGraphState>((set, get) => ({
                 nodes: normalizedFallbackGraph.nodes,
                 edges: normalizedFallbackGraph.edges,
                 selectedNodeId: null,
+                historyByGraph,
+                ...getHistoryAvailability(historyByGraph, normalizedFallbackGraph.id),
             });
 
             audioEngine.refreshConnections(normalizedFallbackGraph.nodes, normalizedFallbackGraph.edges);
@@ -980,11 +1498,17 @@ export const useAudioGraphStore = create<AudioGraphState>((set, get) => ({
                 nodes: nextGraph.nodes,
                 edges: nextGraph.edges,
                 selectedNodeId: null,
+                historyByGraph,
+                ...getHistoryAvailability(historyByGraph, nextGraph.id),
             });
 
             audioEngine.refreshConnections(nextGraph.nodes, nextGraph.edges);
         } else {
-            set({ graphs: remaining });
+            set({
+                graphs: remaining,
+                historyByGraph,
+                ...getHistoryAvailability(historyByGraph, state.activeGraphId),
+            });
         }
 
         return targetGraph;
@@ -1014,77 +1538,144 @@ export const useAudioGraphStore = create<AudioGraphState>((set, get) => ({
     },
 
     onNodesChange: (changes) => {
-        const nextNodes = applyNodeChanges(changes, get().nodes);
+        const state = get();
+        const nextNodes = applyNodeChanges(changes, state.nodes);
+        const activeGraph = state.graphs.find((graph) => graph.id === state.activeGraphId);
+        const hasStructuralChange = changes.some((change) => NODE_CHANGE_STRUCTURAL_TYPES.has(change.type));
+        const hasPositionChange = changes.some((change) => change.type === 'position');
+        let historyByGraph = state.historyByGraph;
 
-        set((state) => {
-            const graphs = state.activeGraphId
-                ? state.graphs.map((graph) =>
-                    graph.id === state.activeGraphId
-                        ? { ...graph, nodes: nextNodes, updatedAt: Date.now() }
-                        : graph
-                )
-                : state.graphs;
+        if (state.activeGraphId && activeGraph && (hasStructuralChange || hasPositionChange)) {
+            const before = createHistorySnapshot({
+                name: activeGraph.name,
+                nodes: state.nodes,
+                edges: state.edges,
+            });
+            const after = createHistorySnapshot({
+                name: activeGraph.name,
+                nodes: nextNodes,
+                edges: state.edges,
+            });
 
-            return { nodes: nextNodes, graphs };
+            historyByGraph = hasStructuralChange
+                ? appendHistoryEntry(historyByGraph, state.activeGraphId, before, after)
+                : updatePendingHistoryGroup(historyByGraph, state.activeGraphId, 'nodes:position', before, after);
+        }
+
+        const graphs = state.activeGraphId
+            ? state.graphs.map((graph) =>
+                graph.id === state.activeGraphId
+                    ? { ...graph, nodes: nextNodes, updatedAt: Date.now() }
+                    : graph
+            )
+            : state.graphs;
+
+        set({
+            nodes: nextNodes,
+            graphs,
+            historyByGraph,
+            ...getHistoryAvailability(historyByGraph, state.activeGraphId),
         });
 
-        changes.forEach(change => {
-            if (change.type === 'remove') {
-                // Deletions handled in onEdgesChange/removeNode
+        if (state.activeGraphId && hasPositionChange && !hasStructuralChange) {
+            const isDragComplete = changes.some((change) => change.type === 'position' && change.dragging === false);
+            if (isDragComplete) {
+                get().finalizeHistoryGroup(state.activeGraphId, 'nodes:position');
+            } else {
+                scheduleHistoryGroupFinalization(state.activeGraphId, 'nodes:position');
             }
-        });
+        }
 
-        const hasStructuralChange = changes.some((change) => change.type === 'add' || change.type === 'remove' || change.type === 'replace');
         if (hasStructuralChange) {
-            audioEngine.refreshConnections(nextNodes, get().edges);
+            audioEngine.refreshConnections(nextNodes, state.edges);
         } else if (changes.length > 0) {
-            audioEngine.refreshDataValues(nextNodes, get().edges);
+            audioEngine.refreshDataValues(nextNodes, state.edges);
         }
     },
 
     onEdgesChange: (changes) => {
-        const nextEdges = applyEdgeChanges(changes, get().edges);
+        const state = get();
+        const nextEdges = applyEdgeChanges(changes, state.edges);
+        const activeGraph = state.graphs.find((graph) => graph.id === state.activeGraphId);
+        const hasStructuralChange = changes.some((change) => EDGE_CHANGE_STRUCTURAL_TYPES.has(change.type));
+        let historyByGraph = state.historyByGraph;
 
-        set((state) => {
-            const graphs = state.activeGraphId
-                ? state.graphs.map((graph) =>
-                    graph.id === state.activeGraphId
-                        ? { ...graph, edges: nextEdges, updatedAt: Date.now() }
-                        : graph
-                )
-                : state.graphs;
+        if (state.activeGraphId && activeGraph && hasStructuralChange) {
+            const before = createHistorySnapshot({
+                name: activeGraph.name,
+                nodes: state.nodes,
+                edges: state.edges,
+            });
+            const after = createHistorySnapshot({
+                name: activeGraph.name,
+                nodes: state.nodes,
+                edges: nextEdges,
+            });
+            historyByGraph = appendHistoryEntry(historyByGraph, state.activeGraphId, before, after);
+        }
 
-            return { edges: nextEdges, graphs };
+        const graphs = state.activeGraphId
+            ? state.graphs.map((graph) =>
+                graph.id === state.activeGraphId
+                    ? { ...graph, edges: nextEdges, updatedAt: Date.now() }
+                    : graph
+            )
+            : state.graphs;
+
+        set({
+            edges: nextEdges,
+            graphs,
+            historyByGraph,
+            ...getHistoryAvailability(historyByGraph, state.activeGraphId),
         });
 
         if (changes.length > 0) {
-            audioEngine.refreshConnections(get().nodes, nextEdges);
+            audioEngine.refreshConnections(state.nodes, nextEdges);
         }
     },
 
     onConnect: (connection) => {
-        const newEdges = createStyledEdge(get().nodes, get().edges, connection as Connection);
+        const state = get();
+        const newEdges = createStyledEdge(state.nodes, state.edges, connection as Connection);
         if (!newEdges) return;
 
-        set({ edges: newEdges });
+        const activeGraph = state.graphs.find((graph) => graph.id === state.activeGraphId);
+        const historyByGraph = state.activeGraphId && activeGraph
+            ? appendHistoryEntry(
+                state.historyByGraph,
+                state.activeGraphId,
+                createHistorySnapshot({
+                    name: activeGraph.name,
+                    nodes: state.nodes,
+                    edges: state.edges,
+                }),
+                createHistorySnapshot({
+                    name: activeGraph.name,
+                    nodes: state.nodes,
+                    edges: newEdges,
+                })
+            )
+            : state.historyByGraph;
 
-        set((state) => {
-            const graphs = state.activeGraphId
+        set({
+            edges: newEdges,
+            graphs: state.activeGraphId
                 ? state.graphs.map((graph) =>
                     graph.id === state.activeGraphId
                         ? { ...graph, edges: newEdges, updatedAt: Date.now() }
                         : graph
                 )
-                : state.graphs;
-
-            return { graphs };
+                : state.graphs,
+            historyByGraph,
+            ...getHistoryAvailability(historyByGraph, state.activeGraphId),
         });
 
-        audioEngine.refreshConnections(get().nodes, newEdges);
+        audioEngine.refreshConnections(state.nodes, newEdges);
     },
 
     addNode: (type, position = { x: 300, y: 200 }) => {
-        if (getSingletonNodeTypes().has(type) && hasSingletonNode(get().nodes, type)) {
+        const state = get();
+        if (getSingletonNodeTypes().has(type) && hasSingletonNode(state.nodes, type)) {
             return;
         }
 
@@ -1092,9 +1683,26 @@ export const useAudioGraphStore = create<AudioGraphState>((set, get) => ({
         const newNode = createEditorNode(id, type, position);
         if (!newNode) return;
 
-        const newNodes = [...get().nodes, newNode];
+        const newNodes = [...state.nodes, newNode];
+        const activeGraph = state.graphs.find((graph) => graph.id === state.activeGraphId);
+        const historyByGraph = state.activeGraphId && activeGraph
+            ? appendHistoryEntry(
+                state.historyByGraph,
+                state.activeGraphId,
+                createHistorySnapshot({
+                    name: activeGraph.name,
+                    nodes: state.nodes,
+                    edges: state.edges,
+                }),
+                createHistorySnapshot({
+                    name: activeGraph.name,
+                    nodes: newNodes,
+                    edges: state.edges,
+                })
+            )
+            : state.historyByGraph;
 
-        set((state) => ({
+        set({
             nodes: newNodes,
             graphs: state.activeGraphId
                 ? state.graphs.map((graph) =>
@@ -1103,13 +1711,16 @@ export const useAudioGraphStore = create<AudioGraphState>((set, get) => ({
                         : graph
                 )
                 : state.graphs,
-        }));
+            historyByGraph,
+            ...getHistoryAvailability(historyByGraph, state.activeGraphId),
+        });
 
-        audioEngine.refreshConnections(newNodes, get().edges);
+        audioEngine.refreshConnections(newNodes, state.edges);
     },
 
     addNodeAndConnect: (type, connection, position = { x: 300, y: 200 }) => {
-        if (getSingletonNodeTypes().has(type) && hasSingletonNode(get().nodes, type)) {
+        const state = get();
+        if (getSingletonNodeTypes().has(type) && hasSingletonNode(state.nodes, type)) {
             return null;
         }
 
@@ -1117,11 +1728,28 @@ export const useAudioGraphStore = create<AudioGraphState>((set, get) => ({
         const newNode = createEditorNode(id, type, position);
         if (!newNode) return null;
 
-        const newNodes = [...get().nodes, newNode];
-        const resolvedConnection = replaceVirtualConnectionNode(get().nodes, connection, id);
-        const newEdges = createStyledEdge(newNodes, get().edges, resolvedConnection);
+        const newNodes = [...state.nodes, newNode];
+        const resolvedConnection = replaceVirtualConnectionNode(state.nodes, connection, id);
+        const newEdges = createStyledEdge(newNodes, state.edges, resolvedConnection);
+        const activeGraph = state.graphs.find((graph) => graph.id === state.activeGraphId);
+        const historyByGraph = state.activeGraphId && activeGraph
+            ? appendHistoryEntry(
+                state.historyByGraph,
+                state.activeGraphId,
+                createHistorySnapshot({
+                    name: activeGraph.name,
+                    nodes: state.nodes,
+                    edges: state.edges,
+                }),
+                createHistorySnapshot({
+                    name: activeGraph.name,
+                    nodes: newNodes,
+                    edges: newEdges ?? state.edges,
+                })
+            )
+            : state.historyByGraph;
 
-        set((state) => ({
+        set({
             nodes: newNodes,
             edges: newEdges ?? state.edges,
             graphs: state.activeGraphId
@@ -1131,85 +1759,103 @@ export const useAudioGraphStore = create<AudioGraphState>((set, get) => ({
                         : graph
                 )
                 : state.graphs,
-        }));
+            historyByGraph,
+            ...getHistoryAvailability(historyByGraph, state.activeGraphId),
+        });
 
-        audioEngine.refreshConnections(newNodes, newEdges ?? get().edges);
+        audioEngine.refreshConnections(newNodes, newEdges ?? state.edges);
         return id;
     },
 
-    updateNodeData: (nodeId, data) => {
-        const currentNode = get().nodes.find((node) => node.id === nodeId);
+    updateNodeData: (nodeId, data, options) => {
+        const state = get();
+        const currentNode = state.nodes.find((node) => node.id === nodeId);
+        if (!currentNode) return;
+
         const refreshConnections = requiresConnectionRefresh(currentNode, data);
-        const nextNodes = get().nodes.map((node) =>
+        const nextNodes = state.nodes.map((node) =>
             node.id === nodeId
-                ? (() => {
-                    const nextData = { ...node.data, ...data } as AudioNodeData;
-                    if (nextData.type === 'input') {
-                        return {
-                            ...node,
-                            data: normalizeInputNodeData(node.id, nextData as InputNodeData),
-                        };
-                    }
-                    if (nextData.type === 'uiTokens') {
-                        return {
-                            ...node,
-                            data: normalizeUiTokensNodeData(nextData as UiTokensNodeData),
-                        };
-                    }
-                    if (nextData.type === 'transport') {
-                        return {
-                            ...node,
-                            data: normalizeTransportNodeData(nextData as TransportNodeData),
-                        };
-                    }
-                    if (nextData.type === 'midiNote') {
-                        return {
-                            ...node,
-                            data: normalizeMidiNoteNodeData(nextData as MidiNoteNodeData),
-                        };
-                    }
-                    return { ...node, data: nextData };
-                })()
+                ? applyNodeDataPatch(node, data)
                 : node
         );
+        const nextEdges = refreshConnections
+            ? migrateGraphEdges(nextNodes, state.edges)
+            : state.edges;
+        const activeGraph = state.graphs.find((graph) => graph.id === state.activeGraphId);
+        const skipHistory = shouldSkipNodeHistory(currentNode, data, options);
+        let historyByGraph = state.historyByGraph;
 
-        set((state) => ({
+        if (state.activeGraphId && activeGraph) {
+            if (skipHistory) {
+                historyByGraph = syncNodePatchIntoHistory(historyByGraph, state.activeGraphId, nodeId, data);
+            } else {
+                historyByGraph = updatePendingHistoryGroup(
+                    historyByGraph,
+                    state.activeGraphId,
+                    createNodeUpdateMergeKey(nodeId, data, options),
+                    createHistorySnapshot({
+                        name: activeGraph.name,
+                        nodes: state.nodes,
+                        edges: state.edges,
+                    }),
+                    createHistorySnapshot({
+                        name: activeGraph.name,
+                        nodes: nextNodes,
+                        edges: nextEdges,
+                    })
+                );
+            }
+        }
+
+        set({
             nodes: nextNodes,
+            edges: nextEdges,
             graphs: state.activeGraphId
                 ? state.graphs.map((graph) =>
                     graph.id === state.activeGraphId
-                        ? { ...graph, nodes: nextNodes, updatedAt: Date.now() }
+                        ? { ...graph, nodes: nextNodes, edges: nextEdges, updatedAt: Date.now() }
                         : graph
                 )
                 : state.graphs,
-        }));
+            historyByGraph,
+            ...getHistoryAvailability(historyByGraph, state.activeGraphId),
+        });
+
+        if (state.activeGraphId && !skipHistory) {
+            scheduleHistoryGroupFinalization(state.activeGraphId, createNodeUpdateMergeKey(nodeId, data, options));
+        }
 
         audioEngine.updateNode(nodeId, data);
         if (refreshConnections) {
-            const migratedEdges = migrateGraphEdges(nextNodes, get().edges);
-            if (migratedEdges !== get().edges) {
-                set((state) => ({
-                    edges: migratedEdges,
-                    graphs: state.activeGraphId
-                        ? state.graphs.map((graph) =>
-                            graph.id === state.activeGraphId
-                                ? { ...graph, nodes: nextNodes, edges: migratedEdges, updatedAt: Date.now() }
-                                : graph
-                        )
-                        : state.graphs,
-                }));
-            }
-            audioEngine.refreshConnections(nextNodes, migratedEdges);
+            audioEngine.refreshConnections(nextNodes, nextEdges);
         } else {
-            audioEngine.refreshDataValues(nextNodes, get().edges);
+            audioEngine.refreshDataValues(nextNodes, nextEdges);
         }
     },
 
     removeNode: (nodeId) => {
-        const newNodes = get().nodes.filter((node) => node.id !== nodeId);
-        const newEdges = get().edges.filter((edge) => edge.source !== nodeId && edge.target !== nodeId);
+        const state = get();
+        const newNodes = state.nodes.filter((node) => node.id !== nodeId);
+        const newEdges = state.edges.filter((edge) => edge.source !== nodeId && edge.target !== nodeId);
+        const activeGraph = state.graphs.find((graph) => graph.id === state.activeGraphId);
+        const historyByGraph = state.activeGraphId && activeGraph
+            ? appendHistoryEntry(
+                state.historyByGraph,
+                state.activeGraphId,
+                createHistorySnapshot({
+                    name: activeGraph.name,
+                    nodes: state.nodes,
+                    edges: state.edges,
+                }),
+                createHistorySnapshot({
+                    name: activeGraph.name,
+                    nodes: newNodes,
+                    edges: newEdges,
+                })
+            )
+            : state.historyByGraph;
 
-        set((state) => ({
+        set({
             nodes: newNodes,
             edges: newEdges,
             graphs: state.activeGraphId
@@ -1219,18 +1865,25 @@ export const useAudioGraphStore = create<AudioGraphState>((set, get) => ({
                         : graph
                 )
                 : state.graphs,
-        }));
+            historyByGraph,
+            ...getHistoryAvailability(historyByGraph, state.activeGraphId),
+        });
 
         audioEngine.refreshConnections(newNodes, newEdges);
     },
 
     loadGraph: (nodes, edges) => {
+        const state = get();
         const normalizedNodes = migrateGraphNodes(nodes);
         const normalizedEdges = migrateGraphEdges(normalizedNodes, edges);
+        const historyByGraph = state.activeGraphId
+            ? clearHistoryForGraphState(state.historyByGraph, state.activeGraphId)
+            : state.historyByGraph;
+
         syncNodeIdCounter(normalizedNodes);
         audioEngine.stop();
 
-        set((state) => ({
+        set({
             nodes: normalizedNodes,
             edges: normalizedEdges,
             selectedNodeId: null,
@@ -1241,7 +1894,9 @@ export const useAudioGraphStore = create<AudioGraphState>((set, get) => ({
                         : graph
                 )
                 : state.graphs,
-        }));
+            historyByGraph,
+            ...getHistoryAvailability(historyByGraph, state.activeGraphId),
+        });
 
         audioEngine.refreshConnections(normalizedNodes, normalizedEdges);
     },
@@ -1249,7 +1904,7 @@ export const useAudioGraphStore = create<AudioGraphState>((set, get) => ({
     setPlaying: (playing) => {
         const outputNode = get().nodes.find((n) => (n.data as AudioNodeData).type === 'output');
         if (outputNode) {
-            get().updateNodeData(outputNode.id, { playing });
+            get().updateNodeData(outputNode.id, { playing }, { history: 'skip' });
         }
     },
 
@@ -1260,3 +1915,13 @@ export const useAudioGraphStore = create<AudioGraphState>((set, get) => ({
         }
     },
 }));
+
+function scheduleHistoryGroupFinalization(graphId: string, mergeKey: string) {
+    clearHistoryGroupTimer(graphId);
+    historyGroupTimers.set(
+        graphId,
+        setTimeout(() => {
+            useAudioGraphStore.getState().finalizeHistoryGroup(graphId, mergeKey);
+        }, HISTORY_GROUP_DELAY_MS)
+    );
+}

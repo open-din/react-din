@@ -731,7 +731,7 @@ describe('editor node UIs', () => {
                         lastVelocity: 0.81,
                     }),
                 ],
-            }));
+            }), expect.objectContaining({ history: 'skip' }));
         });
         applyLatestNodePatch();
 
@@ -769,7 +769,7 @@ describe('editor node UIs', () => {
                     expect.objectContaining({ mappingId: 'usb-keys:2' }),
                     expect.objectContaining({ mappingId: 'rack-keys:5' }),
                 ]),
-            }));
+            }), expect.objectContaining({ history: 'skip' }));
         });
         applyLatestNodePatch();
 
@@ -814,11 +814,6 @@ describe('editor node UIs', () => {
 
         expect(screen.getByText('Active / Connected')).toBeInTheDocument();
         expect(screen.getAllByText('Rack Keys / Ch 5').length).toBeGreaterThan(0);
-        expect(audioEngine.updateNode).toHaveBeenCalledWith('midi-note-1', expect.objectContaining({
-            inputId: 'rack-keys',
-            channel: 5,
-            activeMappingId: 'rack-keys:5',
-        }));
     });
 
     it('learns MIDI CC input and renders live sync state', async () => {

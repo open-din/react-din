@@ -184,6 +184,18 @@ const CONTROL_EDGE_STYLE = { stroke: '#4488ff', strokeWidth: 2, strokeDasharray:
 const TRIGGER_EDGE_STYLE = { stroke: '#ff4466', strokeWidth: 2, strokeDasharray: '6,4' };
 
 const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
+const isMacPlatform = () => {
+    const platform = (navigator as Navigator & { userAgentData?: { platform?: string } }).userAgentData?.platform
+        ?? navigator.platform
+        ?? navigator.userAgent
+        ?? '';
+    return /mac|iphone|ipad|ipod/i.test(platform);
+};
+const isEditableTarget = (target: EventTarget | null) => {
+    if (!(target instanceof HTMLElement)) return false;
+    const editable = target.closest('input, textarea, select, [contenteditable="true"]');
+    return Boolean(editable) || target.isContentEditable;
+};
 
 const AUTO_LAYOUT_PADDING_X = 48;
 const AUTO_LAYOUT_PADDING_Y = 56;
@@ -1100,6 +1112,10 @@ const EditorDemoContent: FC = () => {
     const removeGraph = useAudioGraphStore((s) => s.removeGraph);
     const setSelectedNode = useAudioGraphStore((s) => s.setSelectedNode);
     const updateNodeData = useAudioGraphStore((s) => s.updateNodeData);
+    const undo = useAudioGraphStore((s) => s.undo);
+    const redo = useAudioGraphStore((s) => s.redo);
+    const canUndo = useAudioGraphStore((s) => s.canUndo);
+    const canRedo = useAudioGraphStore((s) => s.canRedo);
     const isHydrated = useAudioGraphStore((s) => s.isHydrated);
     const setHydrated = useAudioGraphStore((s) => s.setHydrated);
 
@@ -1203,6 +1219,34 @@ const EditorDemoContent: FC = () => {
         window.addEventListener('resize', onResize);
         return () => window.removeEventListener('resize', onResize);
     }, []);
+
+    useEffect(() => {
+        const handleKeyDown = (event: KeyboardEvent) => {
+            if (event.defaultPrevented || event.altKey || event.shiftKey) return;
+            if (isEditableTarget(event.target)) return;
+
+            const isMac = isMacPlatform();
+            const modifierPressed = isMac ? event.metaKey : event.ctrlKey;
+            if (!modifierPressed) return;
+            if (!isMac && event.metaKey) return;
+            if (isMac && event.ctrlKey) return;
+
+            const key = event.key.toLowerCase();
+            if (key === 'z' && canUndo) {
+                event.preventDefault();
+                undo();
+                return;
+            }
+
+            if (key === 'y' && canRedo) {
+                event.preventDefault();
+                redo();
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [canRedo, canUndo, redo, undo]);
 
     useEffect(() => {
         const refreshLibraryAssets = () => {
@@ -1311,7 +1355,7 @@ const EditorDemoContent: FC = () => {
                     const url = await getAssetObjectUrl(sampler.sampleId).catch(() => null);
                     if (!url || cancelled) continue;
 
-                    updateNodeData(node.id, { src: url, loaded: true });
+                    updateNodeData(node.id, { src: url, loaded: true }, { history: 'skip' });
                     audioEngine.loadSamplerBuffer(node.id, url);
                     continue;
                 }
@@ -1322,7 +1366,7 @@ const EditorDemoContent: FC = () => {
                 if (convolver.impulseId && !convolver.impulseSrc) {
                     const url = await getAssetObjectUrl(convolver.impulseId).catch(() => null);
                     if (!url || cancelled) continue;
-                    updateNodeData(node.id, { impulseSrc: url });
+                    updateNodeData(node.id, { impulseSrc: url }, { history: 'skip' });
                     continue;
                 }
 
@@ -1341,7 +1385,7 @@ const EditorDemoContent: FC = () => {
                         impulseId: asset.id,
                         impulseSrc: objectUrl,
                         impulseFileName: asset.name,
-                    });
+                    }, { history: 'skip' });
                 }
             }
         };

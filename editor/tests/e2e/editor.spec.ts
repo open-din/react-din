@@ -94,3 +94,20 @@ test('shows compatible handles during a drag and adds a connected node from the 
     await expect(page.locator('.react-flow__node').filter({ hasText: 'Filter' })).toHaveCount(1);
     await expect(page.locator('.react-flow__edge')).toHaveCount(3);
 });
+
+test('supports undo and redo keyboard shortcuts for graph edits', async ({ page }) => {
+    await page.goto('/');
+
+    const graphNameInput = page.getByPlaceholder('Graph name');
+    await expect(graphNameInput).toHaveValue('Graph 1');
+
+    await graphNameInput.fill('Bass Lab');
+    await graphNameInput.press('Enter');
+    await expect(graphNameInput).toHaveValue('Bass Lab');
+
+    await page.keyboard.press('Control+Z');
+    await expect(graphNameInput).toHaveValue('Graph 1');
+
+    await page.keyboard.press('Control+Y');
+    await expect(graphNameInput).toHaveValue('Bass Lab');
+});
