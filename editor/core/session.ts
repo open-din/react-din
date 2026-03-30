@@ -1,8 +1,10 @@
 import type { MidiRuntimeSnapshot } from '../../src/midi';
+import type { ProjectManifest, ProjectWindowKind } from '../project';
 import type { AudioNodeData, GraphDocument } from '../ui/editor/store';
 import type {
     EditorAudioStatus,
     EditorMidiStatus,
+    EditorProjectStatus,
     EditorSessionState,
 } from './types';
 
@@ -37,7 +39,21 @@ export function buildEditorAudioStatus(
     };
 }
 
+export function buildEditorProjectStatus(args: {
+    project?: Pick<ProjectManifest, 'id' | 'name' | 'storageKind'> | null;
+    windowKind?: ProjectWindowKind;
+}): EditorProjectStatus {
+    return {
+        id: args.project?.id ?? null,
+        name: args.project?.name ?? null,
+        storageKind: args.project?.storageKind ?? null,
+        windowKind: args.windowKind ?? 'launcher',
+    };
+}
+
 export function buildEditorSessionState(args: {
+    project?: Pick<ProjectManifest, 'id' | 'name' | 'storageKind'> | null;
+    windowKind?: ProjectWindowKind;
     graphs: GraphDocument[];
     activeGraphId: string | null;
     selectedNodeId?: string | null;
@@ -45,6 +61,10 @@ export function buildEditorSessionState(args: {
     midiSnapshot: MidiRuntimeSnapshot;
 }): EditorSessionState {
     return {
+        project: buildEditorProjectStatus({
+            project: args.project,
+            windowKind: args.windowKind,
+        }),
         graphs: args.graphs,
         activeGraphId: args.activeGraphId,
         selectedNodeId: args.selectedNodeId ?? null,
@@ -58,6 +78,8 @@ export function createEmptyEditorSessionState(
     midiSnapshot: MidiRuntimeSnapshot,
 ): EditorSessionState {
     return buildEditorSessionState({
+        project: null,
+        windowKind: 'launcher',
         graphs: [],
         activeGraphId: null,
         selectedNodeId: null,

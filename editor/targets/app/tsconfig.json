@@ -1,14 +1,14 @@
 {
   "compilerOptions": {
     "target": "ES2022",
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
     "types": ["node"],
     "strict": true,
     "skipLibCheck": true,
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
-    "rootDir": ".",
+    "rootDir": "../../..",
     "outDir": "../../dist/app/main"
   },
   "include": ["main.ts", "preload.ts", "electron-shim.d.ts"]

@@ -36,7 +36,11 @@ export const SamplerNode: React.FC<NodeProps<Node<SamplerNodeData>>> = memo(({ i
         return libraryAssets.filter((asset) => asset.name.toLowerCase().includes(query));
     }, [libraryAssets, libraryQuery]);
 
-    const applyAssetSelection = useCallback(async (assetId: string, fallbackName?: string) => {
+    const applyAssetSelection = useCallback(async (
+        assetId: string,
+        fallbackName?: string,
+        uploadedAsset?: AudioLibraryAsset,
+    ) => {
         if (!assetId) {
             updateNodeData(id, {
                 src: '',
@@ -56,12 +60,12 @@ export const SamplerNode: React.FC<NodeProps<Node<SamplerNodeData>>> = memo(({ i
             return;
         }
 
-        const asset = libraryAssets.find((entry) => entry.id === assetId);
+        const asset = uploadedAsset ?? libraryAssets.find((entry) => entry.id === assetId);
         updateNodeData(id, {
             src: objectUrl,
-            assetPath: externalAssetPath || (asset?.name ? `/samples/${asset.name}` : undefined),
+            assetPath: asset?.relativePath || externalAssetPath || (asset?.name ? `samples/${asset.name}` : undefined),
             sampleId: assetId,
-            fileName: asset?.name || fallbackName || data.fileName || 'Cached sample',
+            fileName: asset?.fileName || asset?.name || fallbackName || data.fileName || 'Cached sample',
             loaded: true,
         });
         setLibraryError(null);
@@ -72,8 +76,8 @@ export const SamplerNode: React.FC<NodeProps<Node<SamplerNodeData>>> = memo(({ i
         const file = e.target.files?.[0];
         if (!file) return;
 
-        addAssetFromFile(file)
-            .then((asset) => applyAssetSelection(asset.id, asset.name))
+        addAssetFromFile(file, { kind: 'sample' })
+            .then((asset) => applyAssetSelection(asset.id, asset.name, asset))
             .catch(() => {
                 setLibraryError('Failed to cache file.');
                 updateNodeData(id, { loaded: false });

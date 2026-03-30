@@ -10,6 +10,12 @@ import type { EditorSessionState } from '../../../core';
 
 function createEmptyState(): EditorSessionState {
     return {
+        project: {
+            id: null,
+            name: null,
+            storageKind: null,
+            windowKind: 'launcher',
+        },
         graphs: [],
         activeGraphId: null,
         selectedNodeId: null,

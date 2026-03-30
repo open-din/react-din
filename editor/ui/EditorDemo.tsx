@@ -183,6 +183,17 @@ const AUDIO_EDGE_STYLE = { stroke: '#44cc44', strokeWidth: 3 };
 const CONTROL_EDGE_STYLE = { stroke: '#4488ff', strokeWidth: 2, strokeDasharray: '5,5' };
 const TRIGGER_EDGE_STYLE = { stroke: '#ff4466', strokeWidth: 2, strokeDasharray: '6,4' };
 
+export interface EditorDemoProjectMeta {
+    id: string;
+    name: string;
+    accentColor: string;
+    onRevealProject?: () => void | Promise<void>;
+}
+
+export interface EditorDemoProps {
+    project?: EditorDemoProjectMeta;
+}
+
 const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
 const isMacPlatform = () => {
     const platform = (navigator as Navigator & { userAgentData?: { platform?: string } }).userAgentData?.platform
@@ -1095,7 +1106,7 @@ const NodePalette: FC<{ compact?: boolean }> = ({ compact = false }) => {
     );
 };
 
-const EditorDemoContent: FC = () => {
+const EditorDemoContent: FC<EditorDemoProps> = ({ project }) => {
     const nodes = useAudioGraphStore((s) => s.nodes);
     const edges = useAudioGraphStore((s) => s.edges);
     const graphs = useAudioGraphStore((s) => s.graphs);
@@ -1163,6 +1174,10 @@ const EditorDemoContent: FC = () => {
         if (!query) return libraryAssets;
         return libraryAssets.filter((asset) => asset.name.toLowerCase().includes(query));
     }, [libraryAssets, librarySearch]);
+    const orderedGraphs = useMemo(
+        () => [...graphs].sort((left, right) => (left.order ?? 0) - (right.order ?? 0) || left.name.localeCompare(right.name)),
+        [graphs],
+    );
 
     const graphDiagnostics = (() => {
         const nodeById = new Map(nodes.map((node) => [node.id, node]));
@@ -1898,6 +1913,84 @@ const EditorDemoContent: FC = () => {
             style={{ gridTemplateColumns: `${leftPanelWidth}px minmax(0, 1fr) ${rightPanelWidth}px` }}
         >
             <aside className="ui-panel ui-panel-left flex h-full min-h-0 flex-col border-r border-[var(--panel-border)]">
+                {!isPaletteCollapsed && project && (
+                    <div className="border-b border-[var(--panel-border)] px-3 py-3">
+                        <div className="rounded-[18px] border border-[var(--panel-border)] bg-[var(--panel-muted)] px-3 py-3">
+                            <div className="flex items-start justify-between gap-3">
+                                <div className="min-w-0">
+                                    <div className="flex items-center gap-2">
+                                        <span
+                                            className="inline-block h-3 w-3 rounded-full"
+                                            style={{ backgroundColor: project.accentColor }}
+                                        />
+                                        <span className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[var(--text-subtle)]">
+                                            Project
+                                        </span>
+                                    </div>
+                                    <div className="mt-2 truncate text-[15px] font-semibold text-[var(--text)]">
+                                        {project.name}
+                                    </div>
+                                    <div className="mt-2 flex flex-wrap gap-2 text-[10px] text-[var(--text-subtle)]">
+                                        <span className="rounded-full border border-[var(--panel-border)] px-2 py-0.5">
+                                            {orderedGraphs.length} graphs
+                                        </span>
+                                        <span className="rounded-full border border-[var(--panel-border)] px-2 py-0.5">
+                                            {libraryAssets.length} assets
+                                        </span>
+                                    </div>
+                                </div>
+                                {project.onRevealProject && (
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            void project.onRevealProject?.();
+                                        }}
+                                        className="rounded-xl border border-[var(--panel-border)] px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--text-subtle)] transition hover:border-[var(--accent)] hover:text-[var(--text)]"
+                                        title="Reveal project folder"
+                                    >
+                                        Reveal
+                                    </button>
+                                )}
+                            </div>
+
+                            <div className="mt-4 flex items-center justify-between gap-3">
+                                <span className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--text-subtle)]">
+                                    Graphs
+                                </span>
+                                <button
+                                    type="button"
+                                    onClick={() => createGraph()}
+                                    className="rounded-full border border-dashed border-[var(--panel-border)] px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--text)] transition hover:border-[var(--accent)] hover:text-[var(--accent)]"
+                                    title="Create graph"
+                                >
+                                    New
+                                </button>
+                            </div>
+
+                            <div className="mt-3 flex max-h-[220px] flex-col gap-2 overflow-y-auto pr-1">
+                                {orderedGraphs.map((graph) => (
+                                    <button
+                                        key={graph.id}
+                                        type="button"
+                                        onClick={() => setActiveGraph(graph.id)}
+                                        className={`rounded-2xl border px-3 py-2 text-left transition ${
+                                            graph.id === activeGraphId
+                                                ? 'border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--text)]'
+                                                : 'border-[var(--panel-border)] bg-[var(--panel-bg)] text-[var(--text-subtle)] hover:border-[var(--accent)] hover:text-[var(--text)]'
+                                        }`}
+                                        title={graph.name}
+                                    >
+                                        <div className="truncate text-[12px] font-semibold">{graph.name}</div>
+                                        <div className="mt-1 text-[10px] uppercase tracking-[0.18em] text-[var(--text-subtle)]">
+                                            Graph {(graph.order ?? 0) + 1}
+                                        </div>
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 <div className="ui-panel-header border-b border-[var(--panel-border)] px-3 py-2">
                     <span className="text-[10px] font-semibold uppercase tracking-[0.32em] text-[var(--text-subtle)]">
                         Nodes
@@ -2330,27 +2423,28 @@ const EditorDemoContent: FC = () => {
                         onChange={handleImportPatch}
                         style={{ display: 'none' }}
                     />
-                    <div className="ui-graph-tabs flex items-center gap-2 overflow-x-auto pr-2">
-                        {graphs.map((graph) => (
-                            <button
-                                key={graph.id}
-                                className={`${tabBase} ${graph.id === activeGraphId
-                                    ? 'border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--text)] shadow-[inset_0_0_0_1px_rgba(104,165,255,0.35)]'
-                                    : 'border-transparent bg-[var(--panel-muted)] text-[var(--text-muted)] hover:border-[var(--panel-border)] hover:text-[var(--text)]'
-                                }`}
-                                onClick={() => setActiveGraph(graph.id)}
-                                title={graph.name}
-                            >
-                                {graph.name}
-                            </button>
-                        ))}
-                        <button
-                            className="h-8 w-8 rounded-full border border-dashed border-[var(--panel-border)] text-[15px] leading-none text-[var(--text-muted)] transition hover:border-[var(--accent)] hover:text-[var(--text)]"
-                            onClick={() => createGraph()}
-                            title="New graph"
-                        >
-                            +
-                        </button>
+                    <div className="flex min-w-0 items-center gap-3">
+                        {project ? (
+                            <div className="flex min-w-0 items-center gap-3 rounded-[18px] border border-[var(--panel-border)] bg-[var(--panel-muted)] px-3 py-2">
+                                <span
+                                    className="inline-block h-3 w-3 shrink-0 rounded-full"
+                                    style={{ backgroundColor: project.accentColor }}
+                                />
+                                <div className="min-w-0">
+                                    <div className="truncate text-[13px] font-semibold text-[var(--text)]">{project.name}</div>
+                                    <div className="truncate text-[10px] uppercase tracking-[0.18em] text-[var(--text-subtle)]">
+                                        Active graph: {activeGraphName}
+                                    </div>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="rounded-[18px] border border-[var(--panel-border)] bg-[var(--panel-muted)] px-3 py-2">
+                                <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--text-subtle)]">
+                                    Workspace
+                                </div>
+                                <div className="text-[13px] font-semibold text-[var(--text)]">{activeGraphName}</div>
+                            </div>
+                        )}
                     </div>
                     <div className="ui-topbar-actions flex flex-wrap items-center justify-end gap-2">
                         <McpStatusBadge />
@@ -2690,9 +2784,9 @@ const EditorDemoContent: FC = () => {
     );
 };
 
-export const EditorDemo: FC = () => (
+export const EditorDemo: FC<EditorDemoProps> = ({ project }) => (
     <MidiProvider runtime={editorMidiRuntime}>
-        <EditorDemoContent />
+        <EditorDemoContent project={project} />
     </MidiProvider>
 );
 

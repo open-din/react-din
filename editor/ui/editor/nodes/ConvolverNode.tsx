@@ -37,7 +37,11 @@ const ConvolverNode = memo(({ id, data, selected }: NodeProps) => {
         audioEngine.updateNode(id, payload);
     }, [id, updateNodeData]);
 
-    const applyImpulseAsset = useCallback(async (assetId: string, fallbackName?: string) => {
+    const applyImpulseAsset = useCallback(async (
+        assetId: string,
+        fallbackName?: string,
+        uploadedAsset?: AudioLibraryAsset,
+    ) => {
         if (!assetId) {
             setUploadError(null);
             applyImpulseUpdate({
@@ -55,13 +59,13 @@ const ConvolverNode = memo(({ id, data, selected }: NodeProps) => {
             return;
         }
 
-        const asset = libraryAssets.find((entry) => entry.id === assetId);
+        const asset = uploadedAsset ?? libraryAssets.find((entry) => entry.id === assetId);
         setUploadError(null);
         applyImpulseUpdate({
-            assetPath: externalAssetPath || (asset?.name ? `/impulses/${asset.name}` : undefined),
+            assetPath: asset?.relativePath || externalAssetPath || (asset?.name ? `impulses/${asset.name}` : undefined),
             impulseId: assetId,
             impulseSrc: objectUrl,
-            impulseFileName: asset?.name || fallbackName || convolverData.impulseFileName || 'Impulse',
+            impulseFileName: asset?.fileName || asset?.name || fallbackName || convolverData.impulseFileName || 'Impulse',
         });
     }, [applyImpulseUpdate, convolverData.impulseFileName, libraryAssets]);
 
@@ -78,8 +82,8 @@ const ConvolverNode = memo(({ id, data, selected }: NodeProps) => {
         if (!file) return;
 
         setUploadError(null);
-        addAssetFromFile(file)
-            .then((asset) => applyImpulseAsset(asset.id, asset.name))
+        addAssetFromFile(file, { kind: 'impulse' })
+            .then((asset) => applyImpulseAsset(asset.id, asset.name, asset))
             .catch(() => {
                 setUploadError('Failed to cache audio file.');
             })

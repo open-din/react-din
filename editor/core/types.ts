@@ -1,6 +1,7 @@
 import type { Edge, Node, XYPosition } from '@xyflow/react';
 import type { MidiRuntimeSnapshot } from '../../src/midi';
 import type { PatchDocument } from '../../src/patch';
+import type { ProjectStorageKind, ProjectWindowKind } from '../project';
 import type { AudioNodeData, GraphDocument } from '../ui/editor/store';
 import type { EditorNodeType } from '../ui/editor/nodeCatalog';
 
@@ -19,7 +20,15 @@ export interface EditorAudioStatus {
     playingGraphIds: string[];
 }
 
+export interface EditorProjectStatus {
+    id: string | null;
+    name: string | null;
+    storageKind: ProjectStorageKind | null;
+    windowKind: ProjectWindowKind;
+}
+
 export interface EditorSessionState {
+    project: EditorProjectStatus;
     graphs: GraphDocument[];
     activeGraphId: string | null;
     selectedNodeId: string | null;
@@ -48,6 +57,7 @@ export interface EditorSessionSummary {
     appVersion: string;
     connectedAt: number;
     lastSeenAt: number;
+    project: EditorProjectStatus;
     activeGraphId: string | null;
     graphCount: number;
     readOnly: boolean;

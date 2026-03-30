@@ -1,4 +1,4 @@
-import type { MidiTransportSyncMode, MidiValueFormat } from '../midi';
+import type { MidiTransportSyncMode, MidiValueFormat } from '../midi/types';
 import { ensureUniqueName, toSafeIdentifier } from './naming';
 import type {
     PatchConnection,

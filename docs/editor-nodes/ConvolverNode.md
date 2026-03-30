@@ -12,10 +12,11 @@ Load and apply impulse responses for UI reverb and spatial coloration using uplo
 
 ## Integration Notes
 - Keep async impulse loading behavior aligned across node UI, engine, and generated `Convolver` props.
-- Uploads create or reuse a global audio-library asset and persist only `impulseId` in stored graph documents.
+- Uploads create or reuse a project-scoped audio-library asset and persist the resolved project-relative `assetPath` for patch export.
 - Patch export keeps `assetPath` as the exchange contract and clears transient object URLs so the graph can round-trip through patch JSON.
 - Imported patch graphs keep unresolved `assetPath` references visible until a local library asset is relinked.
 - The node exposes a searchable library dropdown and can also consume assets managed in the bottom audio-library panel.
+- Selecting an impulse from the project library should preserve the library record path instead of synthesizing a separate global cache path.
 - Use with short IR files for low-latency UI feedback sounds.
 
 ## Failure Modes

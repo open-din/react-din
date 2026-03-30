@@ -60,6 +60,9 @@ const audioLibraryMock = vi.hoisted(() => ({
     addAssetFromFile: vi.fn(async (file: File) => ({
         id: `asset-${file.name}`,
         name: file.name,
+        fileName: file.name,
+        relativePath: file.name.includes('plate') ? `impulses/${file.name}` : `samples/${file.name}`,
+        kind: file.name.includes('plate') ? 'impulse' : 'sample',
         mimeType: file.type || 'audio/wav',
         size: file.size,
         createdAt: 1,
@@ -67,8 +70,8 @@ const audioLibraryMock = vi.hoisted(() => ({
     })),
     getAssetObjectUrl: vi.fn(async (assetId: string) => `blob:${assetId}`),
     listAssets: vi.fn(async () => ([
-        { id: 'asset-kick', name: 'kick.wav', mimeType: 'audio/wav', size: 256, createdAt: 1, updatedAt: 1 },
-        { id: 'asset-plate.wav', name: 'plate.wav', mimeType: 'audio/wav', size: 512, createdAt: 1, updatedAt: 1 },
+        { id: 'asset-kick', name: 'kick.wav', fileName: 'kick.wav', relativePath: 'samples/kick.wav', kind: 'sample', mimeType: 'audio/wav', size: 256, createdAt: 1, updatedAt: 1 },
+        { id: 'asset-plate.wav', name: 'plate.wav', fileName: 'plate.wav', relativePath: 'impulses/plate.wav', kind: 'impulse', mimeType: 'audio/wav', size: 512, createdAt: 1, updatedAt: 1 },
     ])),
     subscribeAssets: vi.fn(() => () => {}),
 }));
@@ -543,6 +546,7 @@ describe('editor node UIs', () => {
             expect(updateNodeData).toHaveBeenCalledWith(
                 'convolver-upload',
                 expect.objectContaining({
+                    assetPath: 'impulses/plate.wav',
                     impulseId: 'asset-plate.wav',
                     impulseFileName: 'plate.wav',
                     impulseSrc: 'blob:asset-plate.wav',
@@ -550,9 +554,14 @@ describe('editor node UIs', () => {
             );
         });
 
+        expect(audioLibraryMock.addAssetFromFile).toHaveBeenCalledWith(
+            expect.any(File),
+            { kind: 'impulse' },
+        );
         expect(audioEngine.updateNode).toHaveBeenCalledWith(
             'convolver-upload',
             expect.objectContaining({
+                assetPath: 'impulses/plate.wav',
                 impulseId: 'asset-plate.wav',
                 impulseFileName: 'plate.wav',
                 impulseSrc: 'blob:asset-plate.wav',
@@ -595,6 +604,7 @@ describe('editor node UIs', () => {
             expect(updateNodeData).toHaveBeenCalledWith(
                 'sampler-select',
                 expect.objectContaining({
+                    assetPath: 'samples/kick.wav',
                     sampleId: 'asset-kick',
                     src: 'blob:asset-kick',
                     fileName: 'kick.wav',

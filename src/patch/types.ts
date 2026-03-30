@@ -6,7 +6,7 @@ import type {
     MidiTransportSyncMode,
     MidiTransportSyncProps,
     MidiValueFormat,
-} from '../midi';
+} from '../midi/types';
 
 export interface PatchPosition {
     x: number;

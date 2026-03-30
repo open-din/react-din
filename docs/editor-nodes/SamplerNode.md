@@ -12,10 +12,10 @@ Load and trigger audio files directly from the editor.
 
 ## Integration Notes
 - Every numeric parameter exposes a dedicated target pin and uses connected-value mode when wired.
-- Uploads create or reuse a global audio-library asset in cache storage and persist only the `sampleId` in graph documents.
+- Uploads create or reuse a project-scoped audio-library asset and persist the resolved project-relative `assetPath` for patch export.
 - Patch export keeps `assetPath` as the external contract and clears transient object URLs so the graph can round-trip between editor and `importPatch(...)`.
 - Imported patch graphs keep unresolved `assetPath` references visible in the node UI until the sound designer or developer relinks a local library asset.
-- Keep cache IDs, object URLs, trigger semantics, and generated code semantics aligned across UI, storage, and engine loading.
+- Keep project asset ids, relative paths, object URLs, trigger semantics, and generated code semantics aligned across UI, storage, and engine loading.
 - The node exposes a searchable library dropdown and can also be populated from the bottom audio-library panel.
 - Use after a trigger-capable source or with manual playback from the node UI.
 

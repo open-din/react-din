@@ -11,6 +11,12 @@ import type { EditorSessionState } from '../../../core';
 
 function createState(name: string): EditorSessionState {
     return {
+        project: {
+            id: `${name}-project`,
+            name,
+            storageKind: 'browser-indexeddb',
+            windowKind: 'project',
+        },
         graphs: [{
             id: `${name}-graph`,
             name,

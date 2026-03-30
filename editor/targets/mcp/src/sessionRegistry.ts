@@ -73,6 +73,7 @@ export class SessionRegistry {
             appVersion: record.appVersion,
             connectedAt: record.connectedAt,
             lastSeenAt: record.lastSeenAt,
+            project: record.snapshot.project,
             activeGraphId: record.snapshot.activeGraphId,
             graphCount: record.snapshot.graphs.length,
             readOnly: record.readOnly,

@@ -25,11 +25,11 @@ import {
 } from './nodeHelpers';
 import type { EditorNodeType } from './nodeCatalog';
 import {
-    createDefaultOutputData,
     createEditorNode,
 } from './graphBuilders';
 import { normalizeUiTokensNodeData } from './uiTokens';
 import type { MidiTransportSyncMode, MidiValueFormat } from '../../../src/midi';
+import { createEditorGraphId, createInitialGraphDocument } from './defaultGraph';
 
 // ============================================================================
 // Audio Node Data Types
@@ -717,13 +717,6 @@ const deepClone = <T>(value: T): T => {
     return JSON.parse(JSON.stringify(value)) as T;
 };
 
-const createGraphId = () => {
-    if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
-        return crypto.randomUUID();
-    }
-    return `graph_${Date.now()}_${Math.random().toString(16).slice(2)}`;
-};
-
 const stopOutputNodes = (nodes: Node<AudioNodeData>[]) =>
     nodes.map((node) => {
         if (node.data.type !== 'output' && node.data.type !== 'transport') return node;
@@ -1046,45 +1039,7 @@ const syncNodePatchIntoHistory = (
     };
 };
 
-// Initial nodes - Horizontal layout
-const initialNodes: Node<AudioNodeData>[] = [
-    {
-        id: 'osc_1',
-        type: 'oscNode',
-        position: { x: 50, y: 150 },
-        dragHandle: '.node-header',
-        data: { type: 'osc', frequency: 440, detune: 0, waveform: 'sine', label: 'Oscillator' } as AudioNodeData,
-    },
-    {
-        id: 'gain_1',
-        type: 'gainNode',
-        position: { x: 300, y: 150 },
-        dragHandle: '.node-header',
-        data: { type: 'gain', gain: 0.5, label: 'Gain' } as AudioNodeData,
-    },
-    {
-        id: 'output_1',
-        type: 'outputNode',
-        position: { x: 520, y: 150 },
-        dragHandle: '.node-header',
-        data: createDefaultOutputData() as AudioNodeData,
-    },
-];
-
-const initialEdges: Edge[] = [
-    { id: 'e1-2', source: 'osc_1', target: 'gain_1', sourceHandle: 'out', targetHandle: 'in' },
-    { id: 'e2-3', source: 'gain_1', target: 'output_1', sourceHandle: 'out', targetHandle: 'in' },
-];
-
-const initialGraph: GraphDocument = {
-    id: createGraphId(),
-    name: 'Graph 1',
-    nodes: deepClone(initialNodes),
-    edges: deepClone(initialEdges),
-    createdAt: Date.now(),
-    updatedAt: Date.now(),
-    order: 0,
-};
+const initialGraph: GraphDocument = createInitialGraphDocument();
 
 const normalizeGraphDocument = (graph: GraphDocument, index: number, now: number): GraphDocument => {
     const nodes = migrateGraphNodes(graph.nodes);
@@ -1372,15 +1327,7 @@ export const useAudioGraphStore = create<AudioGraphState>((set, get) => ({
         const now = Date.now();
         const order = state.graphs.reduce((max, graph) => Math.max(max, graph.order ?? 0), -1) + 1;
 
-        const graph: GraphDocument = {
-            id: createGraphId(),
-            name: graphName,
-            nodes: deepClone(initialNodes),
-            edges: deepClone(initialEdges),
-            createdAt: now,
-            updatedAt: now,
-            order,
-        };
+        const graph: GraphDocument = createInitialGraphDocument(createEditorGraphId(), graphName, order);
         const normalizedGraph = normalizeGraphDocument(graph, order, now);
         const historyByGraph = state.activeGraphId
             ? finalizePendingHistoryGroup(state.historyByGraph, state.activeGraphId)
@@ -1457,15 +1404,11 @@ export const useAudioGraphStore = create<AudioGraphState>((set, get) => ({
 
         if (remaining.length === 0) {
             const now = Date.now();
-            const fallbackGraph: GraphDocument = {
-                id: createGraphId(),
-                name: normalizeGraphName('Graph 1'),
-                nodes: deepClone(initialNodes),
-                edges: deepClone(initialEdges),
-                createdAt: now,
-                updatedAt: now,
-                order: 0,
-            };
+            const fallbackGraph: GraphDocument = createInitialGraphDocument(
+                createEditorGraphId(),
+                normalizeGraphName('Graph 1'),
+                0,
+            );
             const normalizedFallbackGraph = normalizeGraphDocument(fallbackGraph, 0, now);
 
             syncNodeIdCounter(normalizedFallbackGraph.nodes);

@@ -5,6 +5,7 @@ import { editorMidiRuntime } from '../ui/editor/midiRuntime';
 import { generateCode } from '../ui/editor/CodeGenerator';
 import { addAssetFromBlob, getAssetObjectUrl, listAssets } from '../ui/editor/audioLibrary';
 import { useAudioGraphStore } from '../ui/editor/store';
+import { getActiveProjectController, getProjectRepository } from '../project';
 import {
     applyEditorOperations,
     buildEditorSessionState,
@@ -67,7 +68,11 @@ function getOrCreateSessionId(): string {
 
 function buildCurrentSessionState(): EditorSessionState {
     const store = useAudioGraphStore.getState();
+    const activeProject = getActiveProjectController()?.project ?? null;
+    const repository = getProjectRepository();
     return buildEditorSessionState({
+        project: activeProject,
+        windowKind: repository.windowKind,
         graphs: store.graphs,
         activeGraphId: store.activeGraphId,
         selectedNodeId: store.selectedNodeId,
