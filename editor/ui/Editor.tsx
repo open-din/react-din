@@ -19,7 +19,8 @@ import ConnectionAssistMenu from './editor/ConnectionAssistMenu';
 import { MidiProvider } from '../../src/midi';
 import { migratePatchDocument, patchToGraphDocument, type PatchDocument } from '../../src/patch';
 
-import { useAudioGraphStore, type AudioNodeData } from './editor/store';
+import { useAudioGraphStore } from './editor/store';
+import type { AudioNodeData, ConnectionAssistStart } from './editor/types';
 import {
     OscNode, GainNode, FilterNode, OutputNode, NoiseNode, DelayNode, ReverbNode,
     CompressorNode, PhaserNode, FlangerNode, TremoloNode, EQ3Node, DistortionNode,
@@ -36,7 +37,6 @@ import { subscribeAssets, listAssets } from './editor/audioLibrary';
 import { audioEngine } from './editor/AudioEngine';
 import {
     getCompatibleNodeSuggestions,
-    type ConnectionAssistStart,
     type NodeSuggestion,
 } from './editor/nodeHelpers';
 import { editorMidiRuntime } from './editor/midiRuntime';
@@ -420,16 +420,12 @@ const EditorContent: FC<EditorProps> = ({ project }) => {
         });
     }, []);
 
-    const onConnectEnd = useCallback(() => {
-        // We delay hiding to allow the menu to capture clicks if needed
-        setTimeout(() => {
-            const query = useAudioGraphStore.getState().assistQuery;
-            if (query === '') {
-                setConnectionAssist(null);
-                setAssistPosition(null);
-            }
-        }, 200);
-    }, [setConnectionAssist, setAssistPosition]);
+    const onConnectEnd = useCallback((event: any) => {
+        const clientPos = getClientPosition(event);
+        if (clientPos) {
+            setAssistPosition(clientPos);
+        }
+    }, [setAssistPosition]);
 
     const assistSuggestions = useMemo(() => {
         if (!connectionAssist) return [];
@@ -508,7 +504,11 @@ const EditorContent: FC<EditorProps> = ({ project }) => {
                             edges={edges}
                             onNodesChange={onNodesChange}
                             onEdgesChange={onEdgesChange}
-                            onConnect={onConnect}
+                            onConnect={(params) => {
+                                onConnect(params);
+                                setConnectionAssist(null);
+                                setAssistPosition(null);
+                            }}
                             onConnectStart={onConnectStart}
                             onConnectEnd={onConnectEnd}
                             onInit={setReactFlowInstance}

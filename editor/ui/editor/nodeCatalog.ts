@@ -5,7 +5,7 @@ import type {
     MathNodeData,
     SwitchNodeData,
     MatrixMixerNodeData,
-} from './store';
+} from './types';
 import { getInputParamHandleId } from './handleIds';
 
 export type EditorNodeType = AudioNodeData['type'];

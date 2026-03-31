@@ -2,16 +2,16 @@ import { defineConfig } from 'vitest/config';
 import { resolve } from 'node:path';
 
 export default defineConfig({
-    root: __dirname,
     resolve: {
-        alias: {
-            '@din/react': resolve(__dirname, '../src/index.ts'),
-        },
+        alias: [
+            { find: /.*\/AudioEngine$/, replacement: resolve(__dirname, './ui/editor/AudioEngine.stub.ts') },
+            { find: '@din/react', replacement: resolve(__dirname, '../src/index.ts') },
+        ],
     },
     test: {
         environment: 'jsdom',
         globals: true,
-        include: ['tests/unit/**/*.spec.ts', 'tests/unit/**/*.spec.tsx'],
+        include: ['editor/tests/unit/**/*.spec.ts', 'editor/tests/unit/**/*.spec.tsx'],
         setupFiles: [resolve(__dirname, './vitest.setup.ts')],
     },
 });

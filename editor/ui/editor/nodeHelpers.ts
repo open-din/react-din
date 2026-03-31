@@ -7,7 +7,7 @@ import type {
     MidiNoteNodeData,
     TransportNodeData,
     UiTokensNodeData,
-} from './store';
+} from './types';
 import {
     INPUT_PARAM_HANDLE_PREFIX,
     getInputParamHandleId,

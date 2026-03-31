@@ -1,9 +1,9 @@
 import { memo } from 'react';
 import { Position, type NodeProps } from '@xyflow/react';
+import { CustomHandle } from '../components/CustomHandle';
 import { useAudioGraphStore, type GainNodeData } from '../store';
 import { audioEngine } from '../AudioEngine';
 import { formatConnectedValue, useTargetHandleConnection } from '../paramConnections';
-import { CustomHandle } from '../components/CustomHandle';
 
 const GainNode = memo(({ id, data, selected }: NodeProps) => {
     const gainData = data as GainNodeData;
@@ -16,48 +16,47 @@ const GainNode = memo(({ id, data, selected }: NodeProps) => {
     };
 
     return (
-        <div className={`audio-node gain-node ${selected ? 'selected' : ''}`}>
-            <div className="node-header" style={{ justifyContent: 'space-between', position: 'relative' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <CustomHandle type="target" position={Position.Left} id="in" className="handle handle-in handle-audio" style={{ left: '0px' }} />
-                    <span className="node-icon">◧</span>
-                    <span className="node-title">Gain</span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center' }}>
-                    <span className="handle-label-static" style={{ fontSize: '9px', color: '#888', marginRight: '8px', textTransform: 'uppercase' }}>Out</span>
-                    <CustomHandle type="source" position={Position.Right} id="out" className="handle handle-out handle-audio" style={{ right: '0px' }} />
-                </div>
+        <div className={`node gain-node ${selected ? 'selected' : ''}`}>
+            <div className="node-header">
+                <span className="node-label">Gain</span>
             </div>
             <div className="node-content">
-                <div className="node-control">
-                    <label>Level</label>
-                    {gainConnection.connected ? (
-                        <div className="node-connected-value">
-                            {formatConnectedValue(gainConnection.value, (value) => `${Math.round(value * 100)}%`)}
-                        </div>
-                    ) : (
-                        <input
-                            type="range"
-                            min="0"
-                            max="1"
-                            step="0.01"
-                            value={gainData.gain}
-                            onChange={(e) => handleGainChange(Number(e.target.value))}
-                            title="Gain level"
-                        />
-                    )}
-                    {!gainConnection.connected && <span className="value">{Math.round(gainData.gain * 100)}%</span>}
-                    <CustomHandle
-                        type="target"
-                        position={Position.Left}
-                        id="gain"
-                        className="handle handle-in handle-param"
-                    />
+                <div className="parameter">
+                    <label>Gain</label>
+                    <div className="param-value">
+                        {gainConnection ? formatConnectedValue(gainConnection.value) : (
+                            <input
+                                type="number"
+                                value={gainData.gain}
+                                onChange={(e) => handleGainChange(Number(e.target.value))}
+                                step="0.01"
+                            />
+                        )}
+                    </div>
                 </div>
             </div>
+
+            <CustomHandle
+                type="target"
+                position={Position.Left}
+                id="in"
+                style={{ top: '25%' }}
+            />
+            <CustomHandle
+                type="target"
+                position={Position.Left}
+                id="gain"
+                style={{ top: '75%' }}
+            />
+            <CustomHandle
+                type="source"
+                position={Position.Right}
+                id="out"
+            />
         </div>
     );
 });
 
 GainNode.displayName = 'GainNode';
 export default GainNode;
+

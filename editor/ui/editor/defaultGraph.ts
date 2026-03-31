@@ -1,6 +1,6 @@
 import type { Edge, Node } from '@xyflow/react';
 import { createDefaultOutputData } from './graphBuilders';
-import type { AudioNodeData, GraphDocument } from './store';
+import type { AudioNodeData, GraphDocument } from './types';
 
 export function createEditorGraphId(): string {
     if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {

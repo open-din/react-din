@@ -10,7 +10,7 @@ import type {
     OutputNodeData,
     TransportNodeData,
     UiTokensNodeData,
-} from './store';
+} from './types';
 import type { EditorNodeType } from './nodeCatalog';
 import { createUiTokenParams, normalizeUiTokensNodeData } from './uiTokens';
 

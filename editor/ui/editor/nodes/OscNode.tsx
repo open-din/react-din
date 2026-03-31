@@ -1,9 +1,11 @@
 import { memo } from 'react';
 import { Position, type NodeProps } from '@xyflow/react';
+import { CustomHandle } from '../components/CustomHandle';
 import { useAudioGraphStore, type OscNodeData } from '../store';
 import { audioEngine } from '../AudioEngine';
 import { formatConnectedValue, useTargetHandleConnection } from '../paramConnections';
-import { CustomHandle } from '../components/CustomHandle';
+
+type OscillatorType = 'sine' | 'square' | 'sawtooth' | 'triangle';
 
 const waveforms: OscillatorType[] = ['sine', 'square', 'sawtooth', 'triangle'];
 
@@ -28,84 +30,86 @@ const OscNode = memo(({ id, data, selected }: NodeProps) => {
         audioEngine.updateNode(id, { waveform: value });
     };
 
+    const handleLabelChange = (value: string) => {
+        updateNodeData(id, { label: value });
+    };
+
     return (
-        <div className={`audio-node osc-node ${selected ? 'selected' : ''}`}>
-            <div className="node-header" style={{ justifyContent: 'space-between', position: 'relative' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span className="node-icon">◐</span>
-                    <span className="node-title">Oscillator</span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center' }}>
-                    <span className="handle-label-static" style={{ fontSize: '9px', color: '#888', marginRight: '8px', textTransform: 'uppercase' }}>Audio Out</span>
-                    <CustomHandle type="source" position={Position.Right} id="out" className="handle handle-out handle-audio" />
-                </div>
+        <div className={`node osc-node ${selected ? 'selected' : ''}`}>
+            <div className="node-header">
+                <input
+                    type="text"
+                    value={oscData.label || 'Oscillator'}
+                    onChange={(e) => handleLabelChange(e.target.value)}
+                    className="node-label-input"
+                />
             </div>
+
             <div className="node-content">
-                <div className="node-control">
-                    <label>Type</label>
+                <div className="parameter">
+                    <label>Waveform</label>
                     <select
                         value={oscData.waveform}
                         onChange={(e) => handleWaveformChange(e.target.value as OscillatorType)}
-                        title="Waveform type"
                     >
-                        {waveforms.map((w) => (
-                            <option key={w} value={w}>{w}</option>
+                        {waveforms.map((type) => (
+                            <option key={type} value={type}>
+                                {type}
+                            </option>
                         ))}
                     </select>
                 </div>
-                <div className="node-control">
-                    <label>Freq</label>
-                    {frequencyConnection.connected ? (
-                        <div className="node-connected-value">
-                            {formatConnectedValue(frequencyConnection.value, (value) => `${Math.round(value)} Hz`)}
-                        </div>
-                    ) : (
-                        <input
-                            type="range"
-                            min="20"
-                            max="2000"
-                            value={oscData.frequency}
-                            onChange={(e) => handleFrequencyChange(Number(e.target.value))}
-                            title="Frequency in Hz"
-                        />
-                    )}
-                    {!frequencyConnection.connected && <span className="value">{Math.round(oscData.frequency)} Hz</span>}
-                    <CustomHandle
-                        type="target"
-                        position={Position.Left}
-                        id="frequency"
-                        className="handle handle-in handle-param"
-                    />
+
+                <div className="parameter">
+                    <label>Frequency (Hz)</label>
+                    <div className="param-value">
+                        {frequencyConnection ? formatConnectedValue(frequencyConnection.value) : (
+                            <input
+                                type="number"
+                                value={oscData.frequency}
+                                onChange={(e) => handleFrequencyChange(Number(e.target.value))}
+                                step="1"
+                            />
+                        )}
+                    </div>
                 </div>
-                <div className="node-control">
-                    <label>Detune</label>
-                    {detuneConnection.connected ? (
-                        <div className="node-connected-value">
-                            {formatConnectedValue(detuneConnection.value, (value) => `${Math.round(value)} c`)}
-                        </div>
-                    ) : (
-                        <input
-                            type="range"
-                            min="-1200"
-                            max="1200"
-                            step="10"
-                            value={oscData.detune}
-                            onChange={(e) => handleDetuneChange(Number(e.target.value))}
-                            title="Detune in cents"
-                        />
-                    )}
-                    {!detuneConnection.connected && <span className="value">{oscData.detune} c</span>}
-                    <CustomHandle
-                        type="target"
-                        position={Position.Left}
-                        id="detune"
-                        className="handle handle-in handle-param"
-                    />
+
+                <div className="parameter">
+                    <label>Detune (cents)</label>
+                    <div className="param-value">
+                        {detuneConnection ? formatConnectedValue(detuneConnection.value) : (
+                            <input
+                                type="number"
+                                value={oscData.detune}
+                                onChange={(e) => handleDetuneChange(Number(e.target.value))}
+                                step="1"
+                            />
+                        )}
+                    </div>
                 </div>
             </div>
+
+            <CustomHandle
+                type="target"
+                position={Position.Left}
+                id="frequency"
+                style={{ top: '65%' }}
+            />
+            <CustomHandle
+                type="target"
+                position={Position.Left}
+                id="detune"
+                style={{ top: '85%' }}
+            />
+            <CustomHandle
+                type="source"
+                position={Position.Right}
+                id="out"
+            />
         </div>
     );
 });
 
 OscNode.displayName = 'OscNode';
-export default OscNode;
+
+export { OscNode };

@@ -1,4 +1,4 @@
-import { memo, useMemo } from 'react';
+import React, { memo, useMemo } from 'react';
 import { Handle, type HandleProps, useNodeId } from '@xyflow/react';
 import { useAudioGraphStore } from '../store';
 import { canConnect, normalizeConnectionFromStart } from '../nodeHelpers';
