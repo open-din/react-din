@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -36,31 +36,31 @@
   --primitive-slate-500: oklch(0.48 0.03 255);
 
   /* Semantic surfaces and state */
-  --semantic-surface-app: var(--primitive-neutral-950);
-  --semantic-surface-app-accent: color-mix(in oklab, var(--primitive-blue-500) 16%, var(--primitive-neutral-950));
-  --semantic-surface-panel: var(--primitive-neutral-900);
-  --semantic-surface-panel-muted: var(--primitive-neutral-800);
-  --semantic-surface-elevated: color-mix(in oklab, var(--primitive-neutral-800) 88%, white);
-  --semantic-surface-canvas: var(--primitive-neutral-900);
-  --semantic-border-default: color-mix(in oklab, var(--primitive-neutral-500) 35%, var(--primitive-neutral-800));
-  --semantic-border-strong: color-mix(in oklab, var(--primitive-neutral-300) 22%, var(--primitive-neutral-700));
-  --semantic-text: var(--primitive-neutral-50);
-  --semantic-text-muted: color-mix(in oklab, var(--primitive-neutral-300) 82%, var(--primitive-neutral-900));
-  --semantic-text-subtle: color-mix(in oklab, var(--primitive-neutral-400) 82%, var(--primitive-neutral-900));
-  --semantic-accent: var(--primitive-blue-500);
-  --semantic-accent-soft: color-mix(in oklab, var(--semantic-accent) 24%, transparent);
-  --semantic-danger: var(--primitive-red-500);
+  --semantic-surface-app: #0E1015;
+  --semantic-surface-app-accent: color-mix(in oklab, var(--primitive-blue-500) 10%, #0E1015);
+  --semantic-surface-panel: rgba(28, 32, 40, 0.6);
+  --semantic-surface-panel-muted: rgba(20, 22, 28, 0.8);
+  --semantic-surface-elevated: rgba(42, 48, 60, 0.7);
+  --semantic-surface-canvas: #13161C;
+  --semantic-border-default: rgba(255, 255, 255, 0.06);
+  --semantic-border-strong: rgba(255, 255, 255, 0.12);
+  --semantic-text: oklch(0.96 0.005 255);
+  --semantic-text-muted: oklch(0.7 0.01 255);
+  --semantic-text-subtle: oklch(0.5 0.01 255);
+  --semantic-accent: #4F75FF;
+  --semantic-accent-soft: rgba(79, 117, 255, 0.15);
+  --semantic-danger: #FF5F58;
   --semantic-danger-soft: color-mix(in oklab, var(--semantic-danger) 20%, transparent);
-  --semantic-success: var(--primitive-green-500);
+  --semantic-success: #23C768;
   --semantic-success-soft: color-mix(in oklab, var(--semantic-success) 18%, transparent);
-  --semantic-warning: var(--primitive-amber-500);
+  --semantic-warning: #FFB020;
   --semantic-warning-soft: color-mix(in oklab, var(--semantic-warning) 18%, transparent);
-  --semantic-info: var(--primitive-sky-500);
+  --semantic-info: #00B5FF;
   --semantic-info-soft: color-mix(in oklab, var(--semantic-info) 18%, transparent);
-  --semantic-focus-ring-color: color-mix(in oklab, var(--semantic-accent) 52%, white);
-  --semantic-selection: color-mix(in oklab, var(--semantic-accent) 22%, transparent);
-  --semantic-overlay: color-mix(in oklab, var(--primitive-neutral-950) 74%, transparent);
-  --semantic-scrim: color-mix(in oklab, var(--primitive-neutral-950) 84%, transparent);
+  --semantic-focus-ring-color: rgba(79, 117, 255, 0.5);
+  --semantic-selection: rgba(79, 117, 255, 0.2);
+  --semantic-overlay: rgba(10, 12, 16, 0.74);
+  --semantic-scrim: rgba(10, 12, 16, 0.84);
   --semantic-flow-audio: var(--semantic-success);
   --semantic-flow-control: var(--semantic-accent);
   --semantic-flow-trigger: var(--semantic-danger);
@@ -69,14 +69,14 @@
   --semantic-flow-hover: var(--semantic-warning);
 
   /* Component tokens */
-  --component-shell-gap: 10px;
-  --component-shell-padding: 10px;
-  --component-panel-radius: 14px;
-  --component-topbar-radius: 16px;
-  --component-panel-shadow: 0 10px 26px color-mix(in oklab, var(--primitive-neutral-950) 38%, transparent);
-  --component-panel-backdrop: blur(14px);
-  --component-canvas-radius: 12px;
-  --component-canvas-shadow: inset 0 1px 0 color-mix(in oklab, white 7%, transparent);
+  --component-shell-gap: 16px;
+  --component-shell-padding: 16px;
+  --component-panel-radius: 12px;
+  --component-topbar-radius: 12px;
+  --component-panel-shadow: 0 4px 12px rgba(0,0,0,0.2), 0 16px 40px rgba(0,0,0,0.3);
+  --component-panel-backdrop: blur(24px);
+  --component-canvas-radius: 16px;
+  --component-canvas-shadow: none;
   --component-drawer-height: 280px;
   --component-rail-width: 54px;
   --component-inspector-width: 320px;
@@ -251,10 +251,8 @@ html.light {
 
   body {
     @apply bg-[var(--app-bg)] text-[var(--text)] antialiased;
-    font-family: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
-    background-image:
-      radial-gradient(1200px 400px at 50% -20%, color-mix(in oklab, var(--semantic-accent) 18%, transparent), transparent 60%),
-      radial-gradient(800px 340px at 0% 100%, color-mix(in oklab, var(--app-bg-accent) 72%, transparent), transparent 60%);
+    font-family: "Inter", ui-sans-serif, system-ui, sans-serif;
+    background-image: none;
     background-attachment: fixed;
   }
 
@@ -266,17 +264,20 @@ html.light {
 
 @layer components {
   .ui-shell {
-    gap: var(--shell-gap);
-    padding: var(--shell-gap);
-    background: linear-gradient(180deg, color-mix(in oklab, var(--app-bg-accent) 35%, var(--app-bg)) 0%, var(--app-bg) 100%);
+    gap: 0;
+    padding: 0;
+    background: var(--app-bg);
+    position: relative;
   }
 
   .ui-panel {
-    background: color-mix(in oklab, var(--panel-bg) 90%, transparent);
+    background: var(--panel-bg);
     border-radius: var(--panel-radius);
     overflow: hidden;
-    box-shadow: var(--component-panel-shadow);
+    box-shadow: var(--component-panel-shadow), inset 0 1px 0 rgba(255, 255, 255, 0.06), inset 0 0 0 1px rgba(255, 255, 255, 0.02);
     backdrop-filter: var(--component-panel-backdrop);
+    border: 1px solid var(--panel-border);
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
   .ui-panel-header {
@@ -296,9 +297,12 @@ html.light {
   }
 
   .ui-stage {
-    border-radius: var(--panel-radius);
-    background: linear-gradient(180deg, color-mix(in oklab, var(--panel-bg) 18%, var(--canvas-bg)) 0%, var(--canvas-bg) 22%, var(--canvas-bg) 100%);
+    border-radius: 0;
+    background: var(--canvas-bg);
     overflow: hidden;
+    position: absolute;
+    inset: 0;
+    z-index: 0;
   }
 
   .ui-graph-tabs {
@@ -362,7 +366,7 @@ html.light {
   }
 
   .ui-canvas-stage {
-    background: linear-gradient(180deg, color-mix(in oklab, var(--panel-muted) 18%, var(--canvas-bg)) 0%, var(--canvas-bg) 28%, var(--canvas-bg) 100%);
+    background: var(--canvas-bg);
   }
 
   .ui-collapse-button {
@@ -391,11 +395,11 @@ html.light {
   .ui-inspector,
   .ui-catalog-browser,
   .ui-command-palette {
-    background: color-mix(in oklab, var(--panel-bg) 92%, transparent);
-    border: 1px solid color-mix(in oklab, var(--panel-border) 88%, transparent);
+    background: var(--panel-bg);
     border-radius: var(--component-panel-radius);
-    box-shadow: var(--component-panel-shadow);
+    box-shadow: var(--component-panel-shadow), inset 0 1px 0 rgba(255, 255, 255, 0.06), inset 0 0 0 1px rgba(255, 255, 255, 0.02);
     backdrop-filter: var(--component-panel-backdrop);
+    border: none;
   }
 
   .ui-rail {

@@ -36,18 +36,24 @@ export function ActivityRail({ items }: ActivityRailProps) {
                         key={item.id}
                         type="button"
                         onClick={item.onSelect}
-                        className={`flex w-full flex-col items-center gap-1.5 rounded-2xl border px-2 py-2 text-center transition ${
+                        className={`group relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border transition-all duration-200 ${
                             item.active
-                                ? 'border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--text)]'
-                                : 'border-transparent text-[var(--text-subtle)] hover:border-[var(--panel-border)] hover:bg-[var(--panel-bg)] hover:text-[var(--text)]'
+                                ? 'border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)] shadow-[0_0_12px_rgba(79,117,255,0.2)]'
+                                : 'border-transparent text-[var(--text-subtle)] hover:bg-[var(--panel-bg)] hover:text-[var(--text)]'
                         }`}
                         aria-pressed={item.active}
                         title={item.label}
                     >
-                        <Icon className="h-4 w-4" strokeWidth={1.9} aria-hidden="true" />
-                        <span className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em]">{item.shortLabel}</span>
-                        <span className="text-[9px] font-medium uppercase tracking-[0.14em]">{item.label}</span>
-                        {item.badge}
+                        <Icon 
+                            className={`h-5 w-5 transition-transform duration-200 ${item.active ? 'scale-110' : 'group-hover:scale-110'}`} 
+                            strokeWidth={item.active ? 2.2 : 1.8} 
+                            aria-hidden="true" 
+                        />
+                        {item.badge && (
+                            <div className="absolute -right-1 -top-1 pointer-events-none">
+                                {item.badge}
+                            </div>
+                        )}
                     </button>
                 );
             })}

@@ -54,7 +54,6 @@ import { InspectorPane } from './shell/InspectorPane';
 import { SourceControlPanel } from './shell/SourceControlPanel';
 import { useEditorLayout } from './shell/useEditorLayout';
 import { SHELL_LAYOUT } from './shell/shellTokens';
-import { WindowTitlebar } from './shell/WindowTitlebar';
 import { getMiniMapNodeColor } from './editor/nodeColorMap';
 import { consumeProjectResumeIntent, readProjectReviewState, writeProjectInterruptedWork, writeProjectReviewState } from './projectUiState';
 import type { ChangedFileSummary, InterruptedWorkSummary, ResumeIntent, ReviewState, SourceControlPhase } from './phase3a.types';
@@ -869,29 +868,27 @@ const EditorContent: FC<EditorProps> = ({ project }) => {
     return (
         <MidiProvider>
             <div
-                className={`flex h-full min-h-0 flex-col overflow-hidden select-none ${isDark ? 'bg-zinc-950 text-zinc-100' : 'bg-zinc-50 text-zinc-900'}`}
+                className={`flex h-screen w-screen flex-col overflow-hidden select-none ${isDark ? 'bg-zinc-950 text-zinc-100' : 'bg-zinc-50 text-zinc-900'}`}
                 data-testid="editor-root"
                 data-editor-ready={initialDataReady ? 'true' : 'false'}
             >
-                <WindowTitlebar
-                    projectName={project?.name}
-                    activeGraphName={activeGraph?.name || 'Untitled'}
-                />
-                <EditorTopbar
-                    project={project ? {
-                        name: project.name,
-                        accentColor: project.accentColor,
-                        onRevealProject: project.onRevealProject,
-                    } : undefined}
-                    isDark={isDark}
-                    inspectorCollapsed={rightPanelCollapsed}
-                    statusChips={topbarChips}
-                    onToggleTheme={() => setTheme(isDark ? 'light' : 'dark')}
-                    onToggleInspector={toggleRightPanel}
-                    onOpenCommandPalette={() => setCommandPaletteOpen(true)}
-                />
+                <header className="flex-none">
+                    <EditorTopbar
+                        project={project ? {
+                            name: project.name,
+                            accentColor: project.accentColor,
+                            onRevealProject: project.onRevealProject,
+                        } : undefined}
+                        isDark={isDark}
+                        inspectorCollapsed={rightPanelCollapsed}
+                        statusChips={topbarChips}
+                        onToggleTheme={() => setTheme(isDark ? 'light' : 'dark')}
+                        onToggleInspector={toggleRightPanel}
+                        onOpenCommandPalette={() => setCommandPaletteOpen(true)}
+                    />
+                </header>
 
-                <div className="min-h-0 flex-1 overflow-hidden">
+                <main className="relative flex-1 min-h-0 overflow-hidden">
                     <EditorShell
                         rail={(
                             <ActivityRail
@@ -972,7 +969,7 @@ const EditorContent: FC<EditorProps> = ({ project }) => {
                         )}
                         canvas={(
                             <section
-                                className="ui-panel ui-canvas-stage flex min-h-0 flex-col border border-[var(--panel-border)]"
+                                className="ui-panel ui-canvas-stage flex h-full w-full min-h-0 flex-col border border-[var(--panel-border)]"
                                 data-testid="canvas-panel"
                                 onDrop={onDrop}
                                 onDragOver={onDragOver}
@@ -1128,13 +1125,15 @@ const EditorContent: FC<EditorProps> = ({ project }) => {
                         leftPanelWidth={SHELL_LAYOUT.leftPanelWidth}
                         rightPanelWidth={SHELL_LAYOUT.rightPanelWidth}
                     />
-                </div>
+                </main>
 
-                <FooterStatus
-                    gitLabel={gitStatusLabel}
-                    audioLabel={audioStatusLabel}
-                    mcpBadge={<McpStatusBadge />}
-                />
+                <footer className="flex-none">
+                    <FooterStatus
+                        gitLabel={gitStatusLabel}
+                        audioLabel={audioStatusLabel}
+                        mcpBadge={<McpStatusBadge />}
+                    />
+                </footer>
 
                 <CommandPalette
                     open={commandPaletteOpen}

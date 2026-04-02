@@ -25,19 +25,40 @@ export function EditorShell({
     rightPanelWidth,
 }: EditorShellProps) {
     return (
-        <div
-            className="ui-shell grid h-full w-full overflow-hidden text-[var(--text)]"
-            style={{
-                gridTemplateColumns: `${SHELL_LAYOUT.railWidth}px ${leftPanelCollapsed ? 0 : leftPanelWidth}px minmax(0, 1fr) ${rightPanelCollapsed ? 0 : rightPanelWidth}px`,
-            }}
-        >
-            <div className="min-h-0 border-r border-[var(--panel-border)]">{rail}</div>
-            <div className="min-h-0 overflow-hidden">{leftPanel}</div>
-            <div className="min-h-0 grid overflow-hidden" style={{ gridTemplateRows: 'minmax(0, 1fr) auto' }}>
+        <div className="ui-shell relative h-full w-full overflow-hidden text-[var(--text)]">
+            <div className="absolute inset-0 z-0">
                 {canvas}
-                {bottomDrawer}
             </div>
-            <div className="min-h-0 overflow-hidden">{rightPanel}</div>
+
+            <div className="absolute z-10 bottom-4 left-0 right-0 pointer-events-none flex justify-center">
+                <div className="pointer-events-auto w-full max-w-[calc(100vw-var(--component-rail-width)-var(--component-inspector-width)-80px)] px-4">
+                    {bottomDrawer}
+                </div>
+            </div>
+
+            <div className="absolute z-20 top-4 bottom-4 left-4 flex gap-4 pointer-events-none">
+                <div 
+                    className="pointer-events-auto min-h-0 bg-[var(--panel-bg)] border border-[var(--panel-border)] shadow-[var(--component-panel-shadow)] rounded-[var(--component-panel-radius)] overflow-hidden"
+                    style={{ width: SHELL_LAYOUT.railWidth }}
+                >
+                    {rail}
+                </div>
+                <div 
+                    className="pointer-events-auto min-h-0 overflow-hidden transition-all duration-300" 
+                    style={{ width: leftPanelCollapsed ? 0 : leftPanelWidth, opacity: leftPanelCollapsed ? 0 : 1 }}
+                >
+                    {leftPanel}
+                </div>
+            </div>
+
+            <div className="absolute z-20 top-4 bottom-4 right-4 pointer-events-none flex">
+                <div 
+                    className="pointer-events-auto min-h-0 overflow-hidden transition-all duration-300" 
+                    style={{ width: rightPanelCollapsed ? 0 : rightPanelWidth, opacity: rightPanelCollapsed ? 0 : 1 }}
+                >
+                    {rightPanel}
+                </div>
+            </div>
         </div>
     );
 }
