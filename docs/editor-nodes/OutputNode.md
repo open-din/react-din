@@ -12,11 +12,14 @@ Own playback start/stop and master gain for the current editor graph.
 
 ## Integration Notes
 - Every numeric parameter exposes a dedicated target pin and uses connected-value mode when wired.
+- The Figma-aligned sink shell keeps transport state and the compact meter inside the widget while input rows stay dedicated to routing and master control.
+- The shared local icon set supplies the transport glyphs used by the output widget.
 - `OutputNode` must remain aligned with store playback state and `audioEngine.start/stop`.
 - Integration coverage should keep graph persistence resetting `playing` to `false`.
 
 ## Failure Modes
 - Missing live routing updates can leave connected pins visually updated but sonically stale.
+- Regressing to a generic node shell can hide the singleton sink role and reduce playback-state clarity.
 - Persisting transient playback state can reload graphs in a broken state.
 - Starting output without a valid graph can create confusing no-audio behavior.
 

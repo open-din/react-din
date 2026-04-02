@@ -11,6 +11,9 @@
     --node-control-min-height: 40px;
     --node-section-gap: 8px;
     --node-body-radius: 12px;
+    --node-shell-width: 320px;
+    --node-shell-row-height: 30px;
+    --node-shell-widget-radius: 10px;
 }
 
 .react-flow__node {
@@ -51,6 +54,21 @@
 .audio-node.selected {
     border-color: var(--accent);
     box-shadow: var(--node-shadow-focus);
+}
+
+.node-shell {
+    width: var(--node-shell-width);
+    min-width: var(--node-shell-width);
+    border-radius: 16px;
+    border-color: color-mix(in oklab, var(--node-border) 92%, white 8%);
+    background: color-mix(in oklab, var(--panel-bg) 86%, var(--node-bg));
+    overflow: hidden;
+}
+
+.node-shell__body {
+    display: flex;
+    flex-direction: column;
+    padding: 6px 0 10px;
 }
 
 :is(
@@ -211,6 +229,63 @@
     cursor: grab;
 }
 
+.node-shell__header {
+    min-height: 40px;
+    border-bottom: none;
+    padding: 10px 12px;
+    border-radius: 14px 14px 8px 8px;
+    justify-content: space-between;
+}
+
+.node-shell__header-group {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+}
+
+.node-shell__header-dots {
+    display: inline-flex;
+    gap: 4px;
+    opacity: 0.7;
+}
+
+.node-shell__header-dots span {
+    width: 4px;
+    height: 4px;
+    border-radius: 999px;
+    background: currentColor;
+}
+
+.node-shell__header-category {
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    font-size: 10px;
+    line-height: 1.4;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    opacity: 0.82;
+}
+
+.node-shell__header-title {
+    flex: 1;
+    min-width: 0;
+    text-align: center;
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.2;
+    color: inherit;
+}
+
+.node-shell__header-badge {
+    display: inline-flex;
+    justify-content: flex-end;
+    min-width: 72px;
+}
+
+.node-shell__header-spacer {
+    min-width: 72px;
+}
+
 .node-header:active {
     cursor: grabbing;
 }
@@ -228,6 +303,248 @@
     display: flex;
     flex-direction: column;
     gap: var(--node-content-gap);
+}
+
+.node-shell__row {
+    position: relative;
+    display: flex;
+    align-items: center;
+    min-height: var(--node-shell-row-height);
+    padding: 0 18px;
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    font-size: 11px;
+    line-height: 16px;
+    color: color-mix(in oklab, var(--text) 84%, white 16%);
+}
+
+.node-shell__row--source {
+    justify-content: flex-end;
+}
+
+.node-shell__row-label {
+    color: color-mix(in oklab, var(--text) 88%, white 12%);
+}
+
+.node-shell__row-label--source {
+    margin-right: 20px;
+}
+
+.node-shell__row-trailing {
+    margin-left: auto;
+    min-width: 0;
+}
+
+.node-shell__row-field,
+.node-shell__row-field-wrap {
+    width: 112px;
+}
+
+.node-shell__widget {
+    margin: 8px 11px 10px;
+    padding: 11px;
+    border-radius: var(--node-shell-widget-radius);
+    border: 1px solid color-mix(in oklab, var(--control-border) 86%, transparent);
+    background: color-mix(in oklab, var(--primitive-neutral-950) 24%, var(--panel-muted));
+    box-shadow: inset 0 1px 0 color-mix(in oklab, white 6%, transparent);
+}
+
+.node-shell__widget-title {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 10px;
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    font-size: 11px;
+    line-height: 16px;
+    color: var(--text-subtle);
+}
+
+.node-shell__widget-title-content {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.node-shell__widget-title-icon {
+    width: 14px;
+    height: 14px;
+    color: color-mix(in oklab, var(--node-family-accent) 88%, white 12%);
+}
+
+.node-shell__widget-body {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.node-shell__widget-footer {
+    margin-top: 8px;
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    font-size: 11px;
+    line-height: 16px;
+    color: color-mix(in oklab, var(--text) 86%, white 14%);
+}
+
+.node-shell__field {
+    width: 100%;
+    height: 28px;
+    border-radius: 8px;
+    border: 1px solid color-mix(in oklab, var(--control-border) 88%, white 12%);
+    background: color-mix(in oklab, var(--panel-bg) 84%, var(--panel-muted));
+    color: var(--text);
+    padding: 0 10px;
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    font-size: 11px;
+    line-height: 16px;
+    outline: none;
+    transition: border-color 0.16s ease, box-shadow 0.16s ease, background 0.16s ease;
+}
+
+.node-shell__field:focus {
+    border-color: color-mix(in oklab, var(--node-family-accent) 72%, white 28%);
+    box-shadow: 0 0 0 2px color-mix(in oklab, var(--node-family-accent) 18%, transparent);
+}
+
+.node-shell__select-wrap {
+    position: relative;
+    display: inline-flex;
+    width: 100%;
+}
+
+.node-shell__select {
+    appearance: none;
+    padding-right: 28px;
+}
+
+.node-shell__select-icon {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    width: 12px;
+    height: 12px;
+    transform: translateY(-50%);
+    pointer-events: none;
+    color: var(--text-subtle);
+}
+
+.node-shell__badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 24px;
+    padding: 4px 8px;
+    border-radius: 8px;
+    border: 1px solid color-mix(in oklab, var(--control-border) 82%, white 18%);
+    background: color-mix(in oklab, var(--panel-bg) 80%, var(--panel-muted));
+    color: color-mix(in oklab, var(--text) 76%, white 24%);
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    font-size: 11px;
+    line-height: 16px;
+    white-space: nowrap;
+}
+
+.node-shell__badge--live {
+    border-color: color-mix(in oklab, var(--node-family-accent) 74%, white 26%);
+    background: color-mix(in oklab, var(--node-family-accent) 12%, var(--panel-bg));
+    color: color-mix(in oklab, var(--node-family-accent) 88%, white 12%);
+}
+
+.node-shell__badge-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 999px;
+    background: currentColor;
+    box-shadow: 0 0 10px color-mix(in oklab, currentColor 58%, transparent);
+}
+
+.node-shell__helper-text {
+    margin: 0;
+    font-size: 12px;
+    line-height: 16px;
+    color: color-mix(in oklab, var(--text-subtle) 86%, white 14%);
+}
+
+.node-shell__filter-plot {
+    border-radius: 8px;
+    border: 1px solid color-mix(in oklab, var(--panel-border) 72%, transparent);
+    background: color-mix(in oklab, var(--panel-bg) 72%, var(--panel-muted));
+    overflow: hidden;
+}
+
+.node-shell__filter-svg {
+    width: 100%;
+    height: 72px;
+    display: block;
+}
+
+.node-shell__filter-grid {
+    stroke: color-mix(in oklab, var(--panel-border) 56%, transparent);
+    stroke-width: 1;
+}
+
+.node-shell__filter-curve {
+    stroke: color-mix(in oklab, var(--node-family-accent) 88%, white 12%);
+    stroke-width: 2;
+    fill: none;
+}
+
+.node-shell__transport-button {
+    height: 28px;
+    border: 0;
+    border-radius: 8px;
+    padding: 0 10px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    font-size: 11px;
+    line-height: 16px;
+    font-weight: 600;
+    color: color-mix(in oklab, var(--primitive-neutral-950) 88%, black 12%);
+    background: color-mix(in oklab, var(--semantic-warning) 82%, white 18%);
+    cursor: pointer;
+    transition: transform 0.14s ease, filter 0.14s ease;
+}
+
+.node-shell__transport-button:hover {
+    transform: translateY(-1px);
+    filter: brightness(1.02);
+}
+
+.node-shell__transport-button.is-live {
+    background: color-mix(in oklab, var(--semantic-warning) 74%, white 26%);
+}
+
+.node-shell__transport-icon {
+    width: 12px;
+    height: 12px;
+}
+
+.node-shell__widget-meter-label {
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    font-size: 11px;
+    line-height: 16px;
+    color: color-mix(in oklab, var(--text) 88%, white 12%);
+}
+
+.node-shell__meter {
+    display: flex;
+    align-items: flex-end;
+    gap: 6px;
+    min-height: 36px;
+}
+
+.node-shell__meter-bar {
+    width: 20px;
+    border-radius: 4px;
+    background: linear-gradient(
+        180deg,
+        color-mix(in oklab, var(--semantic-warning) 92%, white 8%) 0%,
+        color-mix(in oklab, var(--semantic-warning) 74%, var(--panel-muted)) 100%
+    );
+    opacity: 0.84;
+    box-shadow: inset 0 -1px 0 color-mix(in oklab, black 18%, transparent);
 }
 
 .node-control {
@@ -348,19 +665,19 @@
 }
 
 .react-flow__handle-left {
-    left: 0 !important;
+    left: calc(var(--pin-size) / -2) !important;
 }
 
 .react-flow__handle-right {
-    right: 0 !important;
+    right: calc(var(--pin-size) / -2) !important;
 }
 
 .node-header .react-flow__handle-left {
-    left: calc(var(--node-header-pad-x) * -1) !important;
+    left: calc(var(--pin-size) / -2) !important;
 }
 
 .node-header .react-flow__handle-right {
-    right: calc(var(--node-header-pad-x) * -1) !important;
+    right: calc(var(--pin-size) / -2) !important;
 }
 
 /* Handle Hover */
@@ -689,8 +1006,10 @@
 
 .connection-assist-icon {
     width: 20px;
-    text-align: center;
-    font-size: 15px;
+    height: 20px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .connection-assist-title {
@@ -768,18 +1087,15 @@
 
 /* Sequencer Node */
 .sequencer-node {
-    width: max-content;
-    min-width: unset;
-}
-
-.sequencer-node .node-content {
-    padding: 8px;
+    min-width: var(--node-shell-width);
 }
 
 .sequencer-steps-row {
     display: flex;
     flex-direction: row;
     gap: 2px;
+    overflow-x: auto;
+    padding-bottom: 2px;
 }
 
 .step-column {
@@ -984,14 +1300,39 @@
 
 /* Piano Roll Node Styles */
 .piano-roll-node {
-    min-width: 400px;
+    min-width: var(--node-shell-width);
+}
+
+.node-shell__piano-widget {
+    position: relative;
+    max-height: 152px;
+    border-radius: 8px;
+    overflow: hidden;
+    background:
+        repeating-linear-gradient(
+            to bottom,
+            transparent 0,
+            transparent 16px,
+            color-mix(in oklab, var(--panel-border) 54%, transparent) 16px,
+            color-mix(in oklab, var(--panel-border) 54%, transparent) 17px
+        ),
+        color-mix(in oklab, var(--panel-bg) 76%, var(--panel-muted));
+    border: 1px solid color-mix(in oklab, var(--panel-border) 76%, transparent);
+    padding: 6px;
+}
+
+.node-shell__piano-note {
+    position: absolute;
+    height: 14px;
+    border-radius: 4px;
+    background: color-mix(in oklab, var(--node-family-accent) 88%, white 12%);
 }
 
 .piano-roll-grid {
     display: flex;
     gap: 2px;
-    max-height: 300px;
-    overflow-y: auto;
+    max-height: 138px;
+    overflow: auto;
 }
 
 .piano-keys {

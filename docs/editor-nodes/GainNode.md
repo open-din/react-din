@@ -12,11 +12,14 @@ Control audio level in the editor graph.
 
 ## Integration Notes
 - Every numeric parameter exposes a dedicated target pin and uses connected-value mode when wired.
+- The node now uses the shared Figma-aligned shell: header, outputs, widget, then inputs.
+- The shared local icon set is used for widget glyphs and shell affordances instead of emoji-only markers.
 - Keep UI, store defaults, engine updates, and code generation aligned.
 - Use downstream from sources and upstream from `OutputNode`.
 
 ## Failure Modes
 - Missing live routing updates can leave connected pins visually updated but sonically stale.
+- Duplicating the connected gain value in both widget and input rows makes the shell harder to scan and diverges from the wireframe contract.
 - Missing control-handle updates can desync slider changes from generated code.
 - Gain set incorrectly can hide whether an upstream node is working.
 

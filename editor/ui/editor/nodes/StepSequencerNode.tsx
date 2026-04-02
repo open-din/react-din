@@ -1,8 +1,16 @@
 import React, { memo, useEffect, useState } from 'react';
-import { Handle, Position, type NodeProps, type Node } from '@xyflow/react';
+import type { NodeProps, Node } from '@xyflow/react';
 import { useAudioGraphStore, type StepSequencerNodeData } from '../store';
 import { audioEngine } from '../AudioEngine';
 import '../editor.css';
+import {
+    NodeHandleRow,
+    NodeSelectField,
+    NodeShell,
+    NodeValueBadge,
+    NodeWidget,
+    NodeWidgetTitle,
+} from '../components/NodeShell';
 
 export const StepSequencerNode: React.FC<NodeProps<Node<StepSequencerNodeData>>> = memo(({ id, data, selected }) => {
     const updateNodeData = useAudioGraphStore((s) => s.updateNodeData);
@@ -19,7 +27,6 @@ export const StepSequencerNode: React.FC<NodeProps<Node<StepSequencerNodeData>>>
     const velocities = data.pattern || Array(steps).fill(0.8);
     const activeSteps = data.activeSteps || Array(steps).fill(false);
     const playingStep = currentStep >= 0 ? currentStep % steps : -1;
-
     const toggleStep = (index: number) => {
         const newActive = [...activeSteps];
         newActive[index] = !newActive[index];
@@ -50,45 +57,37 @@ export const StepSequencerNode: React.FC<NodeProps<Node<StepSequencerNodeData>>>
     };
 
     return (
-        <div className={`audio-node sequencer-node ${selected ? 'selected' : ''}`}>
-            <div className="node-header">
-                <span className="node-icon">🎹</span>
-                <span className="node-title">{data.label}</span>
-            </div>
+        <NodeShell
+            nodeType="stepSequencer"
+            title={data.label?.trim() || 'Step Sequencer'}
+            selected={selected}
+            badge={<NodeValueBadge>pattern</NodeValueBadge>}
+            className="sequencer-node"
+        >
+            <NodeHandleRow direction="source" label="trigger" handleId="trigger" handleKind="trigger" />
 
-            <div className="node-content">
-                <div className="node-control">
-                    <label>Steps</label>
-                    <select
-                        value={steps}
-                        onChange={(e) => updateSteps(Number(e.target.value))}
-                    >
-                        {[16, 32, 64].map((value) => (
-                            <option key={value} value={value}>{value}</option>
-                        ))}
-                    </select>
-                </div>
-                <div className="sequencer-status" aria-live="polite">
-                    <span className={`sequencer-status-dot ${playingStep >= 0 ? 'active' : ''}`} />
-                    <span className="sequencer-status-text">
-                        {playingStep >= 0 ? `Playing step ${playingStep + 1} / ${steps}` : 'Waiting for transport'}
-                    </span>
-                </div>
+            <NodeWidget
+                title={<NodeWidgetTitle icon="stepSequencer">Pattern + velocity</NodeWidgetTitle>}
+                footer={playingStep >= 0
+                    ? `Playing step ${playingStep + 1} / ${steps}`
+                    : 'Waiting for transport'}
+            >
                 <div className="sequencer-steps-row">
-                    {Array.from({ length: steps }).map((_, i) => (
+                    {Array.from({ length: steps }).map((_, index) => (
                         <div
-                            key={`step-${i}`}
-                            className={`step-column ${playingStep === i ? 'current-step-column' : ''} ${activeSteps[i] ? 'active-step-column' : ''}`}
+                            key={`step-${index}`}
+                            className={`step-column ${playingStep === index ? 'current-step-column' : ''} ${activeSteps[index] ? 'active-step-column' : ''}`}
                         >
                             <button
-                                className={`sequencer-pad ${activeSteps[i] ? 'active' : ''} ${playingStep === i ? 'current-step' : ''}`}
-                                onClick={() => toggleStep(i)}
-                                title={`Step ${i + 1}`}
+                                type="button"
+                                className={`sequencer-pad ${activeSteps[index] ? 'active' : ''} ${playingStep === index ? 'current-step' : ''}`}
+                                onClick={() => toggleStep(index)}
+                                title={`Step ${index + 1}`}
                             />
                             <div className="velocity-bar-container">
                                 <div
                                     className="velocity-bar"
-                                    style={{ height: `${velocities[i] * 100}%` }}
+                                    style={{ height: `${velocities[index] * 100}%` }}
                                 />
                                 <input
                                     type="range"
@@ -96,33 +95,39 @@ export const StepSequencerNode: React.FC<NodeProps<Node<StepSequencerNodeData>>>
                                     min="0"
                                     max="1"
                                     step="0.05"
-                                    value={velocities[i]}
-                                    onChange={(e) => updateVelocity(i, Number(e.target.value))}
-                                    title={`Velocity ${i + 1}`}
+                                    value={velocities[index]}
+                                    onChange={(event) => updateVelocity(index, Number(event.target.value))}
+                                    title={`Velocity ${index + 1}`}
                                 />
                             </div>
                         </div>
                     ))}
                 </div>
-            </div>
+            </NodeWidget>
 
-            {/* Transport Input */}
-            <Handle
-                type="target"
-                position={Position.Left}
-                id="transport"
-                className="handle handle-in"
+            <NodeHandleRow
+                direction="target"
+                label="transport"
+                handleId="transport"
+                handleKind="trigger"
+                trailing={<NodeValueBadge live={playingStep >= 0}>{playingStep >= 0 ? 'external' : 'idle'}</NodeValueBadge>}
             />
-            <div className="handle-label handle-label-in" style={{ left: '-60px', top: '50%' }}>Transport</div>
-
-            {/* Trigger Output */}
-            <Handle
-                type="source"
-                position={Position.Right}
-                id="trigger"
-                className="handle handle-out"
+            <NodeHandleRow
+                direction="target"
+                label="Steps"
+                trailing={(
+                    <NodeSelectField
+                        aria-label="Steps"
+                        className="node-shell__row-field-wrap"
+                        value={String(steps)}
+                        onChange={(value) => updateSteps(Number(value))}
+                    >
+                        {[16, 32, 64].map((value) => (
+                            <option key={value} value={value}>{value}</option>
+                        ))}
+                    </NodeSelectField>
+                )}
             />
-            <div className="handle-label handle-label-out">Trigger</div>
-        </div>
+        </NodeShell>
     );
 });

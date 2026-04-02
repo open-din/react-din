@@ -12,10 +12,13 @@ Edit note events over time with a piano-roll style interface.
 
 ## Integration Notes
 - Keep note-event serialization aligned across UI editing, storage, transport wiring, and code generation.
+- The shared shell keeps transport, step count, octave count, and base note in stable rows beneath the piano timeline widget.
+- The shared local icon set is used by the widget header and shell affordances.
 - Use with `VoiceNode` for pitch-aware trigger flows.
 
 ## Failure Modes
 - Broken drag or overlap logic can corrupt note-event data.
+- Over-compressing the timeline widget can preserve the shell but make note editing unusable.
 - Disconnected piano rolls do not schedule note events until linked to `TransportNode`.
 - Base-note or octave drift makes saved graphs hard to trust.
 

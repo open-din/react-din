@@ -260,6 +260,11 @@ describe('editor node UIs', () => {
         expect(screen.getByText('Step Sequencer')).toBeInTheDocument();
         expect(screen.getByText('Playing step 3 / 4')).toBeInTheDocument();
         expect(screen.getByText('Piano Roll')).toBeInTheDocument();
+        expect(screen.getByText('ROUTING')).toBeInTheDocument();
+        expect(screen.getAllByText('MIDI').length).toBeGreaterThan(0);
+        expect(screen.getByRole('button', { name: 'Start output' })).toBeInTheDocument();
+        expect(screen.getByText('pattern')).toBeInTheDocument();
+        expect(screen.getByText('notes')).toBeInTheDocument();
         expect(screen.getAllByText('Steps').length).toBeGreaterThan(1);
         expect(screen.getByText('Octaves')).toBeInTheDocument();
         expect(screen.getByText('Base')).toBeInTheDocument();
@@ -433,6 +438,7 @@ describe('editor node UIs', () => {
 
         expect(screen.queryByTitle('Gain level')).not.toBeInTheDocument();
         expect(screen.getByText('0.72')).toBeInTheDocument();
+        expect(screen.getByText('Use the incoming modulation value shown on the gain row to tune the connected source.')).toBeInTheDocument();
     });
 
     it('renders extended MVP feedback and routing node controls with stable handles', () => {

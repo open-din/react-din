@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import type { NodeSuggestion } from './nodeHelpers';
+import { EditorNodeIcon } from './components/EditorIcons';
 
 interface ConnectionAssistMenuProps {
     isOpen: boolean;
@@ -101,7 +102,9 @@ export default function ConnectionAssistMenu({
                             role="option"
                             aria-selected={index === activeIndex}
                         >
-                            <span className="connection-assist-icon" style={{ color: suggestion.color }}>{suggestion.icon}</span>
+                            <span className="connection-assist-icon" style={{ color: suggestion.color }}>
+                                <EditorNodeIcon type={suggestion.type} />
+                            </span>
                             <span className="connection-assist-title">{suggestion.title}</span>
                         </button>
                     ))}

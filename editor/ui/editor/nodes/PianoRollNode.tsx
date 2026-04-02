@@ -1,8 +1,16 @@
 import React, { memo, useEffect, useState, useCallback, useRef } from 'react';
-import { Handle, Position, type NodeProps, type Node } from '@xyflow/react';
+import type { NodeProps, Node } from '@xyflow/react';
 import { useAudioGraphStore, type PianoRollNodeData, type NoteEvent } from '../store';
 import { audioEngine } from '../AudioEngine';
 import '../editor.css';
+import {
+    NodeHandleRow,
+    NodeSelectField,
+    NodeShell,
+    NodeValueBadge,
+    NodeWidget,
+    NodeWidgetTitle,
+} from '../components/NodeShell';
 
 const NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
 
@@ -173,113 +181,120 @@ export const PianoRollNode: React.FC<NodeProps<Node<PianoRollNodeData>>> = memo(
     }, [id, updateNodeData]);
 
     return (
-        <div className={`audio-node piano-roll-node ${selected ? 'selected' : ''}`}>
-            <div className="node-header">
-                <span className="node-icon">🎼</span>
-                <span className="node-title">{data.label}</span>
-            </div>
+        <NodeShell
+            nodeType="pianoRoll"
+            title={data.label?.trim() || 'Piano Roll'}
+            selected={selected}
+            badge={<NodeValueBadge>notes</NodeValueBadge>}
+            className="piano-roll-node"
+        >
+            <NodeHandleRow direction="source" label="trigger" handleId="trigger" handleKind="trigger" />
 
-            <div className="node-content">
-                <div className="grid grid-cols-3 gap-2 pb-3">
-                    <div className="node-control">
-                        <label>Steps</label>
-                        <select
-                            value={steps}
-                            onChange={(e) => updateSteps(Number(e.target.value))}
-                        >
-                            {[16, 32, 64].map((value) => (
-                                <option key={value} value={value}>{value}</option>
-                            ))}
-                        </select>
-                    </div>
-                    <div className="node-control">
-                        <label>Octaves</label>
-                        <select
-                            value={octaves}
-                            onChange={(e) => updateOctaves(Number(e.target.value))}
-                        >
-                            {[1, 2, 3, 4].map((value) => (
-                                <option key={value} value={value}>{value}</option>
-                            ))}
-                        </select>
-                    </div>
-                    <div className="node-control">
-                        <label>Base</label>
-                        <select
-                            value={baseNote}
-                            onChange={(e) => updateBaseNote(Number(e.target.value))}
-                        >
-                            {[36, 48, 60, 72].map((value) => (
-                                <option key={value} value={value}>{midiToNoteName(value)}</option>
-                            ))}
-                        </select>
-                    </div>
-                </div>
-                <div className="piano-roll-grid" ref={gridRef}>
-                    {/* Piano keys column */}
-                    <div className="piano-keys">
-                        {Array.from({ length: totalNotes }).map((_, i) => {
-                            const pitch = baseNote + totalNotes - 1 - i;
-                            const isBlack = [1, 3, 6, 8, 10].includes(pitch % 12);
-                            return (
-                                <div
-                                    key={`key-${pitch}`}
-                                    className={`piano-key ${isBlack ? 'black' : 'white'}`}
-                                    title={midiToNoteName(pitch)}
-                                >
-                                    {!isBlack && <span className="key-label">{midiToNoteName(pitch)}</span>}
-                                </div>
-                            );
-                        })}
-                    </div>
+            <NodeWidget title={<NodeWidgetTitle icon="pianoRoll">Timeline + note events</NodeWidgetTitle>}>
+                <div className="node-shell__piano-widget">
+                    <div className="piano-roll-grid" ref={gridRef}>
+                        <div className="piano-keys">
+                            {Array.from({ length: totalNotes }).map((_, i) => {
+                                const pitch = baseNote + totalNotes - 1 - i;
+                                const isBlack = [1, 3, 6, 8, 10].includes(pitch % 12);
+                                return (
+                                    <div
+                                        key={`key-${pitch}`}
+                                        className={`piano-key ${isBlack ? 'black' : 'white'}`}
+                                        title={midiToNoteName(pitch)}
+                                    >
+                                        {!isBlack && <span className="key-label">{midiToNoteName(pitch)}</span>}
+                                    </div>
+                                );
+                            })}
+                        </div>
+                        <div className="piano-grid-container">
+                            {Array.from({ length: totalNotes }).map((_, rowIdx) => {
+                                const pitch = baseNote + totalNotes - 1 - rowIdx;
+                                return (
+                                    <div key={`row-${pitch}`} className="piano-grid-row">
+                                        {Array.from({ length: steps }).map((_, stepIdx) => {
+                                            const noteEvent = hasNoteAt(pitch, stepIdx);
+                                            const coveringNote = isNoteCovering(pitch, stepIdx);
+                                            const isCurrent = currentPlayStep % steps === stepIdx;
+                                            const isBeat = stepIdx % 4 === 0;
+                                            const isSelected = isInDragSelection(pitch, stepIdx);
+                                            const isNoteStart = noteEvent !== undefined;
+                                            const isNoteContinuation = coveringNote && !isNoteStart;
 
-                    {/* Grid */}
-                    <div className="piano-grid-container">
-                        {Array.from({ length: totalNotes }).map((_, rowIdx) => {
-                            const pitch = baseNote + totalNotes - 1 - rowIdx;
-                            return (
-                                <div key={`row-${pitch}`} className="piano-grid-row">
-                                    {Array.from({ length: steps }).map((_, stepIdx) => {
-                                        const noteEvent = hasNoteAt(pitch, stepIdx);
-                                        const coveringNote = isNoteCovering(pitch, stepIdx);
-                                        const isCurrent = currentPlayStep % steps === stepIdx;
-                                        const isBeat = stepIdx % 4 === 0;
-                                        const isSelected = isInDragSelection(pitch, stepIdx);
-                                        const isNoteStart = noteEvent !== undefined;
-                                        const isNoteContinuation = coveringNote && !isNoteStart;
-
-                                        return (
-                                            <div
-                                                key={`cell-${pitch}-${stepIdx}`}
-                                                className={`piano-cell ${isNoteStart ? 'active note-start' : ''} ${isNoteContinuation ? 'active note-cont' : ''} ${isCurrent ? 'current' : ''} ${isBeat ? 'beat' : ''} ${isSelected ? 'selecting' : ''}`}
-                                                onMouseDown={(e) => handleMouseDown(pitch, stepIdx, e)}
-                                                onMouseEnter={() => handleMouseEnter(pitch, stepIdx)}
-                                                title={`${midiToNoteName(pitch)} Step ${stepIdx + 1}${noteEvent ? ` (dur: ${noteEvent.duration})` : ''}`}
-                                            />
-                                        );
-                                    })}
-                                </div>
-                            );
-                        })}
+                                            return (
+                                                <div
+                                                    key={`cell-${pitch}-${stepIdx}`}
+                                                    className={`piano-cell ${isNoteStart ? 'active note-start' : ''} ${isNoteContinuation ? 'active note-cont' : ''} ${isCurrent ? 'current' : ''} ${isBeat ? 'beat' : ''} ${isSelected ? 'selecting' : ''}`}
+                                                    onMouseDown={(e) => handleMouseDown(pitch, stepIdx, e)}
+                                                    onMouseEnter={() => handleMouseEnter(pitch, stepIdx)}
+                                                    title={`${midiToNoteName(pitch)} Step ${stepIdx + 1}${noteEvent ? ` (dur: ${noteEvent.duration})` : ''}`}
+                                                />
+                                            );
+                                        })}
+                                    </div>
+                                );
+                            })}
+                        </div>
                     </div>
                 </div>
-            </div>
+            </NodeWidget>
 
-            {/* Transport Input */}
-            <Handle
-                type="target"
-                position={Position.Left}
-                id="transport"
-                className="handle handle-in"
+            <NodeHandleRow
+                direction="target"
+                label="transport"
+                handleId="transport"
+                handleKind="trigger"
+                trailing={<NodeValueBadge live={currentPlayStep >= 0}>{currentPlayStep >= 0 ? 'live' : 'idle'}</NodeValueBadge>}
             />
-
-            {/* Trigger Output */}
-            <Handle
-                type="source"
-                position={Position.Right}
-                id="trigger"
-                className="handle handle-out"
+            <NodeHandleRow
+                direction="target"
+                label="Steps"
+                trailing={(
+                    <NodeSelectField
+                        aria-label="Steps"
+                        className="node-shell__row-field-wrap"
+                        value={String(steps)}
+                        onChange={(value) => updateSteps(Number(value))}
+                    >
+                        {[16, 32, 64].map((value) => (
+                            <option key={value} value={value}>{value}</option>
+                        ))}
+                    </NodeSelectField>
+                )}
             />
-        </div>
+            <NodeHandleRow
+                direction="target"
+                label="Octaves"
+                trailing={(
+                    <NodeSelectField
+                        aria-label="Octaves"
+                        className="node-shell__row-field-wrap"
+                        value={String(octaves)}
+                        onChange={(value) => updateOctaves(Number(value))}
+                    >
+                        {[1, 2, 3, 4].map((value) => (
+                            <option key={value} value={value}>{value}</option>
+                        ))}
+                    </NodeSelectField>
+                )}
+            />
+            <NodeHandleRow
+                direction="target"
+                label="Base"
+                trailing={(
+                    <NodeSelectField
+                        aria-label="Base note"
+                        className="node-shell__row-field-wrap"
+                        value={String(baseNote)}
+                        onChange={(value) => updateBaseNote(Number(value))}
+                    >
+                        {[36, 48, 60, 72].map((value) => (
+                            <option key={value} value={value}>{midiToNoteName(value)}</option>
+                        ))}
+                    </NodeSelectField>
+                )}
+            />
+        </NodeShell>
     );
 });
