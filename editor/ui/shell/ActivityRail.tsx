@@ -25,7 +25,7 @@ const ITEM_ICONS: Record<string, typeof FolderTree> = {
 export function ActivityRail({ items }: ActivityRailProps) {
     return (
         <nav
-            className="flex h-full flex-col items-center gap-2 bg-[var(--panel-muted)]/60 px-2 py-3"
+            className="flex h-full flex-col items-center gap-3 px-1.5 py-4"
             aria-label="Editor activity rail"
             data-testid="activity-rail"
         >

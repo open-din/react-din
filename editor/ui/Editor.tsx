@@ -896,7 +896,6 @@ const EditorContent: FC<EditorProps> = ({ project }) => {
                                     { id: 'explorer', label: 'Explorer', shortLabel: 'EXP', active: leftPanelView === 'explorer', onSelect: () => openLeftPanelView('explorer') },
                                     { id: 'catalog', label: 'Catalog', shortLabel: 'CAT', active: leftPanelView === 'catalog', onSelect: () => openLeftPanelView('catalog') },
                                     { id: 'library', label: 'Library', shortLabel: 'LIB', active: leftPanelView === 'library', onSelect: () => openLeftPanelView('library') },
-                                    { id: 'runtime', label: 'Runtime', shortLabel: 'RUN', active: bottomDrawerOpen && bottomDrawerTab === 'runtime', onSelect: () => openBottomDrawerTab('runtime') },
                                     {
                                         id: 'review',
                                         label: 'Review',

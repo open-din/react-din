@@ -36,24 +36,34 @@ export function EditorShell({
                 </div>
             </div>
 
-            <div className="absolute z-20 top-4 bottom-4 left-4 flex gap-4 pointer-events-none">
+            <div 
+                className="absolute z-20 bottom-4 left-4 flex pointer-events-none ui-panel overflow-hidden transition-all duration-300"
+                style={{ top: SHELL_LAYOUT.sidebarTopOffset }}
+            >
                 <div 
-                    className="pointer-events-auto min-h-0 bg-[var(--panel-bg)] border border-[var(--panel-border)] shadow-[var(--component-panel-shadow)] rounded-[var(--component-panel-radius)] overflow-hidden"
+                    className="pointer-events-auto border-r border-[var(--panel-border)]/40 bg-[var(--panel-muted)]/20"
                     style={{ width: SHELL_LAYOUT.railWidth }}
                 >
                     {rail}
                 </div>
                 <div 
-                    className="pointer-events-auto min-h-0 overflow-hidden transition-all duration-300" 
-                    style={{ width: leftPanelCollapsed ? 0 : leftPanelWidth, opacity: leftPanelCollapsed ? 0 : 1 }}
+                    className="pointer-events-auto min-w-0 transition-all duration-300" 
+                    style={{ 
+                        width: leftPanelCollapsed ? 0 : leftPanelWidth, 
+                        opacity: leftPanelCollapsed ? 0 : 1,
+                        visibility: leftPanelCollapsed ? 'hidden' : 'visible'
+                    }}
                 >
                     {leftPanel}
                 </div>
             </div>
 
-            <div className="absolute z-20 top-4 bottom-4 right-4 pointer-events-none flex">
+            <div 
+                className="absolute z-20 bottom-4 right-4 pointer-events-none flex"
+                style={{ top: SHELL_LAYOUT.sidebarTopOffset }}
+            >
                 <div 
-                    className="pointer-events-auto min-h-0 overflow-hidden transition-all duration-300" 
+                    className="pointer-events-auto ui-panel min-h-0 overflow-hidden transition-all duration-300" 
                     style={{ width: rightPanelCollapsed ? 0 : rightPanelWidth, opacity: rightPanelCollapsed ? 0 : 1 }}
                 >
                     {rightPanel}

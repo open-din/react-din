@@ -7,4 +7,5 @@ export const SHELL_LAYOUT = {
     bottomDrawerDefaultHeight: 190,
     bottomDrawerMinHeight: 160,
     bottomDrawerViewportOffset: 220,
+    sidebarTopOffset: 64,
 } as const;
