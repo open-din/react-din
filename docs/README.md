@@ -23,10 +23,6 @@
 - [SourceControlPanel](./editor/SourceControlPanel.md)
 - [AudioLibraryPanel](./editor/AudioLibraryPanel.md)
 
-## DIN Editor Automation
-
-- [Local MCP Server](../editor/targets/mcp/README.md)
-
 ## Governance
 
 - Coverage manifest: [`project/COVERAGE_MANIFEST.json`](../project/COVERAGE_MANIFEST.json)

@@ -43,12 +43,6 @@ const expectedPublicSources = [
     'src/midi/MidiTransportSync.tsx',
 ];
 
-const expectedNodeSources = fs
-    .readdirSync(path.join(root, 'editor/ui/editor/nodes'))
-    .filter((file) => file.endsWith('.tsx'))
-    .map((file) => `editor/ui/editor/nodes/${file}`)
-    .sort();
-
 const contents = fs.readFileSync(manifestPath, 'utf8');
 const manifest = JSON.parse(contents);
 const matrix = fs.readFileSync(testMatrixPath, 'utf8');
@@ -98,7 +92,7 @@ for (const item of manifest.items ?? []) {
     }
 }
 
-for (const source of [...expectedPublicSources, ...expectedNodeSources]) {
+for (const source of expectedPublicSources) {
     if (!sources.has(source)) {
         errors.push(`Coverage manifest missing source entry for ${source}`);
     }

@@ -4,10 +4,9 @@ import { SHELL_LAYOUT } from './shellTokens';
 interface FooterStatusProps {
     gitLabel: string;
     audioLabel: string;
-    mcpBadge: ReactNode;
 }
 
-export function FooterStatus({ gitLabel, audioLabel, mcpBadge }: FooterStatusProps) {
+export function FooterStatus({ gitLabel, audioLabel }: FooterStatusProps) {
     return (
         <footer
             className="flex items-center justify-between gap-3 border-t border-[var(--panel-border)] bg-[color-mix(in_oklab,var(--panel-bg)_90%,transparent)] px-3"
@@ -20,7 +19,6 @@ export function FooterStatus({ gitLabel, audioLabel, mcpBadge }: FooterStatusPro
                 </span>
             </div>
             <div className="flex items-center gap-2">
-                {mcpBadge}
                 <span className="inline-flex items-center px-3 text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--text-subtle)]">
                     {audioLabel}
                 </span>

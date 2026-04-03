@@ -8,7 +8,7 @@
 
 ## Documentation Contract
 
-- Every file under `docs/components/**` and `docs/editor-nodes/**` must include these headings:
+- Every file under `docs/components/**` must include these headings:
   - `## Purpose`
   - `## Props / Handles`
   - `## Defaults`
@@ -26,9 +26,14 @@
 
 ## Coverage Governance
 
-- `project/COVERAGE_MANIFEST.json` is the source of truth for in-scope public components and editor nodes.
+- `project/COVERAGE_MANIFEST.json` is the source of truth for in-scope public components in this repository.
 - Every mapped item must keep its `source`, `docs`, `tests`, and `scenarios` entries current.
 - A change to a mapped source file is incomplete until the mapped documentation file and at least one mapped test file change in the same branch.
+
+## DIN Studio Boundary
+
+- DIN Studio-owned features, editor scenarios, and editor tests live in the sibling `din-studio` repository, not in `react-din`.
+- Changes to editor-node behavior, DIN Studio launcher flows, MCP flows, and workspace UX must update the DIN Studio project docs and tests in that repository.
 
 ## Patch Schema Governance
 
@@ -36,24 +41,9 @@
 - Any change to the patch document structure, public patch interface entries, or serialized patch metadata is incomplete until `schemas/patch.schema.json` is updated in the same branch.
 - The published package must keep exporting the schema at `@open-din/react/patch/schema.json`.
 
-## Component And Node Rules
+## Component Rules
 
 - A new public component is incomplete until it updates exports, docs, tests, and `project/COVERAGE_MANIFEST.json`.
-- A new editor node is incomplete until it updates:
-  - `editor/ui/editor/nodes/index.ts`
-  - `editor/ui/Editor.tsx`
-  - `editor/ui/editor/store.ts`
-  - `editor/ui/editor/AudioEngine.ts`
-  - `editor/ui/editor/CodeGenerator.tsx`
-  - docs, tests, and `project/COVERAGE_MANIFEST.json`
-- Every modulate-able numeric node parameter must expose a dedicated target handle (pin) with a stable handle id.
-- When a target handle is connected for a slider-backed parameter, the UI must hide or disable the slider and show the connected value instead.
-- Every node parameter control must render on its own row. Multi-column parameter grids are not allowed for node parameter sections.
-- Every pin must overlap the node border by exactly 50% of the pin diameter.
-- Connected pin values shown in the UI must auto-refresh from the live input signal while audio is running.
-- Any node addition or change that affects parameters or handles must preserve real-time audible updates while output is playing:
-  - parameter edits update sound immediately
-  - connection add/remove/rewire updates routing immediately
 
 ## Required Checks
 
@@ -61,5 +51,4 @@
 - Run `npm run validate:patch-schema`.
 - Run `npm run validate:coverage`.
 - Run `npm run test:library`.
-- Run `npm run test:editor`.
-- Run `npm run validate:changes` before merging source changes that touch mapped components or nodes.
+- Run `npm run validate:changes` before merging source changes that touch mapped components.

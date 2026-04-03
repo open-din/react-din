@@ -390,35 +390,6 @@ function SpatialAudio() {
 
 The [`example`](./example) workspace stays in the repository for local development and release verification, but it is not bundled into the published npm tarball.
 
-## DIN Editor MCP
-
-The local MCP server for DIN Editor lives in [`editor/targets/mcp`](./editor/targets/mcp).
-
-```bash
-npm run editor:build:web
-npm run editor:build:app
-npm run editor:build:mcp
-npm run editor:mcp:start
-```
-
-The editor now has one root build surface with three targets:
-
-- `editor:build:web` for the stateless web shell
-- `editor:build:app` for the Electron app shell
-- `editor:build:mcp` for the local MCP runtime
-
-The MCP target stays local-only. It exposes a stdio MCP server plus a loopback bridge so an AI agent can inspect, preview, and apply graph operations against a live DIN Editor instance or work offline from patch JSON files.
-
-For local development, run the dev MCP server over plain HTTP on `localhost`:
-
-```bash
-npm run editor:dev:mcp
-```
-
-By default, the dev bridge uses `http://localhost:17374` so it does not collide with the secure standalone MCP server on `17373`.
-
-Use `npm run editor:mcp:start` only for the secure standalone MCP server. If you want the browser editor to connect to that secure server, you must trust the generated local CA and set `VITE_DIN_EDITOR_MCP_PROTOCOL=https`.
-
 ## Quality Gates
 
 ```bash
@@ -427,11 +398,9 @@ npm run validate:patch-schema
 npm run validate:coverage
 npm run validate:changes
 npm run test:library
-npm run test:editor
-npm run test:e2e
 ```
 
-Every component and DIN Editor node in scope is mapped to a dedicated documentation page and at least one required automated test file in [`project/COVERAGE_MANIFEST.json`](./project/COVERAGE_MANIFEST.json). Any source change must update the mapped docs and tests in the same change set. The public patch JSON contract is versioned and tracked separately in [`schemas/patch.schema.json`](./schemas/patch.schema.json).
+Every public component in scope is mapped to a dedicated documentation page and at least one required automated test file in [`project/COVERAGE_MANIFEST.json`](./project/COVERAGE_MANIFEST.json). Any source change must update the mapped docs and tests in the same change set. The public patch JSON contract is versioned and tracked separately in [`schemas/patch.schema.json`](./schemas/patch.schema.json). MCP tooling and DIN Studio workflows now live in the separate `din-studio` repository.
 
 ## Spatial Audio with @react-three/drei
 

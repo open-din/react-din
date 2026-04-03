@@ -107,31 +107,7 @@ for (const entry of diffEntries) {
         continue;
     }
 
-    if (entry.path?.startsWith('editor/ui/editor/nodes/') && entry.path.endsWith('.tsx')) {
-        errors.push(
-            `${entry.path}: editor node changes must be added to project/COVERAGE_MANIFEST.json and update docs/tests`
-        );
-
-        if (entry.status.startsWith('A')) {
-            const baseName = path.basename(entry.path, '.tsx');
-            const expectedDocs = `docs/editor-nodes/${baseName}.md`;
-            const requiredFiles = [
-                'editor/ui/editor/nodes/index.ts',
-                'editor/ui/Editor.tsx',
-                'editor/ui/editor/store.ts',
-                'editor/ui/editor/AudioEngine.ts',
-                'editor/ui/editor/CodeGenerator.tsx',
-                'project/COVERAGE_MANIFEST.json',
-                expectedDocs,
-            ];
-
-            for (const required of requiredFiles) {
-                if (!changedFiles.has(required)) {
-                    errors.push(`${entry.path}: new editor nodes must also change ${required}`);
-                }
-            }
-        }
-    } else if (isPotentialPublicComponent(entry.path)) {
+    if (isPotentialPublicComponent(entry.path)) {
         errors.push(
             `${entry.path}: public component changes must be added to project/COVERAGE_MANIFEST.json and update docs/tests`
         );

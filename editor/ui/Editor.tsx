@@ -40,7 +40,6 @@ import {
     getCompatibleNodeSuggestions,
     type NodeSuggestion,
 } from './editor/nodeHelpers';
-import { McpStatusBadge } from '../bridge/McpStatusBadge';
 import { createAtmosphericBreakbeatArcTemplate } from './editor/templates/atmosphericBreakbeatArcTemplate';
 import { ActivityRail } from './shell/ActivityRail';
 import { BottomDrawer } from './shell/BottomDrawer';
@@ -1162,7 +1161,6 @@ const EditorContent: FC<EditorProps> = ({ project }) => {
                     <FooterStatus
                         gitLabel={gitStatusLabel}
                         audioLabel={audioStatusLabel}
-                        mcpBadge={<McpStatusBadge />}
                     />
                 </footer>
 

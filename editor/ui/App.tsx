@@ -1,6 +1,5 @@
 import { startTransition, useEffect, useState } from 'react';
 import { patchToGraphDocument, type PatchDocument } from '@open-din/react/patch';
-import { AgentBridgeClient } from '../bridge/AgentBridgeClient';
 import {
     getProjectRepository,
     setActiveProjectController,
@@ -301,7 +300,6 @@ function App() {
 
     return (
         <>
-            <AgentBridgeClient />
             <Editor
                 project={{
                     id: screen.controller.project.id,
