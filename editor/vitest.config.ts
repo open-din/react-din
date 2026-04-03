@@ -5,7 +5,6 @@ export default defineConfig({
     resolve: {
         alias: [
             { find: /.*\/AudioEngine$/, replacement: resolve(__dirname, './ui/editor/AudioEngine.stub.ts') },
-            { find: '@din/react', replacement: resolve(__dirname, '../src/index.ts') },
         ],
     },
     test: {

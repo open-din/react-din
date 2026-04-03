@@ -48,7 +48,7 @@ import type {
     ClampNodeData,
     SwitchNodeData,
 } from './types';
-import { math, compare, mix, clamp, switchValue } from '../../../src/data/values';
+import { math, compare, mix, clamp, switchValue } from '@din/react/data';
 import { editorMidiRuntime } from './midiRuntime';
 import {
     getInputParamHandleId,

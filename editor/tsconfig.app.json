@@ -16,10 +16,6 @@
     "noEmit": true,
     "jsx": "react-jsx",
     "baseUrl": ".",
-    "paths": {
-      "@din/react": ["../src/index.ts"],
-      "@din/react/*": ["../src/*"]
-    },
 
     /* Linting */
     "strict": true,

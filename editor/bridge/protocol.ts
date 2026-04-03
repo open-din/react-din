@@ -1,4 +1,4 @@
-import type { PatchDocument } from '../../src/patch';
+import type { PatchDocument } from '@din/react/patch';
 import type {
     EditorOperation,
     EditorOperationResult,

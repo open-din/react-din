@@ -11,6 +11,7 @@ export default defineConfig({
         'sources/index': 'src/sources/index.ts',
         'effects/index': 'src/effects/index.ts',
         'midi/index': 'src/midi/index.ts',
+        'data/index': 'src/data/index.ts',
         'patch/index': 'src/patch/index.ts',
     },
     format: ['esm', 'cjs'],

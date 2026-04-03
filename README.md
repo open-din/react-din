@@ -2,6 +2,8 @@
 
 A React-first declarative WebAudio library for building audio graphs, focused for interactive sound design.
 
+The DIN editor product is being split into a separate `din-studio` repository so this repository can stay focused on the `@din/react` library surface.
+
 Build complex audio graphs using React's declarative paradigm. Audio nodes are represented as React components that automatically connect based on their parent-child relationships.
 
 > [!WARNING]  

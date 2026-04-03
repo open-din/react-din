@@ -1,4 +1,4 @@
-import { graphDocumentToPatch, patchToGraphDocument } from '../../src/patch';
+import { graphDocumentToPatch, patchToGraphDocument } from '@din/react/patch';
 import { createInitialGraphDocument } from '../ui/editor/defaultGraph';
 import { sanitizeGraphForStorage } from '../ui/editor/graphUtils';
 import type { AudioNodeData, ConvolverNodeData, GraphDocument, SamplerNodeData } from '../ui/editor/store';

@@ -160,7 +160,7 @@ vi.mock('../../ui/editor/AudioEngine', () => ({
 
 vi.mock('../../ui/editor/audioLibrary', () => audioLibraryMock);
 
-vi.mock('../../../src/midi', () => ({
+vi.mock('@din/react/midi', () => ({
     useMidi: () => midiHookState.midi,
     useMidiNote: () => midiHookState.note,
     useMidiCC: () => midiHookState.cc,

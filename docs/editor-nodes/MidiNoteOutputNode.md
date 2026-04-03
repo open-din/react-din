@@ -12,7 +12,7 @@
 - Local velocity: `1`
 
 ## Integration Notes
-Use `gate` for held notes and `trigger` for one-shot note pulses. Connected values replace local controls in the UI.
+Use `gate` for held notes and `trigger` for one-shot note pulses. Connected values replace local controls in the UI. The editor implementation now depends on the public `@din/react/midi` package surface so the node can move into `din-studio` without local `src/` imports.
 
 ## Failure Modes
 With no output port, the node remains silent.

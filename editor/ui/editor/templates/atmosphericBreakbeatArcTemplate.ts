@@ -1,5 +1,5 @@
 import type { Edge, Node } from '@xyflow/react';
-import { migratePatchDocument, patchToGraphDocument, type PatchDocument } from '../../../../src/patch';
+import { migratePatchDocument, patchToGraphDocument, type PatchDocument } from '@din/react/patch';
 import type { AudioNodeData } from '../store';
 import atmosphericBreakbeatArcPatchJson from './atmospheric-breakbeat-arc.patch.json?raw';
 

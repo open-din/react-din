@@ -1,5 +1,5 @@
 import type { Edge, Node, XYPosition } from '@xyflow/react';
-import type { MidiTransportSyncMode, MidiValueFormat } from '../../../src/midi';
+import type { MidiTransportSyncMode, MidiValueFormat } from '@din/react/midi';
 
 // ============================================================================
 // Audio Node Data Types

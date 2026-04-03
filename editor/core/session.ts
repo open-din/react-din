@@ -1,4 +1,4 @@
-import type { MidiRuntimeSnapshot } from '../../src/midi';
+import type { MidiRuntimeSnapshot } from '@din/react/midi';
 import type { ProjectManifest, ProjectWindowKind } from '../project';
 import type { AudioNodeData, GraphDocument } from '../ui/editor/store';
 import type {

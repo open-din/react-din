@@ -1,6 +1,6 @@
 import { memo } from 'react';
 import { type NodeProps } from '@xyflow/react';
-import { useMidi, useMidiClock } from '../../../../src/midi';
+import { useMidi, useMidiClock } from '@din/react/midi';
 import { audioEngine } from '../AudioEngine';
 import { useAudioGraphStore, type MidiSyncNodeData } from '../store';
 import { buildInputOptions, buildOutputOptions } from './midiNodeUtils';

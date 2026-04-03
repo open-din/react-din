@@ -1,5 +1,5 @@
-import { createMidiRuntime } from '../../../src/midi';
-import { graphDocumentToPatch } from '../../../src/patch';
+import { createMidiRuntime } from '@din/react/midi';
+import { graphDocumentToPatch } from '@din/react/patch';
 import { vi } from 'vitest';
 
 describe('editor agent API', () => {

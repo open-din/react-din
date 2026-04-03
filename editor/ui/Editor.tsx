@@ -18,7 +18,7 @@ import './editor/editor.css';
 import Inspector from './editor/Inspector';
 import { CodeGenerator } from './editor/CodeGenerator';
 import ConnectionAssistMenu from './editor/ConnectionAssistMenu';
-import { MidiProvider } from '../../src/midi';
+import { MidiProvider } from '@din/react/midi';
 
 import { useAudioGraphStore } from './editor/store';
 import type { AudioNodeData } from './editor/types';

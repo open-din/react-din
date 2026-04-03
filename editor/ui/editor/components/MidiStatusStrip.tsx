@@ -1,5 +1,5 @@
 import { type FC } from 'react';
-import { useMidi } from '../../../../src/midi';
+import { useMidi } from '@din/react/midi';
 
 interface MidiStatusStripProps {
     activity?: boolean;

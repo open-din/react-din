@@ -12,7 +12,7 @@
 - Value mode: `normalized`
 
 ## Integration Notes
-Use it to forward graph modulation to hardware synths, mixers, or lighting controllers.
+Use it to forward graph modulation to hardware synths, mixers, or lighting controllers. The editor implementation now depends on the public `@din/react/midi` package surface so the node can move into `din-studio` without local `src/` imports.
 
 ## Failure Modes
 If the chosen output disappears, the node shows the missing port and sends nothing.

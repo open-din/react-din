@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { graphDocumentToPatch } from '../../../src/patch';
+import { graphDocumentToPatch } from '@din/react/patch';
 import { createInitialGraphDocument } from '../../ui/editor/defaultGraph';
 import {
     buildInterruptedStorageEntry,

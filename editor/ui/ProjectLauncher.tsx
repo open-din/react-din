@@ -1,7 +1,7 @@
 import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
 import { validateOfflinePatchText } from '../core/offline';
 import type { ProjectManifest } from '../project';
-import type { PatchDocument } from '../../src/patch';
+import type { PatchDocument } from '@din/react/patch';
 import type { EditorTemplateDefinition } from './editor/templateLibrary';
 import type { DensityMode, InterruptedWorkSummary, LauncherSection, StatusSeverity } from './phase3a.types';
 import { LAUNCHER_COPY } from './copy';
