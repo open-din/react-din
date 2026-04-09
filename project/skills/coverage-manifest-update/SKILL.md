@@ -1,22 +1,23 @@
-# Skill: coverage-manifest-update
+# SKILL: coverage-manifest-update
 
-## Triggers
+## REPO
 
-- Additions to `project/COVERAGE_MANIFEST.json` or missing `source` / `docs` / `tests` / `scenarios` links.
+`react-din`
 
-## Workflow
+## WHEN TO USE
 
-1. Open `project/COVERAGE_MANIFEST.json` and `project/TEST_MATRIX.md`; every `scenarios` entry must appear in the matrix.
-2. For each item, ensure files exist at `source`, `docs`, and every path in `tests`.
-3. Run `node ./scripts/validate-coverage.mjs` (also executed via `npm run validate:coverage`).
-4. If you change a mapped `source`, run `npm run validate:changes`.
+- A mapped public surface changes
+- Docs, tests, or scenario links drift from `project/COVERAGE_MANIFEST.json`
 
-## Checks
+## STEPS
 
-- `npm run validate:coverage`
-- `npm run validate:changes` when mapped sources move
-- `npm run docs:generate` when mapped `source` files change public exports (`docs/generated/` is gitignored)
+1. Read the target summary files plus `project/COVERAGE_MANIFEST.json`.
+2. Update the affected manifest row with source, docs, tests, and scenarios.
+3. Remove orphan references or add missing coverage rows.
+4. Keep the manifest aligned with exported surface only.
 
-## Expected outputs
+## VALIDATION
 
-- Manifest, matrix, filesystem paths, and feature IDs stay consistent.
+- `npm run lint`
+- `npm run typecheck`
+- `npm run ci:check`

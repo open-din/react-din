@@ -1,24 +1,23 @@
-# Skill: release-surface-check
+# SKILL: release-surface-check
 
-## Triggers
+## REPO
 
-- Before tagging or publishing `@open-din/react`.
-- Final review PRs that touch `src/**`, `schemas/`, or manifests.
+`react-din`
 
-## Workflow
+## WHEN TO USE
 
-1. Run the full gate sequence in `AGENTS.md` (“Quality gates”).
-2. Confirm `schemas/patch.schema.json` and `project/COVERAGE_MANIFEST.json` validate.
-3. Verify DIN Studio compatibility: breaking patch or export changes should reference an accompanying `din-studio` / `din-core` plan in the PR description.
+- A request affects exports, published schema paths, or package release surface
+- You need a final consistency pass before release-facing changes land
 
-## Checks
+## STEPS
+
+1. Read the repo summary, API summary, and repo manifest.
+2. Verify exports, schema path, docs, tests, and coverage rows match.
+3. Confirm the task did not drift into editor or runtime ownership.
+4. Call out any required sibling coordination before merge.
+
+## VALIDATION
 
 - `npm run lint`
 - `npm run typecheck`
 - `npm run ci:check`
-- `npm run validate:changes` when mapped files changed
-- `npm run docs:generate` before tagging (`docs/generated/` is gitignored)
-
-## Expected outputs
-
-- Release surface (exports, schema, docs paths) matches published package layout.

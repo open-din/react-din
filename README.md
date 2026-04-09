@@ -1,5 +1,27 @@
 # @open-din/react
 
+## PURPOSE
+
+Public React audio library and published patch schema for DIN.
+
+## ENTRY FILES
+
+- `project/SUMMARY.md`
+- `schemas/patch.schema.json`
+- `src/index.ts`
+- `project/COVERAGE_MANIFEST.json`
+
+## DO NOT TOUCH
+
+- Editor workflows, launcher UX, MCP behavior -> `din-studio`
+- Runtime semantics, registry, migration, FFI/WASM -> `din-core`
+
+## RELATED REPOS
+
+- `din-core` mirrors the patch contract
+- `din-studio` consumes the library and patch types
+- `din-agents` owns workspace routing and automation
+
 A React-first declarative WebAudio library for building audio graphs, focused for interactive sound design.
 
 The DIN editor product is being split into a separate `din-studio` repository so this repository can stay focused on the `@open-din/react` library surface.

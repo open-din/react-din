@@ -1,173 +1,45 @@
-# AGENTS — react-din (HOT + HOOKS)
+# AGENTS — react-din
 
-## CORE RULE
-Load MINIMUM context. Use hooks. Do NOT load deep context unless required.
+## LOAD ORDER
 
----
+1. `AGENTS.md`
+2. `project/SUMMARY.md`
+3. `../docs/summaries/react-din-api.md`
+4. `project/REPO_MANIFEST.json`
+5. One matching file in `project/skills/`
 
-## 1. SCOPE
+## ROUTE HERE WHEN
 
-react-din owns:
+- The request changes public components, hooks, exports, docs/components, or `project/COVERAGE_MANIFEST.json`.
+- The request changes `schemas/patch.schema.json` or published patch helpers.
 
-- public API (@open-din/react)
-- patch schema
-- component library
-- patch helpers (midi, data, effects)
+## ROUTE AWAY WHEN
 
-It is the SOURCE OF TRUTH for JS/TS contract.
+- Runtime, compiler, registry, migration, FFI, or WASM -> `din-core`
+- Editor, MCP, launcher, shell, or codegen -> `din-studio`
+- Workspace routing or automation -> `din-agents`
 
----
+## ENTRY POINTS
 
-## 2. ROUTING (FIRST DECISION)
+- `src/index.ts`
+- `schemas/patch.schema.json`
+- `project/COVERAGE_MANIFEST.json`
 
-Map task → type:
+## SKILL MAP
 
-- "component" → component rules
-- "schema / patch" → schema rules
-- "API / export" → public API
-- "docs" → documentation
+- Public component or export -> `project/skills/public-component-change/SKILL.md`
+- Schema or contract change -> `project/skills/patch-schema-change/SKILL.md`
+- Coverage/docs sync -> `project/skills/coverage-manifest-update/SKILL.md`
+- Release-surface check -> `project/skills/release-surface-check/SKILL.md`
 
-If unclear → choose smallest scope
+## HARD RULES
 
----
+- Keep docs, tests, exports, and coverage rows aligned.
+- `react-din` owns the public patch schema.
+- Do not change shared schema or persisted IDs without coordinating `din-core`.
 
-## 3. HOOKS (MANDATORY)
+## VALIDATION
 
-### HOOK: COMPONENT_CHANGE
-IF task mentions component:
-
-LOAD ONLY:
-- project/COVERAGE_MANIFEST.json
-- docs/components/** (target file)
-
-REQUIRE:
-- docs updated
-- ≥1 test
-- coverage entry updated
-
----
-
-### HOOK: SCHEMA_CHANGE
-IF task mentions schema / patch:
-
-LOAD ONLY:
-- schemas/patch.schema.json
-
-REQUIRE:
-- schema updated
-- exports preserved (@open-din/react/patch/schema.json)
-
----
-
-### HOOK: API_CHANGE
-IF task mentions export / public API:
-
-LOAD ONLY:
-- package exports
-- docs/components/** OR docs/generated
-
-REQUIRE:
-- docs updated
-- coverage updated
-- tests updated
-
----
-
-### HOOK: DOCS
-IF missing info:
-
-LOAD (max 2):
-1. docs/summaries
-2. docs/**
-3. docs/generated
-
-STOP when sufficient
-
----
-
-### HOOK: CROSS_REPO
-IF mentions:
-editor | runtime | FFI | MCP
-
-STOP → switch:
-
-- din-studio (editor)
-- din-core (runtime)
-
----
-
-## 4. HARD CONSTRAINTS
-
-### Component change MUST update:
-
-- exports
-- docs/components/**
-- tests
-- COVERAGE_MANIFEST.json
-
----
-
-### Schema change MUST:
-
-- update schemas/patch.schema.json
-- preserve public contract
-
----
-
-### NEVER:
-
-- implement editor logic (din-studio)
-- implement runtime logic (din-core)
-- break public API without updating docs + coverage
-
----
-
-## 5. EXECUTION LOOP
-
-1. Detect hook
-2. Load ONLY required files
-3. Apply minimal change
-4. Validate
-
----
-
-## 6. CONTEXT LIMITS
-
-- max 1 repo
-- max 2 files
-- NEVER scan directories
-- NEVER bulk-load docs
-
-If enough → STOP
-
----
-
-## 7. SELF-OPTIMIZATION
-
-Continuously:
-
-- drop irrelevant context
-- ignore unrelated components
-- reduce reads
-- prefer smallest change
-
-If context grows → compress
-
----
-
-## 8. LOAD DEEP CONTEXT ONLY IF
-
-- schema ambiguity
-- API unclear
-- failing validation
-
----
-
-## 9. VALIDATION
-
-npm run lint  
-npm run typecheck  
-npm run ci:check  
-npm run validate:changes  
-
-(optional) npm run docs:generate
+- `npm run lint`
+- `npm run typecheck`
+- `npm run ci:check`

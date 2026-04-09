@@ -1,0 +1,58 @@
+{
+  "version": 1,
+  "repo": {
+    "id": "react_din",
+    "display_name": "react-din",
+    "path": "react-din",
+    "role": "api",
+    "tags": [
+      "react",
+      "typescript",
+      "public api",
+      "components",
+      "patch schema",
+      "exports",
+      "coverage manifest",
+      "library"
+    ],
+    "depends_on": [],
+    "used_by": [
+      "din_core",
+      "din_studio",
+      "din_agents"
+    ],
+    "entry_points": [
+      "src/index.ts",
+      "schemas/patch.schema.json",
+      "project/COVERAGE_MANIFEST.json"
+    ],
+    "owned_contracts": [
+      "public api",
+      "package exports",
+      "patch schema"
+    ],
+    "shared_contracts": [
+      "patch schema",
+      "serialization",
+      "persisted node ids",
+      "round-trip"
+    ],
+    "hard_boundaries": [
+      "Do not implement editor workflows here.",
+      "Do not implement Rust runtime logic here.",
+      "Do not change shared schema without coordinating din-core."
+    ],
+    "validation_commands": [
+      "npm run lint",
+      "npm run typecheck",
+      "npm run ci:check"
+    ],
+    "summary_path": "project/SUMMARY.md",
+    "api_summary_path": "../docs/summaries/react-din-api.md",
+    "repo_manifest_path": "project/REPO_MANIFEST.json",
+    "skills_path": "project/skills",
+    "linked_manifests": [
+      "project/COVERAGE_MANIFEST.json"
+    ]
+  }
+}

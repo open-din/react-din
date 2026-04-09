@@ -1,21 +1,23 @@
-# Skill: docs-component-author
+# SKILL: docs-component-author
 
-## Triggers
+## REPO
 
-- Creating or substantially revising `docs/components/**`.
+`react-din`
 
-## Workflow
+## WHEN TO USE
 
-1. Use the heading list in `AGENTS.md` under “Documentation contract”, in order:
-   - Purpose, Props / Handles, Defaults, Integration Notes, Failure Modes, Example, Test Coverage
-2. Link behavior to scenarios in `project/TEST_MATRIX.md` in the Test Coverage section (IDs, not prose duplication of the matrix).
-3. Match tone and terminology from `project/USERFLOW.md` without copying long passages.
+- `docs/components/*` changes
+- Contributor-facing component docs must move with a public surface change
 
-## Checks
+## STEPS
 
-- `npm run validate:docs`
-- `npm run docs:generate` when components alter re-exported types (`docs/generated/` is gitignored)
+1. Read the repo summary, API summary, and manifest row for the target component.
+2. Update the matching `docs/components/*` file with the current public surface.
+3. Keep examples, props, and scenario references aligned with tests and exports.
+4. Do not document editor-only or runtime-only ownership here.
 
-## Expected outputs
+## VALIDATION
 
-- Component docs are complete and pass the documentation validator.
+- `npm run lint`
+- `npm run typecheck`
+- `npm run ci:check`
