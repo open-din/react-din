@@ -24,7 +24,7 @@ export default defineConfig({
     sourcemap: true,
     clean: true,
     treeshake: true,
-    external: ['react', 'react-dom'],
+    external: ['react', 'react-dom', 'din-wasm'],
     esbuildOptions(options) {
         options.jsx = 'automatic';
     },

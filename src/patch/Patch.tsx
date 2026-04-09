@@ -8,7 +8,7 @@ import type { PatchRuntimeProps } from './types';
  */
 export const Patch: FC<PatchRuntimeProps> = ({
     children,
-    includeProvider = false,
+    includeProvider = true,
     assetRoot,
     midi,
     patchInline,

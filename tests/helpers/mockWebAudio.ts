@@ -194,6 +194,17 @@ class MockConstantSourceNode extends MockAudioNode {
 
 class MockMediaStreamSourceNode extends MockAudioNode {}
 
+class MockScriptProcessorNode extends MockAudioNode {
+    bufferSize: number;
+    onaudioprocess: ((event: { outputBuffer: MockAudioBuffer }) => void) | null = null;
+
+    constructor(bufferSize: number, _numberOfInputChannels: number, numberOfOutputChannels: number) {
+        super();
+        this.bufferSize = bufferSize;
+        void numberOfOutputChannels;
+    }
+}
+
 export class MockAudioContext extends MockEventTarget {
     state: AudioContextState = 'suspended';
     sampleRate = 44100;
@@ -266,6 +277,10 @@ export class MockAudioContext extends MockEventTarget {
 
     createMediaStreamSource() {
         return new MockMediaStreamSourceNode();
+    }
+
+    createScriptProcessor(bufferSize: number, numberOfInputChannels: number, numberOfOutputChannels: number) {
+        return new MockScriptProcessorNode(bufferSize, numberOfInputChannels, numberOfOutputChannels);
     }
 
     createPeriodicWave() {

@@ -10,6 +10,30 @@ let inlinePatchSourceCounter = 0;
 
 export const PatchSourceStackContext = createContext<readonly string[]>([]);
 
+/**
+ * Throws when a `patch` node’s `patchInline` closes a cycle by reusing an ancestor document
+ * (same object identity on the recursion path). Required for wasm graphs where nested loading
+ * no longer passes through `ResolvedPatchSource`.
+ */
+export function assertNoRecursivePatchInline(patch: PatchDocument, path: Set<object> = new Set()): void {
+    const root = patch as unknown as object;
+    if (path.has(root)) {
+        throw new Error(`Recursive patch reference detected for "${patch.name}".`);
+    }
+    path.add(root);
+    try {
+        for (const node of patch.nodes) {
+            if (node.data.type !== 'patch') continue;
+            const inline = (node.data as { patchInline?: PatchDocument | null }).patchInline;
+            if (inline) {
+                assertNoRecursivePatchInline(inline, path);
+            }
+        }
+    } finally {
+        path.delete(root);
+    }
+}
+
 export interface PatchSourceDescriptor {
     key: string;
     label: string;
