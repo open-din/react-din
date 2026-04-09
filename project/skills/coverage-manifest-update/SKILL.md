@@ -15,6 +15,7 @@
 
 - `npm run validate:coverage`
 - `npm run validate:changes` when mapped sources move
+- `npm run docs:generate` when mapped `source` files change public exports (`docs/generated/` is gitignored)
 
 ## Expected outputs
 

@@ -1,4 +1,5 @@
 dist/
+docs/generated/
 coverage/
 playwright-report/
 test-results/

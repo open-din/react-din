@@ -5,6 +5,13 @@ function sanitizeBusId(busId: string | undefined): string {
     return trimmed && trimmed.length > 0 ? trimmed : 'default';
 }
 
+/**
+ * Returns a shared `GainNode` bus for the given `AudioContext`, creating it on first use.
+ *
+ * @param context - Active Web Audio context.
+ * @param busId - Logical bus name; empty values normalize to `"default"`.
+ * @returns Gain node acting as the aux/mix bus for `busId`.
+ */
 export function getOrCreateBusNode(context: AudioContext, busId: string | undefined): GainNode {
     const id = sanitizeBusId(busId);
     let byId = CONTEXT_BUS_REGISTRY.get(context);

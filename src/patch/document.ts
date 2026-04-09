@@ -726,6 +726,13 @@ function buildPatchInterface(nodes: readonly PatchNode[]): PatchInterface {
     return { inputs, events, midiInputs, midiOutputs };
 }
 
+/**
+ * Heuristic: whether a serialized connection behaves like a stereo/mono audio edge in the editor graph.
+ *
+ * @param connection - Partial edge (source/target handles).
+ * @param nodeById - Lookup from node id to normalized patch node.
+ * @returns True when both ends participate in default audio routing.
+ */
 export function isAudioConnectionLike(
     connection: Pick<PatchConnection, 'source' | 'sourceHandle' | 'target' | 'targetHandle'>,
     nodeById: Map<string, PatchNode>
@@ -758,6 +765,13 @@ export function isAudioConnectionLike(
     return normalizeSlotType(outputSlot?.type, 'midi') === 'audio' && isAudioTargetHandle;
 }
 
+/**
+ * Collects node ids that receive transport sync from an attached `transport` node.
+ *
+ * @param connections - All patch edges.
+ * @param nodeById - Node lookup table.
+ * @returns Set of consumer node ids (sequencer-style targets) with active transport links.
+ */
 export function getTransportConnections(
     connections: readonly PatchConnection[],
     nodeById: Map<string, PatchNode>
@@ -783,6 +797,13 @@ export function getTransportConnections(
     return connected;
 }
 
+/**
+ * Joins a relative patch asset path with an optional filesystem or URL root for fetching.
+ *
+ * @param assetPath - Relative path, absolute URL, or blob/data URL.
+ * @param assetRoot - Optional directory or CDN prefix without trailing slash.
+ * @returns Fully qualified URL/path, or `undefined` when `assetPath` is empty.
+ */
 export function resolvePatchAssetPath(assetPath: string | undefined, assetRoot?: string): string | undefined {
     if (!assetPath) return undefined;
     if (!assetRoot) return assetPath;
@@ -795,6 +816,12 @@ export function resolvePatchAssetPath(assetPath: string | undefined, assetRoot?:
     return `${normalizedRoot}${normalizedPath}`;
 }
 
+/**
+ * Converts an editor-style graph document into a validated `PatchDocument` interchange object.
+ *
+ * @param graph - Graph carrying nodes/edges (ReactFlow-compatible shape).
+ * @returns Normalized patch with derived `interface` metadata.
+ */
 export function graphDocumentToPatch(graph: GraphDocumentLike): PatchDocument {
     const rawConnections = graph.connections ?? graph.edges ?? [];
     const nodes = graph.nodes.map(normalizePatchNode);
@@ -813,6 +840,12 @@ export function graphDocumentToPatch(graph: GraphDocumentLike): PatchDocument {
     };
 }
 
+/**
+ * Validates and rehydrates a `PatchDocument`, throwing when the version or nodes are invalid.
+ *
+ * @param patch - Raw interchange JSON object.
+ * @returns Deep-normalized patch safe for codegen/runtime consumers.
+ */
 export function migratePatchDocument(patch: PatchDocument): PatchDocument {
     if (!patch || typeof patch !== 'object') {
         throw new Error('Patch document must be an object.');
@@ -863,6 +896,13 @@ function buildGraphEdgeStyle(
     };
 }
 
+/**
+ * Serializes a `PatchDocument` into a ReactFlow-style graph document for editor persistence.
+ *
+ * @param patch - Source patch document.
+ * @param options - Optional ids/timestamps/order overrides for round-tripping UI state.
+ * @returns Graph payload with typed nodes, styled edges, and metadata.
+ */
 export function patchToGraphDocument(patch: PatchDocument, options: PatchToGraphOptions = {}) {
     const migrated = migratePatchDocument(patch);
     const now = Date.now();

@@ -98,11 +98,23 @@ function getNow(): number {
     return typeof performance !== 'undefined' ? performance.now() : Date.now();
 }
 
+/**
+ * Converts an audio frequency in Hz to an equal-tempered MIDI note number (A4 = 69).
+ *
+ * @param frequency - Hertz; non-positive or non-finite values yield middle C-ish default (69).
+ * @returns MIDI note number clamped to the valid MIDI range.
+ */
 export function freqToMidiNote(frequency: number): number {
     if (!Number.isFinite(frequency) || frequency <= 0) return 69;
     return clampMidi(69 + (12 * Math.log2(frequency / 440)));
 }
 
+/**
+ * Creates a mutable MIDI runtime that manages Web MIDI access, ports, clock, and routing.
+ *
+ * @param options - Initial default ports and listen mode.
+ * @returns Runtime handle with subscribe/getSnapshot and send helpers.
+ */
 export function createMidiRuntime(options: MidiRuntimeOptions = {}): MidiRuntime {
     let midiAccess: MIDIAccess | null = null;
     let status: MidiRuntimeSnapshot['status'] = typeof navigator !== 'undefined' && typeof navigator.requestMIDIAccess === 'function'

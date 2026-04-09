@@ -14,6 +14,7 @@
 ## Checks
 
 - `npm run validate:docs`
+- `npm run docs:generate` when components alter re-exported types (`docs/generated/` is gitignored)
 
 ## Expected outputs
 

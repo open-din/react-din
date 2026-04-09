@@ -16,6 +16,7 @@
 
 - `npm run validate:patch-schema`
 - `npm run ci:check`
+- `npm run docs:generate` after `src/patch/**` or root export surface shifts (`docs/generated/` is gitignored)
 
 ## Expected outputs
 

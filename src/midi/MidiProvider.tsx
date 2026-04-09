@@ -16,6 +16,9 @@ function useMidiSnapshot(runtime: MidiRuntime) {
     return useSyncExternalStore(runtime.subscribe, runtime.getSnapshot, runtime.getSnapshot);
 }
 
+/**
+ * React context provider that wires Web MIDI permissions, default ports, and error hooks.
+ */
 export const MidiProvider: FC<MidiProviderProps> = ({
     children,
     runtime = sharedRuntime,
@@ -71,6 +74,12 @@ export const MidiProvider: FC<MidiProviderProps> = ({
     );
 };
 
+/**
+ * Returns the current MIDI React context (runtime + snapshot).
+ *
+ * @throws When used outside of `MidiProvider`.
+ * @returns MIDI context value from the nearest provider.
+ */
 export function useMidiContext(): MidiContextValue {
     const context = useContext(MidiContext);
     if (!context) {

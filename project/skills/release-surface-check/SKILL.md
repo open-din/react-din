@@ -17,6 +17,7 @@
 - `npm run typecheck`
 - `npm run ci:check`
 - `npm run validate:changes` when mapped files changed
+- `npm run docs:generate` before tagging (`docs/generated/` is gitignored)
 
 ## Expected outputs
 

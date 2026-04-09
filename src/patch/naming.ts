@@ -39,6 +39,14 @@ const RESERVED_IDENTIFIERS = new Set([
     'yield',
 ]);
 
+/**
+ * Produces a JavaScript-safe identifier from arbitrary human-readable text.
+ *
+ * @param value - Raw label or name.
+ * @param fallback - Identifier used when normalization fails or hits reserved words.
+ * @param reserved - Optional extra reserved tokens beyond the built-in list.
+ * @returns camelCase-safe identifier string.
+ */
 export function toSafeIdentifier(value: string, fallback: string, reserved?: ReadonlySet<string>): string {
     const normalized = value.replace(/[^a-zA-Z0-9]+/g, ' ').trim();
     if (!normalized) return fallback;
@@ -61,6 +69,13 @@ export function toSafeIdentifier(value: string, fallback: string, reserved?: Rea
     return result;
 }
 
+/**
+ * Appends a numeric suffix until `base` is unique within `usedNames`.
+ *
+ * @param base - Preferred base name.
+ * @param usedNames - Names already claimed in the current scope.
+ * @returns A name not present in `usedNames`.
+ */
 export function ensureUniqueName(base: string, usedNames: Set<string>): string {
     if (!usedNames.has(base)) return base;
 

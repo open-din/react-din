@@ -51,5 +51,16 @@ Canonical project contract for Codex, Claude, Cursor, and other agents. Product 
 2. `npm run typecheck`
 3. `npm run ci:check` (documentation, patch schema, coverage manifests, and library tests)
 4. `npm run validate:changes` before merging source changes that touch **mapped** components or coverage entries
+5. (Recommended after public API edits) `npm run docs:generate` — refreshes TypeDoc markdown under `docs/generated/` (gitignored)
 
 Portable workflows for repeating tasks: `project/skills/*/SKILL.md`.
+
+## Documentation Strategy
+
+- Prefer `docs/**` hand-written component docs and on-demand `docs/generated/` TypeDoc output over reading raw `src/**` when you only need signatures or exports.
+- Do not attach generated docs to context by default; open them when resolving API surface questions.
+
+## Documentation Rules
+
+- Public exports should carry JSDoc; `eslint-plugin-jsdoc` flags gaps as warnings.
+- Hand-written docs describe behavior and integration; generated docs describe machine-checked API shape—avoid duplicating prose between them.

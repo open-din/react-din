@@ -19,6 +19,7 @@
 - `npm run validate:docs` and `npm run validate:coverage`
 - `npm run test:library`
 - `npm run validate:changes` if the component is mapped
+- `npm run docs:generate` after export or `src/index.ts` changes (`docs/generated/` is gitignored)
 
 ## Expected outputs
 

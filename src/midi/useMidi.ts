@@ -56,6 +56,14 @@ function getPortDescriptor(ports: MidiPortDescriptor[], id: string | null): Midi
     return ports.find((port) => port.id === id) ?? null;
 }
 
+/**
+ * Returns whether an input port id matches the effective selection for the current snapshot.
+ *
+ * @param inputId - Port id under test.
+ * @param selection - Requested selection (concrete id, `default`, or `all`).
+ * @param snapshot - Latest runtime snapshot containing ports and listen mode.
+ * @returns True when `inputId` is included per selection rules.
+ */
 export function matchesInputSelection(
     inputId: string,
     selection: MidiPortSelection,
@@ -123,6 +131,11 @@ function getSourceInfo(snapshot: MidiRuntimeSnapshot, inputId: string | null) {
     };
 }
 
+/**
+ * Hook exposing MIDI runtime state and imperative send helpers.
+ *
+ * @returns Memoized view of ports, status, transport clock, and outbound helpers.
+ */
 export function useMidi(): MidiValue {
     const { runtime, snapshot } = useMidiContext();
 
@@ -154,6 +167,12 @@ export function useMidi(): MidiValue {
     }), [runtime, snapshot]);
 }
 
+/**
+ * Subscribes to filtered note-on/note-off activity derived from the shared MIDI snapshot.
+ *
+ * @param options - Channel, note, and input filters.
+ * @returns Gate, pitch, velocity, trigger token, and active note list for matching input.
+ */
 export function useMidiNote(options: MidiNoteFilterOptions = {}): MidiNoteValue {
     const { snapshot } = useMidiContext();
     const [lastMatchingEvent, setLastMatchingEvent] = useState<MidiInputEventData | null>(null);
@@ -196,6 +215,12 @@ export function useMidiNote(options: MidiNoteFilterOptions = {}): MidiNoteValue 
     };
 }
 
+/**
+ * Subscribes to a filtered control-change stream and latest matching CC state.
+ *
+ * @param options - Channel, CC number, and input filters.
+ * @returns Normalized and raw CC values plus last event metadata.
+ */
 export function useMidiCC(options: MidiCCFilterOptions): MidiCCValue {
     const { snapshot } = useMidiContext();
     const [lastMatchingEvent, setLastMatchingEvent] = useState<MidiInputEventData | null>(null);
@@ -230,6 +255,12 @@ export function useMidiCC(options: MidiCCFilterOptions): MidiCCValue {
     };
 }
 
+/**
+ * Exposes filtered MIDI clock / transport timing derived from the runtime snapshot.
+ *
+ * @param options - Optional input selection override for clock source matching.
+ * @returns BPM estimate, tick counters, and source descriptor when matched.
+ */
 export function useMidiClock(options: MidiClockFilterOptions = {}): MidiClockValue {
     const { snapshot } = useMidiContext();
     const selection = options.inputId ?? (snapshot.listenMode === 'all' ? 'all' : 'default');

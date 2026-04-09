@@ -58,6 +58,12 @@ function loadAssetPatch(assetPath: string): Promise<PatchDocument> {
     return promise;
 }
 
+/**
+ * Builds a loadable patch source descriptor from inline JSON or a resolved asset path.
+ *
+ * @param props - Inline patch document, optional asset ref, display name, and asset root URL.
+ * @returns Descriptor with stable key and async loader, or null when no source is configured.
+ */
 export function resolvePatchSourceDescriptor({
     patchInline,
     patchAsset,
@@ -107,6 +113,12 @@ function usePatchSourceStack(): readonly string[] {
     return useContext(PatchSourceStackContext);
 }
 
+/**
+ * Resolves and caches a `PatchDocument` from inline or asset-backed props inside React.
+ *
+ * @param props - Patch source props mirrored from `PatchRuntime`.
+ * @returns Loaded patch or null while asset loads are pending; throws on recursion.
+ */
 export function useResolvedPatchDocument(
     props: Pick<PatchRuntimeProps, 'patchInline' | 'patchAsset' | 'patchName' | 'assetRoot'>
 ): PatchDocument | null {

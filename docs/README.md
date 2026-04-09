@@ -1,5 +1,9 @@
 # Documentation Index
 
+## Machine-generated API reference
+
+Running `npm run docs:generate` emits TypeDoc markdown under `docs/generated/` (gitignored). Open those files on demand when you need export lists or signatures without browsing `src/`.
+
 ## Library Components
 
 - Core: [AudioProvider](./components/core/AudioProvider.md)
@@ -10,6 +14,10 @@
 - Effects: [Reverb](./components/effects/Reverb.md), [Chorus](./components/effects/Chorus.md), [Distortion](./components/effects/Distortion.md)
 - Patch: [Patch](./components/patch/Patch.md), [PatchOutput](./components/patch/PatchOutput.md), [PatchRenderer](./components/patch/PatchRenderer.md)
 - MIDI: [MidiProvider](./components/midi/MidiProvider.md), [MidiNoteInput](./components/midi/MidiNoteInput.md), [MidiCCInput](./components/midi/MidiCCInput.md), [MidiNoteOutput](./components/midi/MidiNoteOutput.md), [MidiCCOutput](./components/midi/MidiCCOutput.md), [MidiTransportSync](./components/midi/MidiTransportSync.md)
+
+## Architecture
+
+- [Library architecture overview](./Architecture.md)
 
 ## Governance
 
