@@ -2,6 +2,7 @@
  * AudioWorklet processor: runs `din-wasm` `AudioRuntime` on the audio rendering thread.
  * Registered name: {@link DIN_AUDIO_RUNTIME_PROCESSOR_NAME}.
  */
+import './audioWorkletEnvPolyfill';
 import initWasm, { AudioRuntime } from 'din-wasm';
 import type { MidiTransportState, PatchDocument, PatchMidiBindings } from '../../patch/types';
 import {
@@ -20,6 +21,8 @@ export type DinPatchBridgeProcessorOptions = {
     channels: number;
     blockSize: number;
     assets: readonly DinBridgeAsset[];
+    /** Compiled on the main thread; worklet scope may not have `fetch`. */
+    wasmModule: WebAssembly.Module;
 };
 
 export type DinGraphRuntimeProcessorOptions = {
@@ -28,6 +31,7 @@ export type DinGraphRuntimeProcessorOptions = {
     sampleRate: number;
     channels: number;
     blockSize: number;
+    wasmModule: WebAssembly.Module;
 };
 
 export type DinAudioProcessorOptions = DinPatchBridgeProcessorOptions | DinGraphRuntimeProcessorOptions;
@@ -74,6 +78,11 @@ class DinAudioRuntimeProcessor extends AudioWorkletProcessor {
         frameOffset: number;
     }> = [];
 
+    /** One-shot: first successful block render stats (main thread logs in dev). */
+    private renderDebugPosted = false;
+    /** One-shot: log first `renderBlockInto` failure from the audio thread. */
+    private renderErrorPosted = false;
+
     constructor(options: { processorOptions: DinAudioProcessorOptions }) {
         super(options);
         const opts = options.processorOptions;
@@ -113,7 +122,7 @@ class DinAudioRuntimeProcessor extends AudioWorkletProcessor {
 
     private async bootstrap(opts: DinAudioProcessorOptions): Promise<void> {
         try {
-            await initWasm();
+            await initWasm({ module_or_path: opts.wasmModule });
             const runtime = new AudioRuntime(
                 opts.patchJson,
                 opts.sampleRate,
@@ -185,8 +194,29 @@ class DinAudioRuntimeProcessor extends AudioWorkletProcessor {
 
         try {
             rt.renderBlockInto(this.scratch);
-        } catch {
+        } catch (error) {
+            if (!this.renderErrorPosted) {
+                this.renderErrorPosted = true;
+                const message = error instanceof Error ? error.message : String(error);
+                this.port.postMessage({ type: 'error', message: `renderBlockInto: ${message}` });
+            }
             return true;
+        }
+
+        if (!this.renderDebugPosted) {
+            this.renderDebugPosted = true;
+            let peak = 0;
+            for (let i = 0; i < this.scratch.length; i++) {
+                const a = Math.abs(this.scratch[i]!);
+                if (a > peak) peak = a;
+            }
+            this.port.postMessage({
+                type: 'renderDebug',
+                peak,
+                frames,
+                channels: this.channels,
+                mode: this.mode,
+            });
         }
 
         const outL = out[0];

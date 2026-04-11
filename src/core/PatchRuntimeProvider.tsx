@@ -12,6 +12,7 @@ import { bumpWasmDebugCounter } from '../runtime/wasm/loadWasmOnce';
 import {
     DIN_AUDIO_RUNTIME_PROCESSOR_NAME,
     ensureDinAudioWorkletLoaded,
+    getDinWasmModuleForWorklet,
 } from '../runtime/wasm/loadDinAudioWorklet';
 import { usePatchGraph } from './PatchGraphContext';
 
@@ -34,6 +35,11 @@ interface PatchRuntimeContextValue {
 }
 
 const PatchRuntimeContext = createContext<PatchRuntimeContextValue | null>(null);
+
+function isDevBuild(): boolean {
+    const meta = import.meta as unknown as { env?: { DEV?: boolean; MODE?: string } };
+    return Boolean(meta.env?.DEV ?? meta.env?.MODE === 'development');
+}
 
 function buildGraphDocument(graph: ReturnType<typeof usePatchGraph>) {
     const nodes = Array.from(graph.getNodes().entries()).map(([id, node]) => ({
@@ -75,6 +81,10 @@ export const PatchRuntimeProvider: FC<PatchRuntimeProviderProps> = ({
         if (!masterBus) return undefined;
         const context = masterBus.context;
         let cancelled = false;
+        /** Monotonic id for rebuild attempts; stale async completions must not destroy a newer worklet. */
+        const rebuildSeqRef = { current: 0 };
+        /** Coalesce synchronous graph notifications into one microtask rebuild. */
+        let rebuildMicrotaskScheduled = false;
 
         const destroyRuntime = () => {
             const node = workletRef.current;
@@ -92,18 +102,32 @@ export const PatchRuntimeProvider: FC<PatchRuntimeProviderProps> = ({
 
         const rebuildRuntime = async () => {
             if (cancelled) return;
+            const seq = ++rebuildSeqRef.current;
+
             if (graph.getNodes().size === 0) {
-                destroyRuntime();
+                if (seq === rebuildSeqRef.current) {
+                    destroyRuntime();
+                }
                 return;
             }
 
             let patchJson: string;
             try {
                 const graphDoc = buildGraphDocument(graph) as GraphDocumentLike;
-                patchJson = JSON.stringify(graphDocumentToPatch(graphDoc));
+                const patch = graphDocumentToPatch(graphDoc);
+                patchJson = JSON.stringify(patch);
+                if (isDevBuild()) {
+                    console.info('[PatchRuntimeProvider] patch built', {
+                        jsonLength: patchJson.length,
+                        nodeCount: patch.nodes.length,
+                        connectionCount: patch.connections.length,
+                    });
+                }
             } catch (error) {
                 console.error('[PatchRuntimeProvider] graph → patch failed:', error);
-                destroyRuntime();
+                if (seq === rebuildSeqRef.current) {
+                    destroyRuntime();
+                }
                 return;
             }
 
@@ -114,10 +138,20 @@ export const PatchRuntimeProvider: FC<PatchRuntimeProviderProps> = ({
                 return;
             }
 
-            if (cancelled) return;
+            if (cancelled || seq !== rebuildSeqRef.current) return;
+
+            let wasmModule: WebAssembly.Module;
+            try {
+                wasmModule = await getDinWasmModuleForWorklet();
+            } catch (error) {
+                console.error('[PatchRuntimeProvider] din_wasm compile failed:', error);
+                return;
+            }
+
+            if (cancelled || seq !== rebuildSeqRef.current) return;
 
             destroyRuntime();
-            if (cancelled) return;
+            if (cancelled || seq !== rebuildSeqRef.current) return;
 
             const node = new AudioWorkletNode(context, DIN_AUDIO_RUNTIME_PROCESSOR_NAME, {
                 numberOfInputs: 0,
@@ -129,6 +163,7 @@ export const PatchRuntimeProvider: FC<PatchRuntimeProviderProps> = ({
                     sampleRate,
                     channels: 2,
                     blockSize,
+                    wasmModule,
                 },
             });
             workletRef.current = node;
@@ -141,6 +176,9 @@ export const PatchRuntimeProvider: FC<PatchRuntimeProviderProps> = ({
                 }
                 if (data.type === 'error' && typeof data.message === 'string') {
                     console.error('[PatchRuntimeProvider] worklet:', data.message);
+                }
+                if (isDevBuild() && data.type === 'renderDebug') {
+                    console.info('[PatchRuntimeProvider] worklet render', data);
                 }
             };
 
@@ -157,18 +195,26 @@ export const PatchRuntimeProvider: FC<PatchRuntimeProviderProps> = ({
             node.connect(masterBus);
         };
 
-        void rebuildRuntime().catch((error) => {
-            console.error('[PatchRuntimeProvider] rebuild failed:', error);
-        });
+        const scheduleRebuild = () => {
+            if (rebuildMicrotaskScheduled) return;
+            rebuildMicrotaskScheduled = true;
+            queueMicrotask(() => {
+                rebuildMicrotaskScheduled = false;
+                void rebuildRuntime().catch((error) => {
+                    console.error('[PatchRuntimeProvider] rebuild failed:', error);
+                });
+            });
+        };
+
+        scheduleRebuild();
 
         const unsubscribe = graph.subscribe(() => {
-            void rebuildRuntime().catch((error) => {
-                console.error('[PatchRuntimeProvider] rebuild failed:', error);
-            });
+            scheduleRebuild();
         });
 
         return () => {
             cancelled = true;
+            rebuildSeqRef.current += 1;
             unsubscribe();
             destroyRuntime();
         };

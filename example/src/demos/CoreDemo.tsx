@@ -17,7 +17,7 @@ export function CoreDemo() {
             <h1>Core Demo</h1>
             <p>Basic AudioProvider setup with oscillator sound</p>
 
-            <AudioProvider masterGain={100.5} createOnUserGesture debug>
+            <AudioProvider masterGain={0.8} createOnUserGesture debug>
                 <CoreDemoContent />
             </AudioProvider>
         </div>
@@ -80,8 +80,9 @@ function CoreDemoContent() {
                         <label>Frequency: {frequency} Hz</label>
                         <input
                             type="range"
-                            min="0"
-                            max="100"
+                            min="20"
+                            max="2000"
+                            step="1"
                             value={frequency}
                             onChange={(e) => setFrequency(Number(e.target.value))}
                         />
@@ -97,8 +98,9 @@ function CoreDemoContent() {
                         <label>Cutoff: {filterFreq} Hz</label>
                         <input
                             type="range"
-                            min="0"
-                            max="100"
+                            min="20"
+                            max="20000"
+                            step="1"
                             value={filterFreq}
                             onChange={(e) => setFilterFreq(Number(e.target.value))}
                         />

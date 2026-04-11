@@ -171,7 +171,9 @@
     "README.md",
     "LICENSE"
   ],
-  "sideEffects": false,
+  "sideEffects": [
+    "./src/runtime/wasm/audioWorkletEnvPolyfill.ts"
+  ],
   "scripts": {
     "build": "tsup && node ./scripts/copy-din-wasm-to-dist.mjs",
     "dev": "tsup --watch",

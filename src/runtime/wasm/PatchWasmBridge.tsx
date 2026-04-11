@@ -9,7 +9,11 @@ import { resolvePatchAssetPath } from '../../patch/document';
 import { useEffect, useRef, useState, type FC } from 'react';
 import { bumpWasmDebugCounter } from './loadWasmOnce';
 import type { DinBridgeAsset } from './dinAudioRuntime.worklet';
-import { DIN_AUDIO_RUNTIME_PROCESSOR_NAME, ensureDinAudioWorkletLoaded } from './loadDinAudioWorklet';
+import {
+    DIN_AUDIO_RUNTIME_PROCESSOR_NAME,
+    ensureDinAudioWorkletLoaded,
+    getDinWasmModuleForWorklet,
+} from './loadDinAudioWorklet';
 
 /** Must match the Web Audio render quantum (128) and `AudioRuntime` block size. */
 const WASM_BLOCK_FRAMES = 128;
@@ -100,6 +104,8 @@ export const PatchWasmBridge: FC<PatchWasmBridgeProps<PatchDocument>> = ({
                 await ensureDinAudioWorkletLoaded(context);
                 if (cancelled) return;
 
+                const wasmModule = await getDinWasmModuleForWorklet();
+
                 const patchJson = JSON.stringify(patch);
                 const assets = await fetchPatchAssets(patch, assetRoot);
                 if (cancelled) return;
@@ -115,6 +121,7 @@ export const PatchWasmBridge: FC<PatchWasmBridgeProps<PatchDocument>> = ({
                         channels: WASM_CHANNELS,
                         blockSize: WASM_BLOCK_FRAMES,
                         assets,
+                        wasmModule,
                     },
                 });
                 workletRef.current = node;

@@ -1,6 +1,7 @@
 /* eslint-disable jsdoc/require-jsdoc -- ambient module shapes for optional peer */
 /** Optional peer: install `din-wasm` to use the native patch runtime in the browser. */
 declare module 'din-wasm' {
+    /** Pass a URL/string, `Response`, `WebAssembly.Module`, or `{ module_or_path }` (wasm-bindgen 0.2.100+). */
     export default function init(moduleOrPath?: unknown): Promise<unknown>;
 
     export class AudioRuntime {
