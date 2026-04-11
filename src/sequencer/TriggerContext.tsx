@@ -1,4 +1,4 @@
-import { createContext, useContext, type FC, type ReactNode } from 'react';
+import { createContext, useContext, useMemo, type FC, type ReactNode } from 'react';
 import type { TriggerEvent, TrackContextValue } from './types';
 
 /**
@@ -36,11 +36,14 @@ export const TriggerProvider: FC<TriggerProviderProps> = ({
     subscribe,
     currentTrigger,
 }) => {
-    const value: TrackContextValue = {
-        trackId,
-        subscribe,
-        currentTrigger,
-    };
+    const value = useMemo<TrackContextValue>(
+        () => ({
+            trackId,
+            subscribe,
+            currentTrigger,
+        }),
+        [trackId, subscribe, currentTrigger]
+    );
 
     return (
         <TriggerContext.Provider value={value}>

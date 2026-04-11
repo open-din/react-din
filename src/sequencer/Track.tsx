@@ -1,4 +1,5 @@
 import {
+    useCallback,
     useEffect,
     useRef,
     useMemo,
@@ -120,13 +121,13 @@ export const Track: FC<TrackProps> = ({
         return unsubscribe;
     }, [context, subscribe, steps, normalizedPattern, mute, probability, stepDuration, id, note, data, onTrigger]);
 
-    // Subscribe function for children
-    const subscribeToTrigger = (callback: (event: TriggerEvent) => void) => {
+    /** Stable ref-backed subscribe so TriggerContext does not churn every Sequencer step. */
+    const subscribeToTrigger = useCallback((callback: (event: TriggerEvent) => void) => {
         subscribersRef.current.add(callback);
         return () => {
             subscribersRef.current.delete(callback);
         };
-    };
+    }, []);
 
     return (
         <TriggerProvider

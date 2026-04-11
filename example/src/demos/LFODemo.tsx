@@ -100,7 +100,7 @@ export const LFODemo: React.FC = () => {
                         {/* Using LFO component with render props */}
                         {isPlaying && (
                             <LFO rate={lfoRate} depth={lfoDepth} waveform={lfoWaveform}>
-                                {(lfo) => (
+                                {(_lfo) => (
                                     <Gain gain={0.3}>
                                         <Filter
                                             type="lowpass"

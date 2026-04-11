@@ -23,6 +23,8 @@ export type DinPatchBridgeProcessorOptions = {
     assets: readonly DinBridgeAsset[];
     /** Compiled on the main thread; worklet scope may not have `fetch`. */
     wasmModule: WebAssembly.Module;
+    /** When true, posts extra `renderDebug` messages for `PatchRuntimeProvider` logging. */
+    workletDebug?: boolean;
 };
 
 export type DinGraphRuntimeProcessorOptions = {
@@ -32,6 +34,8 @@ export type DinGraphRuntimeProcessorOptions = {
     channels: number;
     blockSize: number;
     wasmModule: WebAssembly.Module;
+    /** When true, posts throttled `renderDebug` peaks for host diagnostics. */
+    workletDebug?: boolean;
 };
 
 export type DinAudioProcessorOptions = DinPatchBridgeProcessorOptions | DinGraphRuntimeProcessorOptions;
@@ -97,12 +101,21 @@ class DinAudioRuntimeProcessor extends AudioWorkletProcessor {
     /** One-shot: warn when host render quantum is not a multiple of `blockSize` (would otherwise output silence). */
     private quantumWarnPosted = false;
 
+    /** Mirrors `AudioProvider` / `PatchRuntimeProvider` `debug` — richer `renderDebug` traffic. */
+    private readonly workletDebug: boolean;
+    /** Invocations of `process` (for throttled debug posts). */
+    private processInvocationCount = 0;
+    /** One-shot diagnostics for early `process` exits when debugging. */
+    private renderDebugNotReadyPosted = false;
+    private renderDebugQuantumPosted = false;
+
     constructor(options: { processorOptions: DinAudioProcessorOptions }) {
         super(options);
         const opts = options.processorOptions;
         this.mode = opts.kind;
         this.blockSize = opts.blockSize ?? 128;
         this.channels = opts.channels;
+        this.workletDebug = 'workletDebug' in opts && opts.workletDebug === true;
         this.patch = JSON.parse(opts.patchJson) as PatchDocument;
 
         this.port.onmessage = (event: MessageEvent) => {
@@ -149,6 +162,10 @@ class DinAudioRuntimeProcessor extends AudioWorkletProcessor {
             const key = String(msg.key);
             const value = Number(msg.value);
             if (key.includes(':')) {
+                if (key.endsWith(':gate')) {
+                    // eslint-disable-next-line no-console -- intentional voice-gate trace (filter: react-din / din-audio)
+                    console.debug('[din-audio] worklet setInput nodeParamOverride', key, value);
+                }
                 this.nodeParamOverrides.set(key, value);
             } else {
                 this.pendingSetInputs.push({ key, value });
@@ -213,7 +230,11 @@ class DinAudioRuntimeProcessor extends AudioWorkletProcessor {
         for (const [key, value] of this.nodeParamOverrides) {
             try {
                 setter.call(rt, key, value);
-            } catch {
+            } catch (err) {
+                if (key.endsWith(':gate')) {
+                    // eslint-disable-next-line no-console -- intentional voice-gate trace
+                    console.debug('[din-audio] applyNodeParamOverrides setNodeParam failed', key, value, err);
+                }
                 /* keep entry for next block */
             }
         }
@@ -237,6 +258,20 @@ class DinAudioRuntimeProcessor extends AudioWorkletProcessor {
         }
 
         if (!this.ready || !this.runtime || !this.scratch) {
+            if (this.workletDebug && !this.renderDebugNotReadyPosted) {
+                this.renderDebugNotReadyPosted = true;
+                this.port.postMessage({
+                    type: 'renderDebug',
+                    peak: 0,
+                    frames,
+                    channels: this.channels,
+                    mode: this.mode,
+                    diag: 'process-before-ready',
+                    ready: this.ready,
+                    hasRuntime: Boolean(this.runtime),
+                    hasScratch: Boolean(this.scratch),
+                });
+            }
             return true;
         }
 
@@ -249,8 +284,22 @@ class DinAudioRuntimeProcessor extends AudioWorkletProcessor {
                     message: `[din-audio] worklet quantum ${frames} is not a multiple of blockSize ${bs} (no audio)`,
                 });
             }
+            if (this.workletDebug && !this.renderDebugQuantumPosted) {
+                this.renderDebugQuantumPosted = true;
+                this.port.postMessage({
+                    type: 'renderDebug',
+                    peak: 0,
+                    frames,
+                    channels: this.channels,
+                    mode: this.mode,
+                    diag: 'quantum-blocksize-mismatch',
+                    blockSize: bs,
+                });
+            }
             return true;
         }
+
+        this.processInvocationCount += 1;
 
         const rt = this.runtime;
         const numBlocks = frames / bs;
@@ -262,6 +311,8 @@ class DinAudioRuntimeProcessor extends AudioWorkletProcessor {
             if (this.mode === 'graph-runtime') {
                 if (this.sabView && this.sabKeyToSlot.size > 0) {
                     for (const [paramKey, slot] of this.sabKeyToSlot) {
+                        // Voice gates use postMessage; do not let SAB slots (often 0) overwrite them each block.
+                        if (paramKey.endsWith(':gate')) continue;
                         this.nodeParamOverrides.set(paramKey, this.sabView[slot]!);
                     }
                 }
@@ -297,7 +348,7 @@ class DinAudioRuntimeProcessor extends AudioWorkletProcessor {
                 return true;
             }
 
-            if (!this.renderDebugPosted) {
+            if (!this.renderDebugPosted || this.workletDebug) {
                 for (let i = 0; i < this.scratch.length; i++) {
                     debugPeak = Math.max(debugPeak, Math.abs(this.scratch[i]!));
                 }
@@ -330,6 +381,16 @@ class DinAudioRuntimeProcessor extends AudioWorkletProcessor {
                 frames,
                 channels: this.channels,
                 mode: this.mode,
+            });
+        } else if (this.workletDebug && this.processInvocationCount % 64 === 0) {
+            this.port.postMessage({
+                type: 'renderDebug',
+                peak: debugPeak,
+                frames,
+                channels: this.channels,
+                mode: this.mode,
+                throttled: true,
+                processInvocationCount: this.processInvocationCount,
             });
         }
 

@@ -214,6 +214,9 @@ export function useWasmNode(
             for (const key of Object.keys(data)) {
                 const val = data[key];
                 if (typeof val === 'number' && Number.isFinite(val)) {
+                    // Voice gating drives `gate` via `useVoiceGateTrigger` + worklet `setNodeParam`;
+                    // re-flushing `gate: 0` on every runtimeEpoch would silence triggers.
+                    if (key === 'gate') continue;
                     rt.setParam(nodeId, key, val);
                 }
             }

@@ -13,12 +13,31 @@ export function useVoiceGateTrigger(gainNodeId: string | null, enabled: boolean)
         }
         const key = `${gainNodeId}:gate`;
         const fire = () => {
-            runtimeRef.current?.setInput(key, 1);
+            const rt = runtimeRef.current;
+            if (rt) {
+                // eslint-disable-next-line no-console -- intentional sequencer / WASM gate trace
+                console.debug('[react-din] useVoiceGateTrigger setInput', key, 1, {
+                    hasRuntime: true,
+                });
+                rt.setInput(key, 1);
+            }
             const ms = Math.max(0, event.duration * 1000);
             window.setTimeout(() => {
-                runtimeRef.current?.setInput(key, 0);
+                const rtClose = runtimeRef.current;
+                if (rtClose) {
+                    // eslint-disable-next-line no-console -- intentional sequencer / WASM gate trace
+                    console.debug('[react-din] useVoiceGateTrigger setInput', key, 0, {
+                        hasRuntime: true,
+                    });
+                    rtClose.setInput(key, 0);
+                }
             }, ms);
         };
+        // eslint-disable-next-line no-console -- intentional sequencer / WASM gate trace
+        console.debug('[react-din] useVoiceGateTrigger trigger', {
+            key,
+            hasRuntime: Boolean(runtimeRef.current),
+        });
         if (runtimeRef.current) {
             fire();
             return;
@@ -31,6 +50,10 @@ export function useVoiceGateTrigger(gainNodeId: string | null, enabled: boolean)
             }
             frames += 1;
             if (frames > 600) {
+                console.warn(
+                    '[react-din] useVoiceGateTrigger: PatchRuntime not ready after ~600 frames; gate messages were dropped.',
+                    { key, gainNodeId }
+                );
                 return;
             }
             requestAnimationFrame(rafPoll);

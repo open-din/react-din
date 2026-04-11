@@ -186,6 +186,7 @@ export const PatchRuntimeProvider: FC<PatchRuntimeProviderProps> = ({
                     channels: 2,
                     blockSize,
                     wasmModule,
+                    workletDebug: debug,
                 },
             });
 
@@ -270,7 +271,7 @@ export const PatchRuntimeProvider: FC<PatchRuntimeProviderProps> = ({
                 if (data.type === 'error' && typeof data.message === 'string') {
                     console.error('[PatchRuntimeProvider] worklet:', data.message);
                 }
-                if (isDevBuild() && data.type === 'renderDebug') {
+                if ((debug || isDevBuild()) && data.type === 'renderDebug') {
                     console.info('[PatchRuntimeProvider] worklet render', data);
                 }
             };

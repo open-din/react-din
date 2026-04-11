@@ -55,6 +55,8 @@ export const AudioProvider: FC<AudioProviderProps> = ({
 }) => {
     // SSR safety: only create AudioContext on client
     const [context, setContext] = useState<AudioContextRef>(null);
+    /** State (not only a ref) so children like `PatchRuntimeProvider` re-render when the bus exists. */
+    const [masterBus, setMasterBus] = useState<GainNode | null>(null);
     const [state, setState] = useState<AudioState>('suspended');
     const [isUnlocked, setIsUnlocked] = useState(false);
     const unlockedRef = useRef(false);
@@ -87,6 +89,7 @@ export const AudioProvider: FC<AudioProviderProps> = ({
 
             contextRef.current = ctx;
             masterBusRef.current = masterBus;
+            setMasterBus(masterBus);
             setContext(ctx);
             setState(ctx.state as AudioState);
             log('AudioContext created', { state: ctx.state, sampleRate: ctx.sampleRate });
@@ -224,7 +227,7 @@ export const AudioProvider: FC<AudioProviderProps> = ({
     const value: AudioContextState = {
         context,
         state,
-        masterBus: masterBusRef.current,
+        masterBus,
         isUnlocked,
         debug,
         unlock,
@@ -239,13 +242,13 @@ export const AudioProvider: FC<AudioProviderProps> = ({
         <AudioContext.Provider value={value}>
             <PatchGraphProvider>
                 <PatchRuntimeProvider
-                    masterBus={masterBusRef.current}
-                    sampleRate={context?.sampleRate ?? 44100}
+                    masterBus={masterBus}
+                    sampleRate={masterBus?.context.sampleRate ?? context?.sampleRate ?? 44100}
                     paramTransport={paramTransport}
                     debug={debug}
                 >
                     <AudioOutProvider
-                        node={masterBusRef.current}
+                        node={masterBus}
                         nodeId={PATCH_MASTER_OUTPUT_NODE_ID}
                         inputHandle="input"
                     >
