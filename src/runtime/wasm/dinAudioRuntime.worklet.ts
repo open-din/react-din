@@ -94,12 +94,14 @@ class DinAudioRuntimeProcessor extends AudioWorkletProcessor {
     private renderDebugPosted = false;
     /** One-shot: log first `renderBlockInto` failure from the audio thread. */
     private renderErrorPosted = false;
+    /** One-shot: warn when host render quantum is not a multiple of `blockSize` (would otherwise output silence). */
+    private quantumWarnPosted = false;
 
     constructor(options: { processorOptions: DinAudioProcessorOptions }) {
         super(options);
         const opts = options.processorOptions;
         this.mode = opts.kind;
-        this.blockSize = opts.blockSize;
+        this.blockSize = opts.blockSize ?? 128;
         this.channels = opts.channels;
         this.patch = JSON.parse(opts.patchJson) as PatchDocument;
 
@@ -238,81 +240,97 @@ class DinAudioRuntimeProcessor extends AudioWorkletProcessor {
             return true;
         }
 
-        if (frames !== this.blockSize || this.scratch.length !== frames * this.channels) {
+        const bs = this.blockSize;
+        if (frames % bs !== 0 || this.scratch.length !== bs * this.channels) {
+            if (!this.quantumWarnPosted && frames > 0) {
+                this.quantumWarnPosted = true;
+                this.port.postMessage({
+                    type: 'error',
+                    message: `[din-audio] worklet quantum ${frames} is not a multiple of blockSize ${bs} (no audio)`,
+                });
+            }
             return true;
         }
 
         const rt = this.runtime;
+        const numBlocks = frames / bs;
+        const outL = out[0]!;
+        const outR = out[1]!;
+        let debugPeak = 0;
 
-        if (this.mode === 'graph-runtime') {
-            if (this.sabView && this.sabKeyToSlot.size > 0) {
-                for (const [paramKey, slot] of this.sabKeyToSlot) {
-                    this.nodeParamOverrides.set(paramKey, this.sabView[slot]!);
+        for (let b = 0; b < numBlocks; b++) {
+            if (this.mode === 'graph-runtime') {
+                if (this.sabView && this.sabKeyToSlot.size > 0) {
+                    for (const [paramKey, slot] of this.sabKeyToSlot) {
+                        this.nodeParamOverrides.set(paramKey, this.sabView[slot]!);
+                    }
+                }
+                this.applyNodeParamOverrides(rt);
+                if (b === 0) {
+                    for (const p of this.pendingSetInputs) {
+                        try {
+                            rt.setInput(p.key, p.value);
+                        } catch {
+                            /* ignore */
+                        }
+                    }
+                    this.pendingSetInputs.length = 0;
+                    for (const m of this.pendingMidi) {
+                        rt.pushMidi(m.status, m.d1, m.d2, m.frameOffset);
+                    }
+                    this.pendingMidi.length = 0;
+                }
+            } else {
+                applyInterfaceInputs(rt, this.patch, this.propValues);
+                applyInterfaceEvents(rt, this.patch, this.propValues);
+                applyMidiNoteEdges(rt, this.patch, this.midi, this.lastGateByNodeId);
+            }
+
+            try {
+                rt.renderBlockInto(this.scratch);
+            } catch (error) {
+                if (!this.renderErrorPosted) {
+                    this.renderErrorPosted = true;
+                    const message = error instanceof Error ? error.message : String(error);
+                    this.port.postMessage({ type: 'error', message: `renderBlockInto: ${message}` });
+                }
+                return true;
+            }
+
+            if (!this.renderDebugPosted) {
+                for (let i = 0; i < this.scratch.length; i++) {
+                    debugPeak = Math.max(debugPeak, Math.abs(this.scratch[i]!));
                 }
             }
-            this.applyNodeParamOverrides(rt);
-            for (const p of this.pendingSetInputs) {
+
+            const off = b * bs;
+            for (let i = 0; i < bs; i++) {
+                outL[off + i] = this.scratch[i * 2]!;
+                outR[off + i] = this.scratch[i * 2 + 1]!;
+            }
+
+            if (this.mode === 'patch-bridge') {
                 try {
-                    rt.setInput(p.key, p.value);
+                    const state = rt.transportState() as MidiTransportState;
+                    if (state.tick_count !== this.lastTickCount) {
+                        this.lastTickCount = state.tick_count;
+                        this.port.postMessage({ type: 'transport', state });
+                    }
                 } catch {
                     /* ignore */
                 }
             }
-            this.pendingSetInputs.length = 0;
-            for (const m of this.pendingMidi) {
-                rt.pushMidi(m.status, m.d1, m.d2, m.frameOffset);
-            }
-            this.pendingMidi.length = 0;
-        } else {
-            applyInterfaceInputs(rt, this.patch, this.propValues);
-            applyInterfaceEvents(rt, this.patch, this.propValues);
-            applyMidiNoteEdges(rt, this.patch, this.midi, this.lastGateByNodeId);
-        }
-
-        try {
-            rt.renderBlockInto(this.scratch);
-        } catch (error) {
-            if (!this.renderErrorPosted) {
-                this.renderErrorPosted = true;
-                const message = error instanceof Error ? error.message : String(error);
-                this.port.postMessage({ type: 'error', message: `renderBlockInto: ${message}` });
-            }
-            return true;
         }
 
         if (!this.renderDebugPosted) {
             this.renderDebugPosted = true;
-            let peak = 0;
-            for (let i = 0; i < this.scratch.length; i++) {
-                const a = Math.abs(this.scratch[i]!);
-                if (a > peak) peak = a;
-            }
             this.port.postMessage({
                 type: 'renderDebug',
-                peak,
+                peak: debugPeak,
                 frames,
                 channels: this.channels,
                 mode: this.mode,
             });
-        }
-
-        const outL = out[0];
-        const outR = out[1];
-        for (let i = 0; i < frames; i++) {
-            outL[i] = this.scratch[i * 2]!;
-            outR[i] = this.scratch[i * 2 + 1]!;
-        }
-
-        if (this.mode === 'patch-bridge') {
-            try {
-                const state = rt.transportState() as MidiTransportState;
-                if (state.tick_count !== this.lastTickCount) {
-                    this.lastTickCount = state.tick_count;
-                    this.port.postMessage({ type: 'transport', state });
-                }
-            } catch {
-                /* ignore */
-            }
         }
 
         return true;

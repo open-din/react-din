@@ -53,10 +53,11 @@ export const Track: FC<TrackProps> = ({
     onTrigger,
 }) => {
     const { context } = useAudio();
-    const { subscribe, totalSteps: sequencerSteps, bpm } = useSequencer();
+    const { subscribe, totalSteps: sequencerSteps, bpm, stepsPerBeat } = useSequencer();
 
     const steps = trackSteps ?? sequencerSteps;
-    const stepDuration = 60 / bpm / 4;
+    const grid = Math.max(1, stepsPerBeat);
+    const stepDuration = 60 / bpm / grid;
 
     const triggerEventRef = useRef<TriggerEvent | null>(null);
     const subscribersRef = useRef<Set<(event: TriggerEvent) => void>>(new Set());

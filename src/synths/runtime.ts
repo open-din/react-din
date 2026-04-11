@@ -22,10 +22,31 @@ export function useSynthTriggerToMidi(
     useOnTrigger((event) => {
         const note = resolveNote(event.step, event.note);
         const velocity = Math.max(0, Math.min(127, Math.round(event.velocity * 127)));
-        runtimeRef.current?.pushMidi(0x90, note, velocity, 0);
-        window.setTimeout(() => {
-            runtimeRef.current?.pushMidi(0x80, note, 0, 0);
-        }, Math.max(0, event.duration * 1000));
+
+        /** Note-on only: per-voice envelopes use Gain `voice` gating; a global `midi_gate` would mute other tracks. */
+        const fireNoteOn = () => {
+            runtimeRef.current?.pushMidi(0x90, note, velocity, 0);
+        };
+
+        if (runtimeRef.current) {
+            fireNoteOn();
+            return;
+        }
+
+        /** WASM worklet boots asynchronously; poll until `PatchRuntime` facade exists. */
+        let frames = 0;
+        const rafPoll = () => {
+            if (runtimeRef.current) {
+                fireNoteOn();
+                return;
+            }
+            frames += 1;
+            if (frames > 600) {
+                return;
+            }
+            requestAnimationFrame(rafPoll);
+        };
+        requestAnimationFrame(rafPoll);
     });
 }
 

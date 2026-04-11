@@ -1,9 +1,12 @@
 import type { FC, ReactNode, RefObject } from 'react';
-import { AudioOutProvider } from '../core/AudioOutContext';
-import { useWasmNode } from '../nodes/useAudioNode';
+import { Distortion } from '../effects/Distortion';
+import { Filter } from '../nodes/Filter';
+import { Gain } from '../nodes/Gain';
+import { Osc } from '../nodes/Osc';
+import { NoiseBurst } from '../sources/NoiseBurst';
 import type { EnvelopeConfig } from './types';
 import { DEFAULT_ENVELOPE } from './types';
-import { useMirrorExternalNodeRef, useSynthTriggerToMidi } from './runtime';
+import { useMirrorExternalNodeRef } from './runtime';
 
 export interface DrumOscillatorConfig {
     type?: OscillatorType;
@@ -33,8 +36,14 @@ export interface DrumSynthProps {
     saturationAmount?: number;
     bypass?: boolean;
     nodeRef?: RefObject<GainNode>;
+    /** Sequencer gate on the root gain (default on for drums). */
+    voice?: boolean;
 }
 
+/**
+ * Drum voice built from WASM graph primitives (`osc`, `noiseBurst`, `filter`, `gain`, `distortion`).
+ * Pitch-decay fields on oscillators are not modeled in the WASM engine v1 and are ignored.
+ */
 export const DrumSynth: FC<DrumSynthProps> = ({
     children,
     oscillators = [],
@@ -44,28 +53,61 @@ export const DrumSynth: FC<DrumSynthProps> = ({
     saturation = false,
     saturationAmount = 2,
     bypass = false,
+    voice = true,
     nodeRef: externalRef,
 }) => {
     const envConfig = { ...DEFAULT_ENVELOPE, ...envelope };
-    const { nodeId } = useWasmNode('drumSynth', {
-        oscillators,
-        noise,
-        attack: envConfig.attack,
-        decay: envConfig.decay,
-        sustain: envConfig.sustain,
-        release: envConfig.release,
-        volume,
-        saturation,
-        distortion: saturationAmount,
-        bypass,
-    });
+    const drive = Math.min(1, Math.max(0, saturationAmount / 4));
 
-    useSynthTriggerToMidi((_, fallback) => fallback);
+    const hasLayers = oscillators.length > 0 || noise.length > 0;
+
+    const layers = (
+        <>
+            {oscillators.map((osc, i) => (
+                <Gain key={`drum-osc-${i.toString()}`} gain={osc.gain ?? 1}>
+                    <Osc type={osc.type ?? 'sine'} frequency={osc.frequency} detune={0} bypass={false} />
+                </Gain>
+            ))}
+            {noise.map((n, i) => (
+                <Gain key={`drum-nz-${i.toString()}`} gain={n.gain ?? 1}>
+                    <Filter
+                        type={n.filterType ?? 'bandpass'}
+                        frequency={n.filterFrequency ?? 2000}
+                        Q={n.filterQ ?? 1}
+                    >
+                        <NoiseBurst
+                            type={n.type ?? 'white'}
+                            duration={n.duration ?? 0.08}
+                            gain={1}
+                            attack={envConfig.attack}
+                            release={envConfig.release}
+                        />
+                    </Filter>
+                </Gain>
+            ))}
+        </>
+    );
+
+    const silent = (
+        <Gain gain={0}>
+            <Osc frequency={440} bypass={false} />
+        </Gain>
+    );
+
+    const body = hasLayers ? layers : silent;
+
     useMirrorExternalNodeRef(externalRef);
 
     return (
-        <AudioOutProvider node={null} nodeId={nodeId}>
+        <Gain gain={volume} bypass={bypass} voice={voice}>
+            {saturation ? (
+                <Distortion drive={drive} mix={1} level={0.72} tone={6500}>
+                    {body}
+                </Distortion>
+            ) : (
+                body
+            )}
             {children}
-        </AudioOutProvider>
+        </Gain>
     );
 };

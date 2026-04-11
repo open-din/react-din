@@ -186,6 +186,17 @@ export function SequencerDemo() {
 function SequencerDemoContent() {
     const { isUnlocked, context } = useAudio();
 
+    const togglePlayback = useCallback(async () => {
+        if (context && context.state === 'suspended') {
+            try {
+                await context.resume();
+            } catch {
+                /* ignore */
+            }
+        }
+        setIsPlaying((p) => !p);
+    }, [context]);
+
     // Sequencer settings - 132 BPM is classic acid house tempo
     const [bpm, setBpm] = useState(132);
     const [isPlaying, setIsPlaying] = useState(false);
@@ -361,7 +372,8 @@ function SequencerDemoContent() {
 
                     <button
                         className={isPlaying ? 'danger' : 'primary'}
-                        onClick={() => setIsPlaying(!isPlaying)}
+                        type="button"
+                        onClick={() => void togglePlayback()}
                         disabled={!isUnlocked}
                     >
                         {isPlaying ? '⏹ Stop' : '▶ Play'}
@@ -483,12 +495,14 @@ function SequencerDemoContent() {
                 </div>
             </div>
 
-            {/* Audio Graph */}
-            {isPlaying && isUnlocked && (
+            {/* Audio graph: mount once unlocked so WASM/worklet can boot before first Play */}
+            {isUnlocked && (
                 <Sequencer
                     bpm={bpm}
                     steps={TOTAL_STEPS}
-                    autoStart
+                    stepsPerBeat={4}
+                    playing={isPlaying}
+                    autoStart={false}
                     loop
                     onStep={onStep}
                 >
@@ -764,7 +778,7 @@ const Kick909: FC = () => (
  * ClosedHiHat - Crispy and bright
  */
 const ClosedHiHat: FC = () => (
-    <Gain gain={0.22}>
+    <Gain gain={0.22} voice>
         <Filter type="highpass" frequency={8000} Q={1}>
             <Filter type="bandpass" frequency={14000} Q={2.5}>
                 <NoiseBurst type="white" duration={0.04} attack={0.0005} release={0.015} />
@@ -777,7 +791,7 @@ const ClosedHiHat: FC = () => (
  * OpenHiHat - Long sizzle with shimmer
  */
 const OpenHiHat: FC = () => (
-    <Gain gain={0.18}>
+    <Gain gain={0.18} voice>
         <Filter type="highpass" frequency={6000} Q={0.8}>
             <Filter type="bandpass" frequency={11000} Q={1.8}>
                 <NoiseBurst type="white" duration={0.3} attack={0.0005} release={0.25} />

@@ -29,3 +29,4 @@ export { useAudio } from './useAudio';
 export { AudioOutProvider, useAudioOut } from './AudioOutContext';
 export { PATCH_MASTER_OUTPUT_NODE_ID, PatchGraphProvider, usePatchGraph } from './PatchGraphContext';
 export { PatchRuntimeProvider, usePatchRuntime, type PatchRuntimeHandle } from './PatchRuntimeProvider';
+export { LfoModulationProvider, useLfoModulatorId } from './LfoModulationContext';

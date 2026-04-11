@@ -14,8 +14,10 @@
 export {
     // Components
     AudioProvider,
+    LfoModulationProvider,
     // Hooks
     useAudio,
+    useLfoModulatorId,
     // Internal (advanced use)
     AudioOutProvider,
     useAudioOut,

@@ -1,5 +1,7 @@
 import { useEffect, useMemo, type FC } from 'react';
 import { AudioOutProvider } from '../core/AudioOutContext';
+import { useLfoModulatorId } from '../core/LfoModulationContext';
+import { usePatchGraph } from '../core/PatchGraphContext';
 import { getNumericValue } from '../core/ModulatableValue';
 import type { FilterProps } from './types';
 import { useWasmNode } from './useAudioNode';
@@ -18,6 +20,9 @@ export const Filter: FC<FilterProps> = ({
     detune = 0,
     detuneBase,
 }) => {
+    const lfoModId = useLfoModulatorId();
+    const graph = usePatchGraph();
+
     const wasmData = useMemo(
         () => ({
             type,
@@ -30,6 +35,15 @@ export const Filter: FC<FilterProps> = ({
         [Q, QBase, bypass, detune, detuneBase, frequency, frequencyBase, gain, gainBase, type]
     );
     const { nodeId } = useWasmNode('filter', wasmData);
+
+    useEffect(() => {
+        if (!lfoModId) return;
+        const connectionId = `${lfoModId}->${nodeId}:frequency`;
+        graph.addConnection(connectionId, lfoModId, 'out', nodeId, 'frequency');
+        return () => {
+            graph.removeConnection(connectionId);
+        };
+    }, [graph, lfoModId, nodeId]);
 
     useEffect(() => {
         if (!externalRef) return;

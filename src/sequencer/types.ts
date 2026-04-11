@@ -88,6 +88,18 @@ export interface SequencerProps {
     steps?: number;
 
     /**
+     * Subdivision steps per quarter-note beat (e.g. 4 = sixteenth notes in 4/4).
+     * This controls transport timing; it is **not** the pattern length — use `steps` for that.
+     * @default 4
+     */
+    stepsPerBeat?: number;
+
+    /**
+     * When set, transport play/pause is controlled by the parent (e.g. keep the graph mounted while stopped).
+     */
+    playing?: boolean;
+
+    /**
      * Auto-start playback on mount.
      * @default false
      */
@@ -313,6 +325,11 @@ export interface SequencerContextValue {
      * Total number of steps.
      */
     totalSteps: number;
+
+    /**
+     * Steps per beat (timing grid), e.g. 4 for 16th notes.
+     */
+    stepsPerBeat: number;
 
     /**
      * Whether the sequencer is playing.

@@ -17,6 +17,7 @@ import { AudioOutProvider } from './AudioOutContext';
 import { PATCH_MASTER_OUTPUT_NODE_ID, PatchGraphProvider } from './PatchGraphContext';
 import { PatchRuntimeProvider } from './PatchRuntimeProvider';
 import { ensureWasmInitialized } from '../runtime/wasm/loadWasmOnce';
+import { ensureDinAudioWorkletLoaded } from '../runtime/wasm/loadDinAudioWorklet';
 import { setupUnlock, setupGestureUnlock } from './unlock';
 
 /**
@@ -137,6 +138,7 @@ export const AudioProvider: FC<AudioProviderProps> = ({
         log('AudioContext unlock requested', { state: ctx.state });
 
         if (ctx.state === 'running') {
+            void ensureDinAudioWorkletLoaded(ctx).catch(() => {});
             if (!unlockedRef.current) {
                 unlockedRef.current = true;
                 setIsUnlocked(true);
@@ -153,6 +155,10 @@ export const AudioProvider: FC<AudioProviderProps> = ({
             onError?.(error as Error);
             return;
         }
+
+        void ensureDinAudioWorkletLoaded(ctx).catch(() => {
+            /* worklet may still load on first PatchRuntime rebuild */
+        });
 
         unlockedRef.current = true;
         setIsUnlocked(true);

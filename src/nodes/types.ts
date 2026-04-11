@@ -65,6 +65,13 @@ export interface GainProps extends AudioNodeProps {
      * @default 'exponential'
      */
     rampType?: 'linear' | 'exponential';
+
+    /**
+     * When true, open/close this gain with sequencer triggers via WASM `gate` (per-voice),
+     * instead of relying on global MIDI gate state.
+     * @default false
+     */
+    voice?: boolean;
 }
 
 // =============================================================================
@@ -194,6 +201,19 @@ export interface OscProps extends AudioNodeProps {
      * @default false
      */
     autoStart?: boolean;
+
+    /**
+     * When true, use the engine's last MIDI note frequency for pitch; otherwise use `frequency` from node data.
+     * @default false
+     */
+    followMidiNote?: boolean;
+
+    /**
+     * When true (Rust default), multiply the oscillator by the engine's global MIDI gate (monophonic MIDI).
+     * React graphs default this to false and gate voices with {@link GainProps.voice} instead.
+     * @default false
+     */
+    useGlobalMidiGate?: boolean;
 
     /**
      * Custom periodic wave for 'custom' type.

@@ -18,6 +18,7 @@ import {
 const defaultValue: SequencerContextValue = {
     currentStep: 0,
     totalSteps: 16,
+    stepsPerBeat: 4,
     isPlaying: false,
     bpm: 120,
     subscribe: () => () => { },
@@ -37,21 +38,29 @@ type TransportRuntimeLike = {
     seekToStep?: (step: bigint) => void;
 };
 
-function createRuntime(bpm: number, steps: number): TransportRuntimeLike | null {
+function createRuntime(bpm: number, stepsPerBeat: number): TransportRuntimeLike | null {
     if (!isWasmReady()) return null;
     const wasm = getWasmModuleSync();
     if (!wasm?.TransportRuntime?.fromConfig) return null;
+    /** 5th arg is subdivisions per beat (e.g. 4 = 16ths), not total pattern length. */
     const runtime = wasm.TransportRuntime.fromConfig(
         bpm,
         4,
         4,
         1,
-        Math.max(1, Math.floor(steps)),
+        Math.max(1, Math.floor(stepsPerBeat)),
         0,
         'tick'
     ) as TransportRuntimeLike;
     bumpWasmDebugCounter('sequencerRuntimeCreated');
     return runtime;
+}
+
+function readTransportTickStepIndex(tick: unknown): number {
+    if (!tick || typeof tick !== 'object') return 0;
+    const o = tick as Record<string, unknown>;
+    const v = o.step_index ?? o.stepIndex;
+    return typeof v === 'number' && Number.isFinite(v) ? v : Number(v) || 0;
 }
 
 function seekRuntime(runtime: TransportRuntimeLike, step: number): void {
@@ -71,6 +80,8 @@ export const Sequencer: FC<SequencerProps> = ({
     children,
     bpm = 120,
     steps = 16,
+    stepsPerBeat = 4,
+    playing: playingProp,
     autoStart = false,
     loop = true,
     onStep,
@@ -79,14 +90,21 @@ export const Sequencer: FC<SequencerProps> = ({
     onStop: _onStop,
 }) => {
     useAudio();
-    const [isPlaying, setIsPlaying] = useState(autoStart);
+    const controlled = playingProp !== undefined;
+    const [internalPlaying, setInternalPlaying] = useState(autoStart);
+    const isPlaying = controlled ? Boolean(playingProp) : internalPlaying;
     const [currentStep, setCurrentStep] = useState(0);
+    const currentStepRef = useRef(0);
 
     const subscribersRef = useRef<Set<(step: number, time: number) => void>>(new Set());
     const runtimeRef = useRef<TransportRuntimeLike | null>(null);
     const lastNowRef = useRef<number | null>(null);
     const fallbackCarryRef = useRef(0);
     const fallbackStepRef = useRef(0);
+
+    useEffect(() => {
+        currentStepRef.current = currentStep;
+    }, [currentStep]);
 
     const subscribe = useCallback((callback: (step: number, time: number) => void) => {
         subscribersRef.current.add(callback);
@@ -101,34 +119,35 @@ export const Sequencer: FC<SequencerProps> = ({
             runtimeRef.current.play();
         }
         setCurrentStep(0);
-        setIsPlaying(true);
+        if (!controlled) {
+            setInternalPlaying(true);
+        }
         lastNowRef.current = null;
         fallbackCarryRef.current = 0;
         fallbackStepRef.current = 0;
         onStart?.();
-    }, [onStart]);
+    }, [controlled, onStart]);
 
     useEffect(() => {
         const previous = runtimeRef.current;
-        const nextRuntime = createRuntime(bpm, steps);
+        const nextRuntime = createRuntime(bpm, stepsPerBeat);
         const wasPlaying = isPlaying;
-        const current = currentStep;
+        const preserveStep = currentStepRef.current;
         runtimeRef.current = nextRuntime;
         previous?.free?.();
         if (!nextRuntime) {
             return;
         }
-        seekRuntime(nextRuntime, current);
+        seekRuntime(nextRuntime, preserveStep);
         if (wasPlaying) {
             nextRuntime.play();
         }
-    }, [bpm, steps, isPlaying, currentStep]);
+    }, [bpm, stepsPerBeat, isPlaying]);
 
     useEffect(() => {
-        if (autoStart && !isPlaying) {
-            start();
-        }
-    }, [autoStart, isPlaying, start]);
+        if (controlled || !autoStart || isPlaying) return;
+        start();
+    }, [autoStart, controlled, isPlaying, start]);
 
     useEffect(() => {
         let disposed = false;
@@ -144,7 +163,7 @@ export const Sequencer: FC<SequencerProps> = ({
 
             const runtime = runtimeRef.current;
             if (!runtime && isPlaying) {
-                const stepDuration = (60 / bpm) / 4;
+                const stepDuration = (60 / bpm) / Math.max(1, stepsPerBeat);
                 fallbackCarryRef.current += delta;
                 while (fallbackCarryRef.current >= stepDuration) {
                     fallbackCarryRef.current -= stepDuration;
@@ -159,7 +178,7 @@ export const Sequencer: FC<SequencerProps> = ({
                         if (loop) {
                             fallbackStepRef.current = 0;
                         } else {
-                            setIsPlaying(false);
+                            if (!controlled) setInternalPlaying(false);
                             onComplete?.();
                             break;
                         }
@@ -170,7 +189,7 @@ export const Sequencer: FC<SequencerProps> = ({
                 const ticks = runtime.advanceSeconds(delta);
                 const tickList = Array.isArray(ticks) ? ticks : [];
                 for (let i = 0; i < tickList.length; i += 1) {
-                    const absStep = Number(runtime.stepIndex());
+                    const absStep = readTransportTickStepIndex(tickList[i]);
                     const step = absStep % Math.max(1, steps);
                     subscribersRef.current.forEach((callback) => {
                         callback(step, now);
@@ -183,7 +202,7 @@ export const Sequencer: FC<SequencerProps> = ({
                             runtime.play();
                         } else {
                             runtime.stop();
-                            setIsPlaying(false);
+                            if (!controlled) setInternalPlaying(false);
                             onComplete?.();
                         }
                     }
@@ -197,7 +216,7 @@ export const Sequencer: FC<SequencerProps> = ({
             disposed = true;
             cancelAnimationFrame(rafId);
         };
-    }, [isPlaying, loop, onComplete, onStep, steps]);
+    }, [bpm, isPlaying, loop, onComplete, onStep, steps, stepsPerBeat]);
 
     useEffect(() => {
         return () => {
@@ -209,6 +228,7 @@ export const Sequencer: FC<SequencerProps> = ({
     const value: SequencerContextValue = {
         currentStep,
         totalSteps: steps,
+        stepsPerBeat,
         isPlaying,
         bpm,
         subscribe,

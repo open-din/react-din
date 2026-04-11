@@ -55,7 +55,8 @@ export const ADSR: FC<ADSRProps> = ({
         release,
         attackCurve,
         releaseCurve,
-        trigger,
+        /** WASM engine reads `gate` (0–1); `trigger` is not forwarded as a number by useWasmNode. */
+        gate: trigger ? 1 : 0,
         velocity,
         duration,
         initialGain,

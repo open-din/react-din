@@ -1,7 +1,10 @@
 import { useEffect, useMemo, type FC } from 'react';
 import { AudioOutProvider } from '../core/AudioOutContext';
+import { useLfoModulatorId } from '../core/LfoModulationContext';
+import { usePatchGraph } from '../core/PatchGraphContext';
 import { getNumericValue } from '../core/ModulatableValue';
 import type { GainProps } from './types';
+import { useVoiceGateTrigger } from '../sequencer/useVoiceGateTrigger';
 import { useWasmNode } from './useAudioNode';
 
 export const Gain: FC<GainProps> = ({
@@ -12,7 +15,10 @@ export const Gain: FC<GainProps> = ({
     gainBase,
     rampTo,
     rampType = 'exponential',
+    voice = false,
 }) => {
+    const lfoModId = useLfoModulatorId();
+    const graph = usePatchGraph();
     const gainValue = getNumericValue(gain, gainBase ?? 1);
     const wasmData = useMemo(
         () => ({
@@ -21,10 +27,21 @@ export const Gain: FC<GainProps> = ({
             rampTo,
             rampType,
             bypass,
+            ...(voice ? { gate: 0 } : {}),
         }),
-        [bypass, gainBase, gainValue, rampTo, rampType]
+        [bypass, gainBase, gainValue, rampTo, rampType, voice]
     );
     const { nodeId } = useWasmNode('gain', wasmData);
+    useVoiceGateTrigger(nodeId, voice);
+
+    useEffect(() => {
+        if (!lfoModId) return;
+        const connectionId = `${lfoModId}->${nodeId}:gain`;
+        graph.addConnection(connectionId, lfoModId, 'out', nodeId, 'gain');
+        return () => {
+            graph.removeConnection(connectionId);
+        };
+    }, [graph, lfoModId, nodeId]);
 
     useEffect(() => {
         if (!externalRef) return;

@@ -70,7 +70,10 @@ function getSourceHandleIds(node: PatchNode): Set<string> {
     }
     if (type === 'lfo') handleIds.add('out');
     if (type === 'voice') ['note', 'gate', 'velocity'].forEach((id) => handleIds.add(id));
-    if (type === 'adsr') handleIds.add('envelope');
+    if (type === 'adsr') {
+        handleIds.add('envelope');
+        handleIds.add('out');
+    }
     if (type === 'midiNote') ['trigger', 'frequency', 'note', 'gate', 'velocity'].forEach((id) => handleIds.add(id));
     if (type === 'midiCC') ['normalized', 'raw'].forEach((id) => handleIds.add(id));
     if (type === 'patch') getPatchSlotHandleIds(node, 'output').forEach((id) => handleIds.add(id));
@@ -108,7 +111,10 @@ function getTargetHandleIds(node: PatchNode): Set<string> {
     if (type === 'stepSequencer' || type === 'pianoRoll' || type === 'midiPlayer') handleIds.add('transport');
     if (type === 'lfo') ['rate', 'depth'].forEach((id) => handleIds.add(id));
     if (type === 'voice') ['trigger', 'portamento'].forEach((id) => handleIds.add(id));
-    if (type === 'adsr') ['gate', 'attack', 'decay', 'sustain', 'release'].forEach((id) => handleIds.add(id));
+    if (type === 'adsr') {
+        handleIds.add('in');
+        ['gate', 'attack', 'decay', 'sustain', 'release'].forEach((id) => handleIds.add(id));
+    }
     if (type === 'noiseBurst') ['trigger', 'duration', 'gain', 'attack', 'release'].forEach((id) => handleIds.add(id));
     if (type === 'constantSource') handleIds.add('offset');
     if (type === 'sampler') ['trigger', 'playbackRate', 'detune'].forEach((id) => handleIds.add(id));
@@ -184,6 +190,10 @@ export function isAudioConnectionLike(
     if (isAudioNodeType(sourceNode.data.type)) {
         const isAudioOutHandle = sourceHandle === 'out' || /^out\d+$/.test(sourceHandle);
         return isAudioOutHandle && isAudioTargetHandle;
+    }
+
+    if (sourceNode.data.type === 'adsr' && sourceHandle === 'out') {
+        return isAudioTargetHandle;
     }
 
     if (sourceNode.data.type !== 'patch' || !(sourceHandle === 'out' || sourceHandle.startsWith('out:'))) {

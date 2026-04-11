@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { AudioProvider } from '@open-din/react';
 import { Gain, Filter, Osc } from '@open-din/react/nodes';
-import { useLFO, LFO, type LFOWaveform } from '@open-din/react/sources';
+import { LFO, type LFOWaveform } from '@open-din/react/sources';
 
 /**
  * LFO Demo - Demonstrates using LFO for modulation
@@ -104,7 +104,7 @@ export const LFODemo: React.FC = () => {
                                     <Gain gain={0.3}>
                                         <Filter
                                             type="lowpass"
-                                            frequency={lfo ?? baseFrequency}
+                                            frequency={baseFrequency}
                                             frequencyBase={baseFrequency}
                                             Q={5}
                                         >
@@ -210,18 +210,16 @@ const lfo = useLFO({ rate: 2, depth: 500, waveform: 'sine' });
 };
 
 /**
- * Tremolo synth using useLFO hook
+ * Tremolo: LFO modulates gain (WASM control edge lfo:out → gain:gain).
  */
-const TremoloSynth: React.FC<{ rate: number; depth: number }> = ({ rate, depth }) => {
-    const lfo = useLFO({ rate, depth, waveform: 'sine' });
-
-    if (!lfo) return null;
-
-    return (
-        <Gain gain={lfo} gainBase={0.5}>
-            <Osc type="sine" frequency={440} autoStart />
-        </Gain>
-    );
-};
+const TremoloSynth: React.FC<{ rate: number; depth: number }> = ({ rate, depth }) => (
+    <LFO rate={rate} depth={depth} waveform="sine">
+        {() => (
+            <Gain gain={0.5}>
+                <Osc type="sine" frequency={440} autoStart />
+            </Gain>
+        )}
+    </LFO>
+);
 
 export default LFODemo;
