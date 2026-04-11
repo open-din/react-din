@@ -1,4 +1,4 @@
-import { useEffect, type FC } from 'react';
+import { useEffect, useMemo, type FC } from 'react';
 import { AudioOutProvider } from '../core/AudioOutContext';
 import { getNumericValue } from '../core/ModulatableValue';
 import type { FilterProps } from './types';
@@ -18,14 +18,18 @@ export const Filter: FC<FilterProps> = ({
     detune = 0,
     detuneBase,
 }) => {
-    const { nodeId } = useWasmNode('filter', {
-        type,
-        frequency: getNumericValue(frequency, frequencyBase ?? 350),
-        Q: getNumericValue(Q, QBase ?? 1),
-        gain: getNumericValue(gain, gainBase ?? 0),
-        detune: getNumericValue(detune, detuneBase ?? 0),
-        bypass,
-    });
+    const wasmData = useMemo(
+        () => ({
+            type,
+            frequency: getNumericValue(frequency, frequencyBase ?? 350),
+            Q: getNumericValue(Q, QBase ?? 1),
+            gain: getNumericValue(gain, gainBase ?? 0),
+            detune: getNumericValue(detune, detuneBase ?? 0),
+            bypass,
+        }),
+        [Q, QBase, bypass, detune, detuneBase, frequency, frequencyBase, gain, gainBase, type]
+    );
+    const { nodeId } = useWasmNode('filter', wasmData);
 
     useEffect(() => {
         if (!externalRef) return;

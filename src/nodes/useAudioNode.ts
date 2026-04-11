@@ -179,7 +179,7 @@ export function useWasmNode(
     data: Record<string, unknown>
 ): UseWasmNodeResult {
     const graph = usePatchGraph();
-    const { runtimeRef } = usePatchRuntime();
+    const { runtimeRef, runtimeEpoch } = usePatchRuntime();
     const { nodeId: parentNodeId, inputHandle: parentInputHandle } = useAudioOut();
     const nodeIdRef = useRef<string | null>(null);
     if (!nodeIdRef.current) {
@@ -209,15 +209,26 @@ export function useWasmNode(
     }, [graph, nodeId, parentInputHandle, parentNodeId, type]);
 
     useEffect(() => {
-        if (Object.is(dataRef.current, data)) return;
-        dataRef.current = data;
-        graph.updateNodeData(nodeId, data);
-    }, [data, graph, nodeId]);
+        const rt = runtimeRef.current;
+        if (rt) {
+            for (const key of Object.keys(data)) {
+                const val = data[key];
+                if (typeof val === 'number' && Number.isFinite(val)) {
+                    rt.setParam(nodeId, key, val);
+                }
+            }
+        }
+
+        if (!Object.is(dataRef.current, data)) {
+            dataRef.current = data;
+            graph.updateNodeData(nodeId, data);
+        }
+    }, [data, graph, nodeId, runtimeEpoch]);
 
     return {
         nodeId,
         updateParam: (key: string, value: number) => {
-            runtimeRef.current?.setInput(`${nodeId}:${key}`, value);
+            runtimeRef.current?.setParam(nodeId, key, value);
         },
     };
 }

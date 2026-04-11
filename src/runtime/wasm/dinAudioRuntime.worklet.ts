@@ -70,6 +70,13 @@ class DinAudioRuntimeProcessor extends AudioWorkletProcessor {
     private propValues: Record<string, unknown> = {};
     private midi: PatchMidiBindings<PatchDocument> | undefined;
 
+    private sabView: Float32Array | null = null;
+
+    private readonly sabKeyToSlot = new Map<string, number>();
+
+    /** Latest compound `nodeId:param` values; re-applied each block so failed `setNodeParam` calls retry. */
+    private readonly nodeParamOverrides = new Map<string, number>();
+
     private readonly pendingSetInputs: Array<{ key: string; value: number }> = [];
     private readonly pendingMidi: Array<{
         status: number;
@@ -78,6 +85,11 @@ class DinAudioRuntimeProcessor extends AudioWorkletProcessor {
         frameOffset: number;
     }> = [];
 
+    /** Set by `destroy` message; causes `process` to return `false` so the browser releases the processor. */
+    private destroyed = false;
+
+    /** One-shot: warn once when `setNodeParam` is missing from the WASM binary. */
+    private setNodeParamWarned = false;
     /** One-shot: first successful block render stats (main thread logs in dev). */
     private renderDebugPosted = false;
     /** One-shot: log first `renderBlockInto` failure from the audio thread. */
@@ -101,13 +113,44 @@ class DinAudioRuntimeProcessor extends AudioWorkletProcessor {
     private onPortMessage(data: unknown): void {
         if (!data || typeof data !== 'object') return;
         const msg = data as Record<string, unknown>;
+        if (msg.type === 'destroy') {
+            this.destroyed = true;
+            try { (this.runtime as AudioRuntime | null)?.free(); } catch { /* ignore */ }
+            this.runtime = null;
+            this.ready = false;
+            return;
+        }
         if (msg.type === 'controls') {
             this.propValues = (msg.propValues as Record<string, unknown>) ?? {};
             this.midi = msg.midi as PatchMidiBindings<PatchDocument> | undefined;
             return;
         }
+        if (msg.type === 'init-sab') {
+            const sab = msg.sab;
+            if (sab instanceof SharedArrayBuffer) {
+                this.sabView = new Float32Array(sab);
+                this.sabKeyToSlot.clear();
+                const mapping = msg.mapping as Record<string, number> | undefined;
+                if (mapping) {
+                    for (const [k, v] of Object.entries(mapping)) {
+                        this.sabKeyToSlot.set(k, Number(v));
+                    }
+                }
+            }
+            return;
+        }
+        if (msg.type === 'registerSabParam') {
+            this.sabKeyToSlot.set(String(msg.key), Number(msg.slot));
+            return;
+        }
         if (msg.type === 'setInput') {
-            this.pendingSetInputs.push({ key: String(msg.key), value: Number(msg.value) });
+            const key = String(msg.key);
+            const value = Number(msg.value);
+            if (key.includes(':')) {
+                this.nodeParamOverrides.set(key, value);
+            } else {
+                this.pendingSetInputs.push({ key, value });
+            }
             return;
         }
         if (msg.type === 'pushMidi') {
@@ -147,11 +190,39 @@ class DinAudioRuntimeProcessor extends AudioWorkletProcessor {
         }
     }
 
+    /**
+     * Apply compound node param overrides to WASM. Retries every audio quantum if the runtime
+     * lacks `setNodeParam` or a call throws (stale module, init race).
+     */
+    private applyNodeParamOverrides(rt: AudioRuntime): void {
+        const setter = (
+            rt as unknown as { setNodeParam?: (compoundKey: string, value: number) => void }
+        ).setNodeParam;
+        if (typeof setter !== 'function') {
+            if (!this.setNodeParamWarned) {
+                this.setNodeParamWarned = true;
+                this.port.postMessage({
+                    type: 'error',
+                    message: '[din-wasm] setNodeParam missing — rebuild din-wasm to enable live parameter updates',
+                });
+            }
+            return;
+        }
+        for (const [key, value] of this.nodeParamOverrides) {
+            try {
+                setter.call(rt, key, value);
+            } catch {
+                /* keep entry for next block */
+            }
+        }
+    }
+
     process(
         _inputs: Float32Array[][],
         outputs: Float32Array[][],
         parameters: Record<string, Float32Array>
     ): boolean {
+        if (this.destroyed) return false;
         void parameters;
         const out = outputs[0];
         if (!out || out.length < 2) {
@@ -174,6 +245,12 @@ class DinAudioRuntimeProcessor extends AudioWorkletProcessor {
         const rt = this.runtime;
 
         if (this.mode === 'graph-runtime') {
+            if (this.sabView && this.sabKeyToSlot.size > 0) {
+                for (const [paramKey, slot] of this.sabKeyToSlot) {
+                    this.nodeParamOverrides.set(paramKey, this.sabView[slot]!);
+                }
+            }
+            this.applyNodeParamOverrides(rt);
             for (const p of this.pendingSetInputs) {
                 try {
                     rt.setInput(p.key, p.value);

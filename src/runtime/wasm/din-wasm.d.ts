@@ -15,6 +15,7 @@ declare module 'din-wasm' {
         renderBlockInto(dst: Float32Array): void;
         runtimeSnapshot(): unknown;
         setInput(key: string, value: number): void;
+        setNodeParam(compoundKey: string, value: number): void;
         transportState(): unknown;
         triggerEvent(key: string, token: bigint): void;
     }

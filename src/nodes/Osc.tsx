@@ -1,4 +1,4 @@
-import { useEffect, type FC } from 'react';
+import { useEffect, useMemo, type FC } from 'react';
 import { AudioOutProvider } from '../core/AudioOutContext';
 import { getNumericValue } from '../core/ModulatableValue';
 import type { OscProps } from './types';
@@ -15,13 +15,17 @@ export const Osc: FC<OscProps> = ({
     detuneBase,
     autoStart = false,
 }) => {
-    const { nodeId } = useWasmNode('osc', {
-        type,
-        frequency: getNumericValue(frequency, frequencyBase ?? 440),
-        detune: getNumericValue(detune, detuneBase ?? 0),
-        autoStart,
-        bypass,
-    });
+    const wasmData = useMemo(
+        () => ({
+            type,
+            frequency: getNumericValue(frequency, frequencyBase ?? 440),
+            detune: getNumericValue(detune, detuneBase ?? 0),
+            autoStart,
+            bypass,
+        }),
+        [autoStart, bypass, detune, detuneBase, frequency, frequencyBase, type]
+    );
+    const { nodeId } = useWasmNode('osc', wasmData);
 
     useEffect(() => {
         if (!externalRef) return;

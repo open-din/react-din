@@ -47,6 +47,7 @@ export const AudioProvider: FC<AudioProviderProps> = ({
     createOnUserGesture = false,
     debug = false,
     masterGain: initialMasterGain = 1,
+    paramTransport = 'auto',
     onStateChange,
     onUnlock,
     onError,
@@ -234,6 +235,8 @@ export const AudioProvider: FC<AudioProviderProps> = ({
                 <PatchRuntimeProvider
                     masterBus={masterBusRef.current}
                     sampleRate={context?.sampleRate ?? 44100}
+                    paramTransport={paramTransport}
+                    debug={debug}
                 >
                     <AudioOutProvider
                         node={masterBusRef.current}

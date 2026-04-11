@@ -73,6 +73,15 @@ export interface AudioProviderProps {
      * @default false
      */
     debug?: boolean;
+
+    /**
+     * How real-time WASM node parameters are sent to the AudioWorklet.
+     * - `auto`: SharedArrayBuffer when `crossOriginIsolated`, else postMessage
+     * - `sab`: force SharedArrayBuffer (falls back internally if unavailable)
+     * - `postMessage`: per-parameter messages only
+     * @default 'auto'
+     */
+    paramTransport?: 'auto' | 'sab' | 'postMessage';
 }
 
 // =============================================================================

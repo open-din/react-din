@@ -1,4 +1,4 @@
-import { useEffect, type FC } from 'react';
+import { useEffect, useMemo, type FC } from 'react';
 import { AudioOutProvider } from '../core/AudioOutContext';
 import { getNumericValue } from '../core/ModulatableValue';
 import type { GainProps } from './types';
@@ -14,13 +14,17 @@ export const Gain: FC<GainProps> = ({
     rampType = 'exponential',
 }) => {
     const gainValue = getNumericValue(gain, gainBase ?? 1);
-    const { nodeId } = useWasmNode('gain', {
-        gain: gainValue,
-        gainBase,
-        rampTo,
-        rampType,
-        bypass,
-    });
+    const wasmData = useMemo(
+        () => ({
+            gain: gainValue,
+            gainBase,
+            rampTo,
+            rampType,
+            bypass,
+        }),
+        [bypass, gainBase, gainValue, rampTo, rampType]
+    );
+    const { nodeId } = useWasmNode('gain', wasmData);
 
     useEffect(() => {
         if (!externalRef) return;
